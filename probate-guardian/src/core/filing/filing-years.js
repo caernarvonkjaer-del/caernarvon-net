@@ -89,6 +89,9 @@ export function resetYearlyFieldsForNewYear(data,type){
     data.amendedForm='';
     data.schA=[];data.schB1=[];data.schB2=[];data.schB3=[];data.schB4=[];
     data.schC=[];data.schE=[];data.schF1=[];data.schF2=[];
+    // Milestone 74J-2: the Final Report's lists describe one final report.
+    if(Array.isArray(data.finalReserved))data.finalReserved=[];
+    if(Array.isArray(data.finalTurnover))data.finalTurnover=[];
   }else if(type==='planSimplified'){
     // Every answer on a Plan describes one specific year ("during the
     // preceding year", "in the past year"), so ALL of them reset — unlike

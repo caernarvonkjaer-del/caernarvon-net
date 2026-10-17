@@ -117,7 +117,11 @@ describe('the rows, lists and page list moved with them', () => {
     // Every identity's page list, the way the router and sidebar read them.
     expect(json(FILING_PAGES)).toStrictEqual(BEFORE.pages);
     for (const type of BEFORE.types) expect(FILING_REGISTRY[type].pages, type).toBe(FILING_PAGES[type]);
-    expect(FILING_PAGES.finalAccounting).toBe(FILING_PAGES.annual);
+    // Milestone 74J-2: the Final's pages are the Annual's with the Final Report
+    // (Rule 5.680(c)) before Print Preview; the Trust's are the Annual's.
+    expect(FILING_PAGES.finalAccounting.filter((p) => p.id !== '/final')).toStrictEqual(FILING_PAGES.annual);
+    expect(FILING_PAGES.finalAccounting.map((p) => p.id).slice(-2)).toEqual(['/final', '/print']);
+    expect(FILING_PAGES.trustAccounting).toBe(FILING_PAGES.annual);
     expect(json(INVENTORY_TYPES)).toStrictEqual(BEFORE.inventoryTypes);
     expect(json(INVENTORY_TYPE_META)).toStrictEqual(BEFORE.meta);
     for (const [value, label] of Object.entries(BEFORE.planRightLabels)) expect(planRightLabel(value)).toBe(label);

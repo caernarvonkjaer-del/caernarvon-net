@@ -161,3 +161,11 @@ export const PAGES_ANNUAL=[
   {id:'/p11',  label:'Part XI'},
   {id:'/print',label:'Print Preview'},
 ];
+
+// Milestone 74J-2: the Final Accounting's pages -- the Annual's, with the
+// Final Report (Rule 5.680(c), src/core/filing/final-report.js) after Part XI.
+export const PAGES_FINAL=[
+  ...PAGES_ANNUAL.filter(p=>p.id!=='/print'),
+  {id:'/final',label:'Final Report'},
+  ...PAGES_ANNUAL.filter(p=>p.id==='/print'),
+];

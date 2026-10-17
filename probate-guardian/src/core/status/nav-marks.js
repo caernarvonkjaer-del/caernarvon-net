@@ -241,7 +241,7 @@ export function getCurrentPageKey(){
   if(!prefix)return '';
   const pageMap={
     '/':'cover', '/p2':'p2', '/p3':'p3', '/p4':'p4', '/p5':'p5', '/p6':'p6', '/p7':'p7',
-    '/p8':'p8', '/p9':'p9', '/p10':'p10', '/p11':'p11',
+    '/p8':'p8', '/p9':'p9', '/p10':'p10', '/p11':'p11', '/final':'final',
     '/scha':'scha', '/schb1':'schb1', '/schb2':'schb2', '/schb3':'schb3', '/schb4':'schb4',
     '/schc':'schc', '/schd1':'schd1', '/schd2':'schd2', '/schd3':'schd3', '/schd4':'schd4', '/schd5':'schd5',
     '/sche':'sche', '/schf1':'schf1', '/schf2':'schf2', '/schf3':'schf3', '/schf4':'schf4', '/schf5':'schf5'

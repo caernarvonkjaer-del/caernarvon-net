@@ -4,6 +4,7 @@
 // exporter and importer (src/features/annual-accounting/excel.js) run on it,
 // and the import goes through 73E's transaction.
 import { trustInfoStarted } from '../../filing/trust-identity.js';
+import { finalReportStarted, isFinalAccountingType } from '../../filing/final-report.js';
 import { codecs } from './codecs.js';
 import { writeCell } from './engine.js';
 import { remunerationEntered, remunerationLine, splitRemuneration } from './remuneration-line.js';
@@ -381,6 +382,8 @@ export const ANNUAL_CONTRACT = Object.freeze({
     if (String(f.ucn ?? '').trim()) out.push({ text: 'the UCN' });
     // Milestone 74N: a Trust Accounting's "This accounting reports on" block.
     if (f.inventoryType === 'trustAccounting' && trustInfoStarted(f)) out.push({ text: 'which trust this accounting reports on' });
+    // Milestone 74J-2: a Final Accounting's Final Report -- filed another way, so Save as Excel asks.
+    if (isFinalAccountingType(f.inventoryType) && finalReportStarted(f)) out.push({ text: "the Final Report's amounts reserved and assets to be turned over (Rule 5.680(c))", warn: true });
     return out;
   },
   // What the workbook holds differently, so an import brings it back changed.

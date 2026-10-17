@@ -72,6 +72,8 @@ export function errorRoute(section, filingType){
   const s=(section||'').trim();
   if(!s)return '/';
   if(/^Cover/i.test(s))return '/';
+  // Milestone 74J-2: the Final Accounting's Final Report page.
+  if(/^Final Report\b/i.test(s))return '/final';
   const type = filingType || getActiveInventoryType();
   const norm = str => String(str||'').toLowerCase().replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
   const sNorm = norm(s);

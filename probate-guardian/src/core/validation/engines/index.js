@@ -32,6 +32,7 @@ import { SCH_B4_ACCOUNT_BLOCKS } from '../../excel/b4-register-pages.js';
 import { createIssue } from '../issue-registry.js';
 import { sidebarOnlyWants } from '../../status/section-guidance-policy.js';
 import { getCollection } from '../../form/collections.js';
+import { FINAL_LISTS, FINAL_REPORT_ROUTE, FINAL_REPORT_SECTION, finalReportStarted, isFinalAccountingType } from '../../filing/final-report.js';
 import { isAffirmative } from '../../form/yes-no.js';
 import { collectGuardianIssues } from './guardian.js';
 import { collectAnnualIssues } from './annual.js';
@@ -68,6 +69,20 @@ function annualNoItemsPrompts(d, engineId) {
   });
 }
 
+// Milestone 74J-2 (decision 74J-N1): the Final Report's two lists, each
+// answered by an entry or its "I verify there are none" box -- a prompt, as
+// on the Annual's schedules, never an export block. The Final Accounting's
+// alone: an Annual or Trust holding the lists (a changed Filing Type) is
+// asked nothing about them.
+function finalReportPrompts(d) {
+  if (!isFinalAccountingType(d?.inventoryType)) return [];
+  return FINAL_LISTS.flatMap(({ list, noItems, heading }) => {
+    const untouched = getCollection(d.inventoryType, list).isBlank;
+    if (d.scheduleNoItems?.[noItems] || (d[list] || []).some((row) => !untouched(row))) return [];
+    return [{ code: `prompt.annual.no-items.${noItems}`, route: FINAL_REPORT_ROUTE, label: `${FINAL_REPORT_SECTION} — ${heading}: add an entry, or tick "I verify there are no items to report"`, path: `scheduleNoItems.${noItems}`, sidebarOnly: /** @type {const} */ (true) }];
+  });
+}
+
 // The Initial Plan's Q7 (benefits): the sidebar wants a benefit ticked or an
 // explanation (completion.js 'pi-p4'); export doesn't.
 const Q7_BENEFITS = ['q7SocialSecurity', 'q7Ssdi', 'q7Hmo', 'q7Ssi', 'q7StateSupplement', 'q7InstitutionalCare', 'q7SupplementalIns',
@@ -98,7 +113,7 @@ const ENGINES = Object.freeze({
   annual: {
     collect: collectAnnualIssues,
     excel: (d, type) => [...getExcelCapacityIssues(type, d, ANNUAL_EXCEL_CAPS), ...annualB4Issues(d, type)],
-    prompts: (d) => annualNoItemsPrompts(d, 'annual'),
+    prompts: (d) => [...annualNoItemsPrompts(d, 'annual'), ...finalReportPrompts(d)],
   },
   simplified: { collect: collectSimplifiedIssues, excel: (d) => getExcelCapacityIssues('simplified', d, SIMPLIFIED_EXCEL_CAPS), prompts: () => [] },
   planInitial: { collect: collectPlanInitialIssues, excel: null, prompts: planInitialQ7Prompts },

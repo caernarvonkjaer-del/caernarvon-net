@@ -49,6 +49,8 @@ const ANNUAL_FAMILY = [
   { list: 'trusts', field: 'wardAmount', route: '/p8', section: 'Part VIII', row: 'Trust', label: "Amount (Ward's Interest)" },
   { path: 'bondAmount', route: '/p9', section: 'Part IX', label: 'Bond Amount' },
   { list: 'remuneration', field: 'amount', route: '/p11', section: 'Part XI', row: 'Line', label: 'Amount' },
+  // Milestone 74J-2: the Final Report's amounts reserved (only a Final Accounting holds the list).
+  { list: 'finalReserved', field: 'amount', route: '/final', section: 'Final Report — Amounts Reserved', row: 'Line', label: 'Amount' },
 ];
 
 const SIMPLIFIED = [

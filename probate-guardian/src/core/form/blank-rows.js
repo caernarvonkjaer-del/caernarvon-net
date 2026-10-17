@@ -26,6 +26,9 @@ export const BLANK_SCHEDULE_ENTRY = {
   // schedules was never cleaned up and counted as an entry.
   ...Object.fromEntries(['schA', 'schB1', 'schB2', 'schB3', 'schB4', 'schC', 'schD1', 'schD2', 'schD3', 'schD4', 'schD5', 'schE', 'schF1', 'schF2']
     .map((key) => [key, SCHEDULE_SCHEMAS[key].factory])),
+  // Milestone 74J-2: the Final Report's two lists (pruned like any schedule).
+  finalReserved: SCHEDULE_SCHEMAS.finalReserved.factory,
+  finalTurnover: SCHEDULE_SCHEMAS.finalTurnover.factory,
 };
 
 export const BLANK_CARD_COLLECTIONS = {

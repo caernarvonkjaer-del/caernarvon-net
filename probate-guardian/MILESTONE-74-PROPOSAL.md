@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K, 74N, 74R. **Closing full regression, 2026-10-16** (`npm test` from a copy on C: at `4378ed9b`, 44 min 48 s): unit 225 files, 3,299 tests passed; browser 1,012 passed, 7 skipped, 4 failed -- two cases still expecting 74E's old capitalization of a typed description (updated in `da3a2fc6`) and the two checks that unpack an older build with git, which a copy on C: can't do until a run on D: has (AGENTS.md §1). All four then passed from D: and again from a fresh copy on C:. **Approved 2026-10-16, after the open questions were answered** (Appendix B): building 74J-2's Rule 5.680(c) section and 74O-5's remuneration warning, then one full regression. **Built:** 74O-5. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K, 74N, 74R. **Closing full regression, 2026-10-16** (`npm test` from a copy on C: at `4378ed9b`, 44 min 48 s): unit 225 files, 3,299 tests passed; browser 1,012 passed, 7 skipped, 4 failed -- two cases still expecting 74E's old capitalization of a typed description (updated in `da3a2fc6`) and the two checks that unpack an older build with git, which a copy on C: can't do until a run on D: has (AGENTS.md §1). All four then passed from D: and again from a fresh copy on C:. **Approved 2026-10-16, after the open questions were answered** (Appendix B): building 74J-2's Rule 5.680(c) section and 74O-5's remuneration warning, then one full regression. **Built:** 74O-5, 74J-2. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -2072,6 +2072,80 @@ shared footer and the documents headings' small capitals, and the conversion
 golden gaining the Initial Plan -> Annual Plan record (additions only, the
 residence carried, living choice mapped); then all passed. Full unit suite:
 3,057 passed; `check:types` clean.
+
+### Build record, 74J-2 — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer:** decision 2 was answered on 2026-10-16: a
+Final Accounting shows Rule 5.680(c)'s items beyond the Clerk's Annual
+workbook (Pinellas Clerk practice; the legal reading stays flagged for a
+qualified person). A Final Accounting now has a **Final Report — Rule
+5.680(c)** page, after Part XI and before Print Preview, which quotes Rule
+5.680(c) and asks for its two lists:
+
+- **Amounts reserved for unpaid and anticipated disbursements, costs, and
+  fees** -- a description and an amount on each line, with Rule
+  5.680(b)(3)'s words beside it ("the amount of unpaid and anticipated costs
+  and fees to be paid to the guardian and to the attorneys, accountants, or
+  other agents employed by the guardian").
+- **Assets to be turned over, and to whom** -- the asset and the person on
+  each line.
+
+Per 74J-N1 each list is asked like an Annual schedule: the filer adds lines
+or ticks "I verify there are no ... to report". Until each is answered the
+sidebar shows the page unfinished and asks; export is never blocked by it.
+A line that is started needs both its boxes, an ordinary error the filer can
+override, named on the Final Report page; an amount that cannot be read is
+named there too. The Final's readiness card has a Final Report row, Part
+XI's Next goes to the page, and the Summary lists it.
+
+The PDF prints a **FINAL REPORT — Rule 5.680(c), Florida Probate Rules**
+section: each list as a table (the reserved amounts with their total), or
+"The guardian verified there are no ... to report.", or "No ... are listed."
+The Clerk's workbook has no cells for either list, so Save as Excel says so
+and asks first, as it does for the other content the workbook omits. An
+Annual or Trust Accounting has no such page, prints no such section, and is
+asked nothing about the lists, even when a Filing Type change leaves them in
+the file. A new year empties both lists.
+
+**How:** new `src/core/filing/final-report.js` (the page's route, the two
+lists and their boxes, the Final test); `models/annual.js`'s `PAGES_FINAL`
+(the Final's own page list in `filing-registry.js`); the lists registered on
+the Final only (`collections.js`, `schedule-schemas.js`, `blank-rows.js`,
+`no-items-keys.js`); `engines/annual.js` checks a started line,
+`engines/index.js`'s `finalReportPrompts()` asks the sidebar question,
+`error-route.js` routes "Final Report" to the page, `amount-fields.js` reads
+the amounts; `completion.js` and `nav-marks.js` (the page's mark);
+`readiness-config.js`; the page itself in `annual-accounting/index.js`;
+`pdf-model.js`; `workbook-contract/annual.js`; `filing-years.js`; the user
+guide's anchor and `help/index.html`. Data model: four rows,
+`finalReserved[]` (description, amount) and `finalTurnover[]` (asset,
+recipient), and their two "no items" keys; `verify:data-model` passes (1,079
+rows). Nothing in an existing file changes: the lists appear only when the
+filer adds a line.
+
+**Tests:**
+
+- New `tests/unit/final-report.spec.js` (11): the page, the lists and the
+  route are the Final's alone; unanswered lists are sidebar questions, never
+  blockers; a tick or a line answers; a started line's boxes, overridable;
+  an unreadable amount routes to the page; an Annual or Trust holding the
+  lists is asked nothing; the PDF section; the workbook notice.
+  **Red-first:** 9 of the 11 fail before the change.
+- New `tests/e2e/final-report.spec.ts` (1): through the real sidebar and
+  boxes, one list ticked none and the other answered by a typed line; the
+  mark turns finished and the saved filing holds both; an Annual has no
+  such page. **Red-first:** the sidebar link is not found.
+- Records updated, each stated: the Final's page list in
+  `filing-registry.spec.js` and the 70C snapshot; its two lists in
+  `collection-descriptors.spec.js`; the Final Report's question enumerated
+  in `sidebar-export-parity.spec.js`; the completion golden regenerated --
+  every Final variant gains the page's mark, unfinished, and its progress
+  counts 25 sections where it counted 24; nothing else changed.
+- Green: the whole unit suite (3,316 in 226 files), `check:types`, and 14
+  related browser specs on D: (129 tests: the new spec, the Annual's pages,
+  the year-rollover and conversion goldens unchanged, routes, navigation
+  status, readiness card, user guide wiring, the guided tour, page
+  structure, the Final's PDF specs, conversions and the Filing Type change).
 
 ---
 

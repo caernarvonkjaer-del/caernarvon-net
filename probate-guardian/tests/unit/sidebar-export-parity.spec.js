@@ -50,6 +50,8 @@ const PROMPTS = [
   { name: "an Annual-family schedule's \"no items\" box", code: /^prompt\.annual\.no-items\.(sch[a-f]\d?|sch[a-f])$/, own: true },
   // Milestone 73F part 3 (decision 73F-4): the Inventory's eleven schedules, a prompt where they used to block export.
   { name: "an Inventory schedule's \"no items\" box", code: /^prompt\.guardian\.no-items\.[abc]\d$/, own: true },
+  // Milestone 74J-2 (decision 74J-N1): the Final Accounting's Final Report lists (Rule 5.680(c)), asked like a schedule.
+  { name: "a Final Report list's \"no items\" box", code: /^prompt\.annual\.no-items\.final(reserved|turnover)$/, own: true },
   { name: 'the bond question (the Inventory D-4, the Annual family Part IX)', code: /^prompt\.(guardian\.d4|annual\.p9)\.bondDepositoryState$/ },
   { name: "a Plan's certificate of service", code: /^prompt\.plan(Initial|Annual|Minor|Simplified)\.p(4|8|11|12)\.certRecipients\.\d+\.name$/ },
   { name: "the Annual Plan's 3G (benefits)", code: /^prompt\.planAnnual\.p4\.q3BenefitsNone$/ },

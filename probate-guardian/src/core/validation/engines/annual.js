@@ -15,6 +15,7 @@ import { formatMoney } from '../../format/money.js';
 import { getD } from '../../state.js';
 import { rowStarted } from '../row-started.js';
 import { getCollection } from '../../form/collections.js';
+import { FINAL_LISTS, FINAL_REPORT_ROUTE, FINAL_REPORT_SECTION, finalReportStarted, isFinalAccountingType } from '../../filing/final-report.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
@@ -365,5 +366,11 @@ export function collectAnnualIssues(d){
       +fmtAnnual(Math.abs(_rec.diff))+': correct the schedules or explain the difference','reconcileExplanation'));
   }
 
+  // Milestone 74J-2 (decision 74J-N1): a Final Accounting's Final Report -- a
+  // started row's boxes are required, as on every schedule; whether a list
+  // has anything is a prompt (engines/index.js), never an export block.
+  if(isFinalAccountingType(T)){
+    for(const {list,heading,fields} of FINAL_LISTS)checkRows(d[list],fields,`${FINAL_REPORT_SECTION} — ${heading}`,list);
+  }
   return errs;
 }

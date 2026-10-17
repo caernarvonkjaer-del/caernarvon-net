@@ -24,6 +24,8 @@ export function noItemsKeyFor(filingType, listKey) {
   if (engine === 'annual') {
     if (/^sch[A-F]\d?$/.test(list)) return list.toLowerCase();
     if (list === 'remuneration') return 'remuneration';
+    // Milestone 74J-2: the Final Report's two lists.
+    if (list === 'finalReserved' || list === 'finalTurnover') return list.toLowerCase();
     return null;
   }
   if (engine === 'guardian') {

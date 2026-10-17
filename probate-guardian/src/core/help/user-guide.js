@@ -40,7 +40,7 @@ export const USER_GUIDE_ANCHORS={
     '/schd4':'annual-accounting-schedules', '/schd5':'annual-accounting-schedules', '/sche':'annual-accounting-schedules',
     '/schf1':'annual-accounting-schedules', '/schf2':'annual-accounting-schedules',
     '/p67':'annual-accounting-p67',
-    '/p8':'annual-accounting-p8-11', '/p9':'annual-accounting-p8-11', '/p10':'annual-accounting-p8-11', '/p11':'annual-accounting-p8-11',
+    '/p8':'annual-accounting-p8-11', '/p9':'annual-accounting-p8-11', '/p10':'annual-accounting-p8-11', '/p11':'annual-accounting-p8-11', '/final':'annual-accounting-p8-11',
     '/print':'preview',
   },
   planSimplified:{default:'simplified-plan', '/print':'preview'},

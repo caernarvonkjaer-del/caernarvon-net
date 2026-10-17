@@ -16,7 +16,7 @@ import { resolveDescriptorForInventoryType, mountFeatureFnName, FILING_TYPE_KEYS
 import { normalizeWardData } from './normalize-filing.js';
 import { emptyDataGuardian, PAGES_GUARDIAN } from './models/guardian.js';
 import { emptyDataSimplified, PAGES_SIMPLIFIED } from './models/simplified.js';
-import { emptyDataAnnual, PAGES_ANNUAL } from './models/annual.js';
+import { emptyDataAnnual, PAGES_ANNUAL, PAGES_FINAL } from './models/annual.js';
 import { emptyDataPlanSimplified, PAGES_PLAN_SIMPLIFIED } from './models/plan-simplified.js';
 import { emptyDataPlanAnnual, PAGES_PLAN_ANNUAL } from './models/plan-annual.js';
 import { emptyDataPlanInitial, PAGES_PLAN_INITIAL } from './models/plan-initial.js';
@@ -183,7 +183,7 @@ export function initializeEmptyData(type){
 // the Final and Trust Accountings use the Annual engine's pages.
 export const FILING_PAGES={
   guardian: PAGES_GUARDIAN,
-  finalAccounting: PAGES_ANNUAL,
+  finalAccounting: PAGES_FINAL,
   trustAccounting: PAGES_ANNUAL,
   simplified: PAGES_SIMPLIFIED,
   annual: PAGES_ANNUAL,

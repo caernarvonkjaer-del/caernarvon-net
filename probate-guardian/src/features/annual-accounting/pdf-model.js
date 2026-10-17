@@ -1,6 +1,7 @@
 // Structured intermediate representation for Annual Guardianship Accounting PDF generation.
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
+import { FINAL_LISTS, isFinalAccountingType } from '../../core/filing/final-report.js';
 import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } from './totals.js';
 import { wardShare, formatShare } from '../../core/format/money.js';
 import { presentAmount } from '../../core/form/amount-codec.js';
@@ -1296,6 +1297,50 @@ export function buildAnnualAccountingModel(D, options = {}) {
           title: 'Declaration of Remuneration',
           text: REMUNERATION_NONE_REPORTED,
         },
+      ],
+    });
+  }
+
+  // Milestone 74J-2 (decision 74J-N1): the Final Accounting's Rule 5.680(c)
+  // lists, which the Clerk's workbook has no place for -- each a table, or
+  // what the filer answered when there is no entry.
+  if (isFinalAccountingType(descriptor.inventoryType)) {
+    const entered = (rows) => (Array.isArray(rows) ? rows : []).filter((r) => Object.entries(r || {}).some(([k, v]) => k !== 'id' && v !== '' && v != null));
+    const answered = (spec, table) => {
+      const rows = entered(d[spec.list]);
+      if (rows.length) return table(rows);
+      const none = !!d.scheduleNoItems?.[spec.noItems];
+      return { type: 'notice', tag: 'P', title: spec.title, text: none ? `The guardian verified there are no ${spec.noun} to report.` : `No ${spec.noun} are listed.` };
+    };
+    const [reserved, turnover] = FINAL_LISTS;
+    const figure = (v) => (v === '' || v == null || !Number.isFinite(Number(v)) ? 0 : Number(v));
+    sections.push({
+      id: 'finalReport',
+      title: 'FINAL REPORT — Rule 5.680(c), Florida Probate Rules',
+      bookmarkTitle: 'Final Report',
+      parentBookmark: null,
+      level: 1,
+      pageBreakBefore: true,
+      blocks: [
+        answered(reserved, (rows) => ({
+          type: 'table',
+          tag: 'Table',
+          title: reserved.title,
+          headers: ['#', 'Description', 'Amount'],
+          rows: rows.map((r, i) => [String(i + 1), r.description || '', r.amount === '' || r.amount == null ? '' : fmtS(r.amount)]),
+          totals: { label: 'Total Reserved', value: fmtS(Math.round(rows.reduce((sum, r) => sum + figure(r.amount), 0) * 100) / 100) },
+          colWidths: [6, 74, 20],
+          colAlign: ['center', 'left', 'right'],
+        })),
+        answered(turnover, (rows) => ({
+          type: 'table',
+          tag: 'Table',
+          title: turnover.title,
+          headers: ['#', 'Asset', 'To Whom'],
+          rows: rows.map((r, i) => [String(i + 1), r.asset || '', r.recipient || '']),
+          colWidths: [6, 54, 40],
+          colAlign: ['center', 'left', 'left'],
+        })),
       ],
     });
   }

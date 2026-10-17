@@ -155,6 +155,20 @@ export const SCHEDULE_SCHEMAS = {
     floor: 0,
     max: Infinity,
   },
+  // Milestone 74J-2: the Final Accounting's Final Report (Rule 5.680(c);
+  // src/core/filing/final-report.js).
+  finalReserved: {
+    factory: () => ({ description: '', amount: '' }),
+    label: 'Final Report Amount Reserved',
+    floor: 0,
+    max: Infinity,
+  },
+  finalTurnover: {
+    factory: () => ({ asset: '', recipient: '' }),
+    label: 'Final Report Asset to Be Turned Over',
+    floor: 0,
+    max: Infinity,
+  },
 
   // Guardianship Plan Schedules
   planGuardians: {

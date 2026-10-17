@@ -34,7 +34,8 @@ const EXPECTED = {
   guardian: ['scheduleA1', 'scheduleA2', 'scheduleB1', 'scheduleB2', 'scheduleB3', 'scheduleB4', 'scheduleC1', 'scheduleC2',
     'scheduleC3', 'scheduleC4', 'scheduleC5', 'guardians', 'serviceRecipients', 'witnesses'],
   annual: ANNUAL_LISTS,
-  finalAccounting: ANNUAL_LISTS,
+  // Milestone 74J-2: the Final Report's two lists.
+  finalAccounting: [...ANNUAL_LISTS, 'finalReserved', 'finalTurnover'],
   trustAccounting: ANNUAL_LISTS,
   simplified: ['guardians', 'certRecipients', 'remuneration'],
   planInitial: ['planGuardians', 'certRecipients', 'q9Providers', 'q11Directives'],

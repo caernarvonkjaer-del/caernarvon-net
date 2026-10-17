@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9706,
-  "tests": 2862
+  "expects": 9755,
+  "tests": 2879
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -143,8 +143,8 @@
    "expects": 14
   },
   "tests/e2e/contradiction-warnings.spec.ts": {
-   "tests": 3,
-   "expects": 9
+   "tests": 4,
+   "expects": 10
   },
   "tests/e2e/convert-ward.spec.ts": {
    "tests": 7,
@@ -237,6 +237,10 @@
   "tests/e2e/filing-type-change.spec.ts": {
    "tests": 2,
    "expects": 13
+  },
+  "tests/e2e/final-report.spec.ts": {
+   "tests": 1,
+   "expects": 7
   },
   "tests/e2e/first-guardian-stays.spec.ts": {
    "tests": 1,
@@ -899,8 +903,8 @@
    "expects": 11
   },
   "tests/unit/consistency-advisories.spec.js": {
-   "tests": 27,
-   "expects": 60
+   "tests": 31,
+   "expects": 71
   },
   "tests/unit/content-corrections.spec.js": {
    "tests": 4,
@@ -1036,11 +1040,15 @@
   },
   "tests/unit/filing-registry.spec.js": {
    "tests": 12,
-   "expects": 57
+   "expects": 59
   },
   "tests/unit/filing-type-enumeration-guard.spec.js": {
    "tests": 2,
    "expects": 3
+  },
+  "tests/unit/final-report.spec.js": {
+   "tests": 11,
+   "expects": 28
   },
   "tests/unit/fixture-contract.spec.js": {
    "tests": 11,

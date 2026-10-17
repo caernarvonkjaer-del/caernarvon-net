@@ -99,6 +99,7 @@ import { withMinusCue } from '../../core/form/amount-codec.js';
 const fmtA=(v)=>withMinusCue(fmtAnnual(v));
 import { GUARDIAN_RELATIONSHIPS } from '../../core/filing/guardian-relationship.js';
 import { ANNUAL_DECLARATION, ANNUAL_RECEIPTS_CERTIFICATION } from '../../core/filing/court-text/accountings.js';
+import { FINAL_LISTS, FINAL_REPORT_ROUTE, isFinalAccountingType } from '../../core/filing/final-report.js';
 
 // Milestone 71B: the Part V fields that become required once an attorney is
 // started (and only then) -- the live markers and validateAnnual() share it.
@@ -192,6 +193,7 @@ export async function mount(container, page, { signal } = {}) {
     case '/p9':    html = pagePart9Annual(); break;
     case '/p10':   html = pagePart10Annual(); break;
     case '/p11':   html = pagePart11Annual(); break;
+    case '/final': html = isFinalAccountingType(getD().inventoryType) ? pageFinalReportAnnual() : pagePart1Annual(); break;
     case '/print': {
       const capOver = checkExcelCapacity(_excelModule.ANNUAL_EXCEL_CAPS, getD());
       html = _printModule.pagePrintAnnual(capOver);
@@ -471,6 +473,7 @@ function buildNavAnnual(container){
       <button class="nav-link-item" data-page="/p9" data-nav="a-p9" data-form-action="navigate" data-route="/p9">Part IX — Bond</button>
       <button class="nav-link-item" data-page="/p10" data-nav="a-p10" data-form-action="navigate" data-route="/p10">Part X — Cert. of Service</button>
       <button class="nav-link-item" data-page="/p11" data-nav="a-p11" data-form-action="navigate" data-route="/p11">Part XI — Remuneration</button>
+      ${isFinalAccountingType(getD().inventoryType)?'<button class="nav-link-item" data-page="/final" data-nav="a-final" data-form-action="navigate" data-route="/final">Final Report — Rule 5.680(c)</button>':''}
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
@@ -582,6 +585,7 @@ function getSummaryConfigAnnual(){
           {label:'Part IX — Bond',route:'/p9',status:navStatus(nav,'a-p9')},
           {label:'Part X — Cert. of Service',route:'/p10',status:navStatus(nav,'a-p10')},
           {label:'Part XI — Remuneration',route:'/p11',status:navStatus(nav,'a-p11')},
+          ...(isFinalAccountingType(getD().inventoryType)?[{label:'Final Report — Rule 5.680(c)',route:'/final',status:navStatus(nav,'a-final')}]:[]),
         ],
       },
     ],
@@ -1671,6 +1675,44 @@ function pagePart10Annual(){
 }
 
 // ── Part XI — Remuneration ────────────────────────────────
+// ── Final Report — Rule 5.680(c) (Milestone 74J-2) ──────────
+// The Final Accounting alone: the two lists Rule 5.680(c) names beyond the
+// schedules, each asked like a schedule -- rows, or "I verify there are none"
+// (decision 74J-N1). The Clerk's workbook has no place for them; the PDF
+// prints them.
+function finalListHTML(spec){
+  const rows=getD()[spec.list]||[];
+  const field=(i)=>spec.list==='finalReserved'
+    ?`<div class="col-md-8">${inpD('Description',rows[i].description,`D.finalReserved[${i}].description=this.value`,true)}</div>
+        <div class="col-md-4">${inpD('Amount',rows[i].amount,`D.finalReserved[${i}].amount=this.value`,true,'number')}</div>`
+    :`<div class="col-md-6">${inpD('Asset',rows[i].asset,`D.finalTurnover[${i}].asset=this.value`,true)}</div>
+        <div class="col-md-6">${inpD('To Whom',rows[i].recipient,`D.finalTurnover[${i}].recipient=this.value`,true)}</div>`;
+  const body=rows.length
+    ?'<div class="row g-3 schedule-entry-grid">'+rows.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,spec.list,i,FINAL_REPORT_ROUTE)}
+      <div class="entry-card-body"><div class="row g-2">
+        ${field(i)}
+      </div></div>
+    </div></div>`).join('')+'</div>'
+    :scheduleEmptyHTMLAnnual(spec.noItems,spec.noun,spec.list,`I verify there are no ${spec.noun} to report.`);
+  const hint=spec.list==='finalReserved'
+    ?`<div class="schedule-instructions">Include the amounts in Rule 5.680(b)(3): &quot;the amount of unpaid and anticipated costs and fees to be paid to the guardian and to the attorneys, accountants, or other agents employed by the guardian&quot;.</div>`
+    :'';
+  return `<h2 class="subsection-heading">${esc(spec.title)}</h2>
+  ${hint}
+  ${body}
+  <button class="btn btn-outline-primary btn-sm mb-3" data-annual-action="add-row" data-collection="${spec.list}" data-route="${FINAL_REPORT_ROUTE}">+ Add Entry</button>`;
+}
+
+function pageFinalReportAnnual(){
+  return `<div class="schedule-page">
+  <h1>Final Report — Rule 5.680(c)</h1>
+  <div class="schedule-instructions">Rule 5.680(c), Florida Probate Rules: &quot;The report shall show receipts, disbursements, amounts reserved for unpaid and anticipated disbursements, costs, and fees, including the amounts set forth in subdivision (b)(3), and other relevant financial information from the date of the previous annual accounting, and a list of the assets to be turned over to the person entitled to them.&quot; The receipts and disbursements are in the schedules; list the other two here. The Clerk's workbook has no place for them: the PDF prints them.</div>
+  ${FINAL_LISTS.map(finalListHTML).join('')}
+  ${pageNavAnnual('/p11','/print')}
+  </div>`;
+}
+
 function pagePart11Annual(){
   const d=getD();
   let rows='';
@@ -1697,7 +1739,7 @@ function pagePart11Annual(){
   <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward. "Remuneration" means any payment or other benefit made directly or indirectly, overtly or covertly, or in cash or in kind to the guardian.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-3 mt-3" data-annual-action="add-row" data-collection="remuneration" data-route="/p11">+ Add Entry</button>
-  ${pageNavAnnual('/p10','/print')}
+  ${pageNavAnnual('/p10',isFinalAccountingType(getD().inventoryType)?'/final':'/print')}
   </div>`;
 }
 // Milestone 42F: every issue states its own field path (validation-issue.js).

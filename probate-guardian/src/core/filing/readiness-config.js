@@ -24,6 +24,7 @@
 import { Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from './plan-initial-multiselect.js';
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from './filing-descriptor.js';
 import { FILING_PAGES } from './filing-registry.js';
+import { isFinalAccountingType } from './final-report.js';
 import { hasSixthCircuitLocalGuidance } from './county-guidance.js';
 // Milestone 73F part 3: the county rows follow the export checks' county rule.
 import { isFloridaCounty } from '../validation/county-rule.js';
@@ -434,6 +435,8 @@ function nonPlanDetails(type, issues) {
     detailRow(`${prefix}.signatures`, 'Guardian, preparer, attorney, and certification information is complete where required', issues, type, ['/p3', '/p4', '/p5']),
     detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, type, ['/p9', '/p10']),
     detailRow(`${prefix}.remuneration`, 'Part XI remuneration is declared', issues, type, ['/p11']),
+    // Milestone 74J-2: the Final Accounting's Final Report.
+    ...(isFinalAccountingType(type) ? [detailRow(`${prefix}.final-report`, 'The Final Report (Rule 5.680(c)) is complete for every entered line', issues, type, ['/final'])] : []),
   ];
 }
 

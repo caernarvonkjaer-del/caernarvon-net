@@ -124,6 +124,11 @@ register(['annual', 'finalAccounting', 'trustAccounting'], {
     max: SCH_B4_ACCOUNT_BLOCKS.length,
   }),
 });
+// Milestone 74J-2: the Final Report's two lists, the Final Accounting's alone.
+register(['finalAccounting'], {
+  finalReserved: fromSchema('finalReserved'),
+  finalTurnover: fromSchema('finalTurnover'),
+});
 
 // ── The Simplified Accounting ──────────────────────────
 register(['simplified'], {
