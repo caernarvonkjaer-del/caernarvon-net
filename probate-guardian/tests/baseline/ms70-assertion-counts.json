@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9808,
-  "tests": 2903
+  "expects": 9817,
+  "tests": 2908
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -860,7 +860,7 @@
   },
   "tests/unit/carry-forward-hints.spec.js": {
    "tests": 12,
-   "expects": 26
+   "expects": 27
   },
   "tests/unit/case-county-drift.spec.js": {
    "tests": 6,
@@ -903,8 +903,8 @@
    "expects": 11
   },
   "tests/unit/consistency-advisories.spec.js": {
-   "tests": 31,
-   "expects": 71
+   "tests": 36,
+   "expects": 79
   },
   "tests/unit/content-corrections.spec.js": {
    "tests": 4,

@@ -378,3 +378,58 @@ describe('74O-5: the Annual Plan\'s remuneration against the accounting for the 
     }
   });
 });
+
+// The code review of 74O-5 (2026-10-17, fixed on the requester's choice): the
+// warning read only the latest edited accounting ending the day before the
+// plan year, and only the year it was on -- so one that had started its next
+// year was missed, an Annual and a Trust Accounting for the same year (or an
+// original and its amendment) gave a missed or a false warning by which was
+// edited last, and $0.00 counted as remuneration received. The Question 11
+// note now reads the same accountings (carry-forward-hints.js).
+describe('74O-5 after the code review', () => {
+  let caseConsistencyAdvisories, accountingRemuneration;
+  beforeAll(async () => {
+    ({ caseConsistencyAdvisories } = await import('../../src/core/filing/consistency-advisories.js'));
+    ({ accountingRemuneration } = await import('../../src/core/filing/carry-forward-hints.js'));
+  });
+  const CASE = '26-000555-GD';
+  const plan = (extra = {}) => ({ wardId: 'plan', inventoryType: 'planAnnual', caseNumber: CASE, periodFrom: '2026-01-01', periodTo: '2026-12-31', ...extra });
+  const accounting = (type, extra = {}) => ({ wardId: `acct-${type}`, inventoryType: type, caseNumber: CASE, periodFrom: '2025-01-01', periodTo: '2025-12-31', ...extra });
+  const fees = [{ guardian: 'Pat Guardian', type: 'Fee', amount: 1000, description: '' }, { guardian: 'Pat Guardian', type: 'Costs', amount: 200, description: '' }];
+  const run = (filing, others) => caseConsistencyAdvisories(filing, 'planAnnual', [filing, ...others]).filter((a) => a.code === 'consistency.remuneration-plan-and-accounting');
+  const LISTS = "11. Remuneration — Question 11 declares that no remuneration was received, while the ward's Annual Accounting for 01/01/2025 through 12/31/2025 lists $1,200.00 in Part XI (2 entries). Review both before filing.";
+  const NONE = "11. Remuneration — Question 11 records remuneration received, while the ward's Annual Accounting for 01/01/2025 through 12/31/2025 declares in Part XI that there is none to report. Review both before filing.";
+
+  test('an accounting that has started its next year is read for the year it archived', () => {
+    const moved = accounting('annual', { periodFrom: '2026-01-01', periodTo: '', activeYearKey: 'Year 2',
+      years: [{ key: 'Year 1', data: { periodFrom: '2025-01-01', periodTo: '2025-12-31', remuneration: fees } }, { key: 'Year 2', data: {} }] });
+    expect(messages(run(plan({ q11NoRemuneration: true }), [moved]))).toEqual([LISTS]);
+  });
+
+  test('an Annual and a Trust Accounting for the year: "none" is warned by any that lists some; "some" only when none lists any', () => {
+    const annual = accounting('annual', { remuneration: fees, lastModified: '2026-01-05T00:00:00Z' });
+    const trust = accounting('trustAccounting', { scheduleNoItems: { remuneration: true }, lastModified: '2026-02-01T00:00:00Z' });
+    expect(messages(run(plan({ q11NoRemuneration: true }), [annual, trust]))).toEqual([LISTS]);
+    expect(run(plan({ q11ReceivedName: 'Pat Guardian', q11Amount: 1200 }), [annual, trust])).toEqual([]);
+  });
+
+  test('an amended accounting is read over its original, whichever was edited last', () => {
+    const original = accounting('annual', { wardId: 'original', remuneration: fees, lastModified: '2026-03-01T00:00:00Z' });
+    const amendment = accounting('annual', { wardId: 'amendment', amendedForm: 'Yes', scheduleNoItems: { remuneration: true }, lastModified: '2026-02-01T00:00:00Z' });
+    expect(run(plan({ q11NoRemuneration: true }), [original, amendment])).toEqual([]);
+    expect(messages(run(plan({ q11ReceivedName: 'Pat Guardian', q11Amount: 1200 }), [original, amendment]))).toEqual([NONE]);
+  });
+
+  test('$0.00 received is not remuneration received', () => {
+    expect(run(plan({ q11Amount: 0 }), [accounting('annual', { scheduleNoItems: { remuneration: true } })])).toEqual([]);
+  });
+
+  test('the Question 11 note shows the accountings the warning compares, the Simplified\'s Part VII among them', () => {
+    const lastYear = accounting('annual', { wardId: 'y2025', remuneration: fees, lastModified: '2026-01-05T00:00:00Z' });
+    const thisYear = accounting('annual', { wardId: 'y2026', periodFrom: '2026-01-01', periodTo: '2026-12-31', scheduleNoItems: { remuneration: true }, lastModified: '2026-09-01T00:00:00Z' });
+    const notes = accountingRemuneration(plan(), [plan(), lastYear, thisYear]);
+    expect(notes.map((n) => [n.name, n.period, n.part, n.none])).toEqual([['Annual Accounting', '01/01/2025 through 12/31/2025', 'Part XI', false]]);
+    const simplified = accounting('simplified', { remuneration: fees.slice(0, 1) });
+    expect(accountingRemuneration(plan(), [plan(), simplified]).map((n) => n.part)).toEqual(['Part VII']);
+  });
+});

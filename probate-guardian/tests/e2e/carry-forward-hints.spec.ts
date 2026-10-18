@@ -76,7 +76,9 @@ test.describe('74O: carried forward from the ward\'s other filings', () => {
     await createWard(page, 'Hint Ward', 'planInitial');
     await patch(page, { caseNumber: CASE, 'adls.lightHousekeeping': 'Ward needs some assistance' });
     await createWard(page, 'Hint Ward', 'planAnnual');
-    await patch(page, { caseNumber: CASE });
+    // (2026-10-17: the Question 11 note reads the accounting for the year
+    // just ended, so the plan's year follows the accounting's.)
+    await patch(page, { caseNumber: CASE, periodFrom: '2026-01-01', periodTo: '2026-12-31' });
 
     await navigate(page, '/p4');
     await expect(page.locator('[data-carry-hint="benefits"]')).toContainText('Social Security Administration (C-1)');
@@ -88,7 +90,7 @@ test.describe('74O: carried forward from the ward\'s other filings', () => {
 
     await navigate(page, '/p10');
     const reference = page.locator('[data-carry-hint="remuneration"]');
-    await expect(reference).toContainText('Part XI');
+    await expect(reference).toContainText("the ward's Annual Accounting for 01/01/2025 through 12/31/2025 declares in Part XI");
     await expect(reference.locator('li')).toHaveText(['Pat Guardian — Guardian fee — $1,200.00']);
     const plan = await t(page);
     expect([plan.q11NoRemuneration, plan.q11ReceivedName, plan.q11Amount], 'reference only: nothing answered').toEqual([false, '', '']);

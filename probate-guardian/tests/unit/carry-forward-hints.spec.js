@@ -120,25 +120,29 @@ describe('carry-forward hints: "Last plan:" ratings (74O-4)', () => {
 });
 
 describe('carry-forward hints: the accounting\'s Part XI beside Question 11 (74O-5)', () => {
-  const plan = filing('plan', 'planAnnual');
+  // Since the code review (2026-10-17): the accounting for the year just
+  // ended -- its period ends the day before the plan's begins.
+  const plan = filing('plan', 'planAnnual', { periodFrom: '2026-01-01' });
 
-  it('lists the newest accounting\'s Part XI entries with its period', () => {
+  it('lists the accounting\'s Part XI entries with its period', () => {
     const accounting = filing('acct', 'annual', {
       periodFrom: '2025-01-01', periodTo: '2025-12-31',
       remuneration: [{ guardian: 'Pat Guardian', type: 'Fee', description: 'Court-approved', amount: 1200 }, { guardian: '', type: '', amount: '' }],
     });
-    const found = accountingRemuneration(plan, [plan, accounting]);
+    const [found] = accountingRemuneration(plan, [plan, accounting]);
     expect(found.entries).toEqual(['Pat Guardian — Fee — Court-approved — $1,200.00']);
     expect(found.none).toBe(false);
     expect(found.period).toMatch(/2025.*through.*2025/);
     expect(accountingRemunerationHTML(plan, [plan, accounting])).toContain('data-carry-hint="remuneration"');
   });
 
-  it('reports a verified "none", and says nothing when Part XI is unanswered or there is no accounting', () => {
-    const none = filing('acct', 'annual', { remuneration: [], scheduleNoItems: { remuneration: true } });
-    expect(accountingRemuneration(plan, [plan, none])).toMatchObject({ entries: [], none: true });
-    expect(accountingRemuneration(plan, [plan, filing('acct', 'annual', { remuneration: [] })])).toBeNull();
-    expect(accountingRemuneration(plan, [plan])).toBeNull();
+  it('reports a verified "none", and says nothing when Part XI is unanswered, there is no accounting for the year, or the plan has no period', () => {
+    const year = { periodFrom: '2025-01-01', periodTo: '2025-12-31' };
+    const none = filing('acct', 'annual', { ...year, remuneration: [], scheduleNoItems: { remuneration: true } });
+    expect(accountingRemuneration(plan, [plan, none])).toMatchObject([{ entries: [], none: true }]);
+    expect(accountingRemuneration(plan, [plan, filing('acct', 'annual', { ...year, remuneration: [] })])).toEqual([]);
+    expect(accountingRemuneration(plan, [plan])).toEqual([]);
+    expect(accountingRemuneration(filing('plan', 'planAnnual'), [plan, none])).toEqual([]);
     expect(accountingRemunerationHTML(plan, [plan])).toBe('');
   });
 });

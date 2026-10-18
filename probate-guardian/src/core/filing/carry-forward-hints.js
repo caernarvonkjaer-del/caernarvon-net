@@ -7,10 +7,12 @@
 //     ward's Initial Inventory (decision 74O-2).
 //   - The Annual Plan's daily-living ratings: "Last plan: <rating>" beside
 //     each activity, from the ward's previous plan (decision 74O-4).
-//   - The Annual Plan's Question 11: the remuneration the ward's Annual
-//     Accounting declares in Part XI, for reference only and with no warning,
-//     until a qualified person says which accounting period a plan's
-//     declaration should match (decision 74O-5, flagged).
+//   - The Annual Plan's Question 11: the remuneration the ward's accounting
+//     for the year just ended declares (an Annual, Final or Trust
+//     Accounting's Part XI, or the Simplified's Part VII), for reference --
+//     the accounting Preview's warning compares (decision 74O-5, answered
+//     2026-10-16 as Pinellas Clerk practice; one rule for both since the
+//     code review, 2026-10-17: accountingsForYearEnded()).
 //
 // "This ward's other filings" (decision 74O-N1, the requester, 2026-10-09):
 // those linked to the same case, or showing the same Case # when either
@@ -22,11 +24,12 @@
 // stays the filer's act, case-resolver.js) and never fills an answer.
 
 import { caseNumberOf, resolveCase } from '../case-resolver.js';
-import { displayDate } from '../form/date-parser.js';
+import { displayDate, nextIsoDay } from '../form/date-parser.js';
 import { amountForStore, presentAmount } from '../form/amount-codec.js';
 import { rowStarted } from '../validation/row-started.js';
 import { esc } from './escape-html.js';
 import { formEngine } from './filing-registry.js';
+import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
 
 const text = (value) => String(value ?? '').trim();
 const when = (ward) => String(ward?.lastModified || ward?.createdDate || '');
@@ -109,27 +112,60 @@ export function lastPlanRating(ratings, label) {
   return rating ? `Last plan: ${rating}` : '';
 }
 
+const amended = (data) => data?.amendedForm === 'Yes';
+
 /**
- * The ward's Annual Accounting's Part XI, for reference beside the Annual
- * Plan's Question 11: { period, entries: [line, ...], none } from the case's
- * newest Annual, Final or Trust Accounting; null when there is none, or it
- * declares nothing either way.
+ * 74O-5: the ward's accountings for the year just ended -- of the case's
+ * other filings (`others`, caseFilings()'s list), each Annual, Final, Trust
+ * or Simplified Accounting year whose period ends the day before the plan's
+ * begins: the year it is on, or one it has archived after starting the next
+ * (filing-years.js). One per kind of accounting: an amended one over the
+ * original, else the latest edited (caseFilings() lists those first). Each
+ * as { filing, data }, data being that year's fields.
+ * @param {Record<string, any>} filing the plan
+ * @param {any[]} others
+ */
+export function accountingsForYearEnded(filing, others) {
+  const from = text(filing?.periodFrom);
+  if (!from) return [];
+  const chosen = new Map();
+  for (const w of others || []) {
+    if (!['annual', 'simplified'].includes(formEngine(w?.inventoryType))) continue;
+    const archived = (Array.isArray(w.years) ? w.years : []).filter((y) => y && y.key !== w.activeYearKey).map((y) => y.data);
+    for (const data of [w, ...archived]) {
+      if (!data || nextIsoDay(data.periodTo) !== from) continue;
+      const held = chosen.get(w.inventoryType);
+      if (!held || (amended(data) && !amended(held.data))) chosen.set(w.inventoryType, { filing: w, data });
+    }
+  }
+  return [...chosen.values()];
+}
+
+/** "Annual Accounting", "Simplified Annual Accounting" -- a filing as the notes and warnings name it. */
+export const accountingName = (w) => resolveDescriptorForInventoryType(w?.inventoryType)?.displayName || 'accounting';
+
+/** Where an accounting declares remuneration: the Simplified's Part VII, the others' Part XI. */
+export const remunerationPart = (w) => (formEngine(w?.inventoryType) === 'simplified' ? 'Part VII' : 'Part XI');
+
+/**
+ * For reference beside the Annual Plan's Question 11: what each of the
+ * ward's accountings for the year just ended declares, as [{ name, period,
+ * part, entries: [line, ...], none }] -- the accountings Preview's warning
+ * compares (accountingsForYearEnded()); those declaring nothing either way
+ * are left out. Empty when the plan has no period yet.
  */
 export function accountingRemuneration(filing, wards) {
-  // The Annual Accounting and its Final and Trust forms: one engine, one Part XI.
-  const accounting = caseFilings(filing, wards).find((w) => formEngine(w.inventoryType) === 'annual');
-  if (!accounting) return null;
-  const entries = (accounting.remuneration || []).filter((r) => rowStarted(r)).map((r) => {
-    const amount = amountForStore(r.amount, { blank: '' });
-    return [text(r.guardian), text(r.type), text(r.description), typeof amount === 'number' ? presentAmount(amount) : text(amount)]
-      .filter(Boolean).join(' — ');
+  return accountingsForYearEnded(filing, caseFilings(filing, wards)).flatMap(({ filing: w, data }) => {
+    const entries = (data.remuneration || []).filter((r) => rowStarted(r)).map((r) => {
+      const amount = amountForStore(r.amount, { blank: '' });
+      return [text(r.guardian), text(r.type), text(r.description), typeof amount === 'number' ? presentAmount(amount) : text(amount)]
+        .filter(Boolean).join(' — ');
+    });
+    const none = !entries.length && !!data.scheduleNoItems?.remuneration;
+    if (!entries.length && !none) return [];
+    const period = `${displayDate(data.periodFrom) || '—'} through ${displayDate(data.periodTo) || '—'}`;
+    return [{ name: accountingName(w), period, part: remunerationPart(w), entries, none }];
   });
-  const none = !entries.length && !!accounting.scheduleNoItems?.remuneration;
-  if (!entries.length && !none) return null;
-  const period = accounting.periodFrom || accounting.periodTo
-    ? `${displayDate(accounting.periodFrom) || '—'} through ${displayDate(accounting.periodTo) || '—'}`
-    : '';
-  return { period, entries, none };
 }
 
 /** A hint on the page, in the pages' instruction style; '' when there is none. */
@@ -142,13 +178,15 @@ export function inventoryBenefitsNoteHTML(filing, wards) {
   return carryHintHTML('benefits', esc(inventoryBenefitsNote(filing, wards) || ''));
 }
 
-/** The Annual Accounting's Part XI beside the Annual Plan's Question 11, for reference. */
+/** The accounting for the year just ended beside the Annual Plan's Question 11, for reference. */
 export function accountingRemunerationHTML(filing, wards) {
   const found = accountingRemuneration(filing, wards);
-  if (!found) return '';
-  const heading = `For reference, the ward's accounting${found.period ? ` for ${esc(found.period)}` : ''} declares in Part XI:`;
-  const body = found.none
-    ? '<div>No remuneration (the guardian verified there is none to report).</div>'
-    : `<ul class="mb-0 ps-3">${found.entries.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>`;
-  return carryHintHTML('remuneration', `${heading}${body}`);
+  if (!found.length) return '';
+  return carryHintHTML('remuneration', found.map((a) => {
+    const heading = `For reference, the ward's ${esc(a.name)} for ${esc(a.period)} declares in ${a.part}:`;
+    const body = a.none
+      ? '<div>No remuneration (the guardian verified there is none to report).</div>'
+      : `<ul class="mb-0 ps-3">${a.entries.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>`;
+    return `${heading}${body}`;
+  }).join(''));
 }
