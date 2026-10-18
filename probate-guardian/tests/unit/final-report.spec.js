@@ -130,3 +130,24 @@ describe('the PDF and the workbook', () => {
     expect(item(typed('annual', { finalTurnover: TURNOVER }))).toBeUndefined();
   });
 });
+
+// The code review of 74J-2 (2026-10-17, fixed on the requester's choice).
+describe('after the code review', () => {
+  test("the PDF's Total Reserved rounds by the rule each line prints by", async () => {
+    const { buildAnnualAccountingModel } = await import('../../src/features/annual-accounting/pdf-model.js');
+    const table = (amount) => buildAnnualAccountingModel(typed('finalAccounting', { finalReserved: [{ description: 'Costs', amount }] }))
+      .sections.find((s) => s.id === 'finalReport').blocks[0];
+    for (const amount of [1.005, 2.675, 797229.185]) {
+      const t = table(amount);
+      expect(t.totals.value, String(amount)).toBe(t.rows[0][2]);
+    }
+  });
+
+  test('a filing known as a Final by its Filing Type alone is checked as a Final, not refused', async () => {
+    const { collectAnnualIssues } = await import('../../src/core/validation/engines/annual.js');
+    const d = typed('finalAccounting', { finalReserved: [{ description: 'Court costs', amount: '' }] });
+    delete d.inventoryType;
+    d.filingType = 'Final';
+    expect(collectAnnualIssues(d).map((i) => i.path).filter((p) => /^final/.test(String(p)))).toEqual(['finalReserved.0.amount']);
+  });
+});

@@ -15,7 +15,7 @@ import { formatMoney } from '../../format/money.js';
 import { getD } from '../../state.js';
 import { rowStarted } from '../row-started.js';
 import { getCollection } from '../../form/collections.js';
-import { FINAL_LISTS, FINAL_REPORT_ROUTE, FINAL_REPORT_SECTION, finalReportStarted, isFinalAccountingType } from '../../filing/final-report.js';
+import { FINAL_LISTS, FINAL_REPORT_SECTION, isFinalAccountingType } from '../../filing/final-report.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
@@ -240,9 +240,10 @@ export function collectAnnualIssues(d){
   // Milestone 73F part 3: a row "+ Add" added and the filer never touched is
   // no row (the list's own blank test), so it raises nothing -- D-1, D-2 and
   // D-4's rows start with "No" answers, which used to count as data.
-  // (The three Annual-family types share one set of row rules; a filing handed
-  // in without its type is read as an Annual.)
-  const rowHasAnyData=(collection,r)=>!getCollection(d.inventoryType||'annual',collection).isBlank(r);
+  // (The three Annual-family types share one set of row rules; the filing's
+  // type is read as the rest of these checks read it (T, its descriptor) --
+  // the Final Report's lists have rules on the Final Accounting alone.)
+  const rowHasAnyData=(collection,r)=>!getCollection(T,collection).isBlank(r);
   const checkRows=(rows,fields,schedLabel,collection)=>{
     (rows||[]).forEach((r,i)=>{
       if(!rowHasAnyData(collection,r))return;

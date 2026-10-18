@@ -1311,15 +1311,26 @@ export function buildAnnualAccountingModel(D, options = {}) {
   // lists, which the Clerk's workbook has no place for -- each a table, or
   // what the filer answered when there is no entry.
   if (isFinalAccountingType(descriptor.inventoryType)) {
-    const entered = (rows) => (Array.isArray(rows) ? rows : []).filter((r) => Object.entries(r || {}).some(([k, v]) => k !== 'id' && v !== '' && v != null));
-    const answered = (spec, table) => {
-      const rows = entered(d[spec.list]);
-      if (rows.length) return table(rows);
+    // Each list's columns from FINAL_LISTS; its amount formatted and
+    // totalled by the rule each line prints by (2026-10-17: the total used
+    // to round apart from its lines, $1.00 under a $1.01).
+    const amountText = (v) => (v === '' || v == null ? '' : fmtS(v));
+    const table = (spec, rows) => ({
+      type: 'table',
+      tag: 'Table',
+      title: spec.title,
+      headers: ['#', ...spec.fields.map(([, label]) => label)],
+      rows: rows.map((r, i) => [String(i + 1), ...spec.fields.map(([key]) => (key === spec.amountField ? amountText(r[key]) : r[key] || ''))]),
+      ...(spec.amountField ? { totals: { label: spec.totalLabel, value: fmtS(rows.reduce((sum, r) => sum + toAmount(r[spec.amountField]), 0)) } } : {}),
+      colWidths: spec.amountField ? [6, 74, 20] : [6, 54, 40],
+      colAlign: ['center', ...spec.fields.map(([key]) => (key === spec.amountField ? 'right' : 'left'))],
+    });
+    const answered = (spec) => {
+      const rows = (Array.isArray(d[spec.list]) ? d[spec.list] : []).filter((r) => rowStarted(r));
+      if (rows.length) return table(spec, rows);
       const none = !!d.scheduleNoItems?.[spec.noItems];
       return { type: 'notice', tag: 'P', title: spec.title, text: none ? `The guardian verified there are no ${spec.noun} to report.` : `No ${spec.noun} are listed.` };
     };
-    const [reserved, turnover] = FINAL_LISTS;
-    const figure = (v) => (v === '' || v == null || !Number.isFinite(Number(v)) ? 0 : Number(v));
     sections.push({
       id: 'finalReport',
       title: 'FINAL REPORT — Rule 5.680(c), Florida Probate Rules',
@@ -1327,27 +1338,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       parentBookmark: null,
       level: 1,
       pageBreakBefore: true,
-      blocks: [
-        answered(reserved, (rows) => ({
-          type: 'table',
-          tag: 'Table',
-          title: reserved.title,
-          headers: ['#', 'Description', 'Amount'],
-          rows: rows.map((r, i) => [String(i + 1), r.description || '', r.amount === '' || r.amount == null ? '' : fmtS(r.amount)]),
-          totals: { label: 'Total Reserved', value: fmtS(Math.round(rows.reduce((sum, r) => sum + figure(r.amount), 0) * 100) / 100) },
-          colWidths: [6, 74, 20],
-          colAlign: ['center', 'left', 'right'],
-        })),
-        answered(turnover, (rows) => ({
-          type: 'table',
-          tag: 'Table',
-          title: turnover.title,
-          headers: ['#', 'Asset', 'To Whom'],
-          rows: rows.map((r, i) => [String(i + 1), r.asset || '', r.recipient || '']),
-          colWidths: [6, 54, 40],
-          colAlign: ['center', 'left', 'left'],
-        })),
-      ],
+      blocks: FINAL_LISTS.map(answered),
     });
   }
 

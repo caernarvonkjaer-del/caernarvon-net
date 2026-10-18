@@ -32,7 +32,8 @@ import { SCH_B4_ACCOUNT_BLOCKS } from '../../excel/b4-register-pages.js';
 import { createIssue } from '../issue-registry.js';
 import { sidebarOnlyWants } from '../../status/section-guidance-policy.js';
 import { getCollection } from '../../form/collections.js';
-import { FINAL_LISTS, FINAL_REPORT_ROUTE, FINAL_REPORT_SECTION, finalReportStarted, isFinalAccountingType } from '../../filing/final-report.js';
+import { FINAL_LISTS, FINAL_REPORT_ROUTE, FINAL_REPORT_SECTION, isFinalAccountingType } from '../../filing/final-report.js';
+import { resolveFilingDescriptor } from '../../filing/filing-descriptor.js';
 import { isAffirmative } from '../../form/yes-no.js';
 import { collectGuardianIssues } from './guardian.js';
 import { collectAnnualIssues } from './annual.js';
@@ -75,9 +76,11 @@ function annualNoItemsPrompts(d, engineId) {
 // alone: an Annual or Trust holding the lists (a changed Filing Type) is
 // asked nothing about them.
 function finalReportPrompts(d) {
-  if (!isFinalAccountingType(d?.inventoryType)) return [];
+  // The filing's type as its export checks read it (its descriptor).
+  const type = resolveFilingDescriptor(d || {}).descriptor?.inventoryType;
+  if (!isFinalAccountingType(type)) return [];
   return FINAL_LISTS.flatMap(({ list, noItems, heading }) => {
-    const untouched = getCollection(d.inventoryType, list).isBlank;
+    const untouched = getCollection(type, list).isBlank;
     if (d.scheduleNoItems?.[noItems] || (d[list] || []).some((row) => !untouched(row))) return [];
     return [{ code: `prompt.annual.no-items.${noItems}`, route: FINAL_REPORT_ROUTE, label: `${FINAL_REPORT_SECTION} — ${heading}: add an entry, or tick "I verify there are no items to report"`, path: `scheduleNoItems.${noItems}`, sidebarOnly: /** @type {const} */ (true) }];
   });

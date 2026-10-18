@@ -20,7 +20,7 @@
 import { PLAN_RIGHTS, PLAN_ADLS } from '../filing/models/plan-annual.js';
 import { INITIAL_ADLS } from '../filing/models/plan-initial.js';
 import { rowStarted } from '../validation/row-started.js';
-import { isFinalAccountingType } from '../filing/final-report.js';
+import { finalReportStarted, isFinalAccountingType } from '../filing/final-report.js';
 import { isPlanInitialAttorneyStarted, isAttorneyStarted } from '../validation/attorney-block.js';
 import { certificateStarted as planCertificateStarted } from '../filing/plan-certificate-of-service.js';
 import { recipientListed } from '../filing/recipient-shape.js';
@@ -75,7 +75,8 @@ export function annualStarted(D) {
     'a-schf1': rowsStarted(D.schF1),
     'a-schf2': rowsStarted(D.schF2),
     // Milestone 74J-2: the Final Report, on the Final Accounting alone.
-    ...(isFinalAccountingType(D.inventoryType) ? { 'a-final': rowsStarted(D.finalReserved) || rowsStarted(D.finalTurnover) } : {}),
+    // (The Final Report's started rule is the facts module's, row-started.js's.)
+    ...(isFinalAccountingType(D.inventoryType) ? { 'a-final': finalReportStarted(D) } : {}),
   };
 }
 

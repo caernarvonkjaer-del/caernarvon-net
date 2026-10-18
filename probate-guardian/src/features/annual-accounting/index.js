@@ -1682,11 +1682,12 @@ function pagePart10Annual(){
 // prints them.
 function finalListHTML(spec){
   const rows=getD()[spec.list]||[];
-  const field=(i)=>spec.list==='finalReserved'
-    ?`<div class="col-md-8">${inpD('Description',rows[i].description,`D.finalReserved[${i}].description=this.value`,true)}</div>
-        <div class="col-md-4">${inpD('Amount',rows[i].amount,`D.finalReserved[${i}].amount=this.value`,true,'number')}</div>`
-    :`<div class="col-md-6">${inpD('Asset',rows[i].asset,`D.finalTurnover[${i}].asset=this.value`,true)}</div>
-        <div class="col-md-6">${inpD('To Whom',rows[i].recipient,`D.finalTurnover[${i}].recipient=this.value`,true)}</div>`;
+  // Each line's boxes from FINAL_LISTS (2026-10-17): an amount box a third
+  // of the line, the text boxes sharing the rest.
+  const texts=spec.fields.filter(([key])=>key!==spec.amountField).length;
+  const width=(key)=>key===spec.amountField?4:Math.floor((spec.amountField?8:12)/texts);
+  const field=(i)=>spec.fields.map(([key,label])=>
+    `<div class="col-md-${width(key)}">${inpD(label,rows[i][key],`D.${spec.list}[${i}].${key}=this.value`,true,key===spec.amountField?'number':'text')}</div>`).join('');
   const body=rows.length
     ?'<div class="row g-3 schedule-entry-grid">'+rows.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,spec.list,i,FINAL_REPORT_ROUTE)}
@@ -1695,9 +1696,7 @@ function finalListHTML(spec){
       </div></div>
     </div></div>`).join('')+'</div>'
     :scheduleEmptyHTMLAnnual(spec.noItems,spec.noun,spec.list,`I verify there are no ${spec.noun} to report.`);
-  const hint=spec.list==='finalReserved'
-    ?`<div class="schedule-instructions">Include the amounts in Rule 5.680(b)(3): &quot;the amount of unpaid and anticipated costs and fees to be paid to the guardian and to the attorneys, accountants, or other agents employed by the guardian&quot;.</div>`
-    :'';
+  const hint=spec.hint?`<div class="schedule-instructions">${esc(spec.hint)}</div>`:'';
   return `<h2 class="subsection-heading">${esc(spec.title)}</h2>
   ${hint}
   ${body}
