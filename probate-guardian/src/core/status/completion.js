@@ -21,6 +21,8 @@ import { PLAN_RIGHTS, PLAN_ADLS } from '../filing/models/plan-annual.js';
 import { INITIAL_ADLS } from '../filing/models/plan-initial.js';
 import { rowStarted } from '../validation/row-started.js';
 import { finalReportStarted, isFinalAccountingType } from '../filing/final-report.js';
+import { getCollection } from '../form/collections.js';
+import { resolveFilingDescriptor } from '../filing/filing-descriptor.js';
 import { isPlanInitialAttorneyStarted, isAttorneyStarted } from '../validation/attorney-block.js';
 import { certificateStarted as planCertificateStarted } from '../filing/plan-certificate-of-service.js';
 import { recipientListed } from '../filing/recipient-shape.js';
@@ -51,8 +53,14 @@ export function simplifiedStarted(D) {
 
 /** annual engine (Final and Trust take the Annual one). */
 export function annualStarted(D) {
-  const rowHasAnyData = (r) => Object.entries(r || {}).some(([key, v]) => key !== 'id' && v !== '' && v != null);
-  const rowsStarted = (rows) => (rows || []).some((r) => rowHasAnyData(r));
+  // A schedule reads begun by its list's own blank test -- the one the
+  // export checks use (collections.js), so a row "+ Add" added and never
+  // touched, or one an older version saved with its old default "No"
+  // (blank-rows.js's FORMER_DEFAULTS), is no start (the requester's choice,
+  // 2026-10-18: a Summary badge read "In progress" while the export checks
+  // saw nothing entered). The type as the checks read it, its descriptor.
+  const type = resolveFilingDescriptor(D || {}).descriptor?.inventoryType || 'annual';
+  const rowsStarted = (list) => (D[list] || []).some((r) => !getCollection(type, list).isBlank(r));
   const guardians = D.guardians || [];
   return {
     'a-p1': true,
@@ -60,20 +68,20 @@ export function annualStarted(D) {
     'a-p3': guardians.length > 0 || rowStarted(guardians[0] || {}),
     'a-p4': true,
     'a-p5': true,
-    'a-scha': rowsStarted(D.schA),
-    'a-schb1': rowsStarted(D.schB1),
-    'a-schb2': rowsStarted(D.schB2),
-    'a-schb3': rowsStarted(D.schB3),
-    'a-schb4': rowsStarted(D.schB4),
-    'a-schc': (D.schC || []).length > 0,
-    'a-schd1': rowsStarted(D.schD1),
-    'a-schd2': rowsStarted(D.schD2),
-    'a-schd3': rowsStarted(D.schD3),
-    'a-schd4': rowsStarted(D.schD4),
-    'a-schd5': rowsStarted(D.schD5),
-    'a-sche': (D.schE || []).length > 0,
-    'a-schf1': rowsStarted(D.schF1),
-    'a-schf2': rowsStarted(D.schF2),
+    'a-scha': rowsStarted('schA'),
+    'a-schb1': rowsStarted('schB1'),
+    'a-schb2': rowsStarted('schB2'),
+    'a-schb3': rowsStarted('schB3'),
+    'a-schb4': rowsStarted('schB4'),
+    'a-schc': rowsStarted('schC'),
+    'a-schd1': rowsStarted('schD1'),
+    'a-schd2': rowsStarted('schD2'),
+    'a-schd3': rowsStarted('schD3'),
+    'a-schd4': rowsStarted('schD4'),
+    'a-schd5': rowsStarted('schD5'),
+    'a-sche': rowsStarted('schE'),
+    'a-schf1': rowsStarted('schF1'),
+    'a-schf2': rowsStarted('schF2'),
     // Milestone 74J-2: the Final Report, on the Final Accounting alone.
     // (The Final Report's started rule is the facts module's, row-started.js's.)
     ...(isFinalAccountingType(D.inventoryType) ? { 'a-final': finalReportStarted(D) } : {}),
