@@ -200,6 +200,20 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
     await expect(frequency, 'Weekly / Monthly / Annually appear on the click').toHaveCount(3);
   });
 
+  // 2026-10-17 (the requester's choice): the Initial Plan's steps taken to
+  // verify there are no directives appear under the "no directives" tick,
+  // as on the Annual Plan (they print only under it).
+  test('Initial Plan Q11: "no pre-existing orders or directives" reveals the steps taken to verify', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Initial Steps Ward', 'planInitial');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p8'));
+
+    const step = page.locator('#main-content #q11StepResidence');
+    await expect(step).toHaveCount(0);
+    await page.locator('#q11NoDirectives').check();
+    await expect(step).toBeVisible();
+  });
+
   test('Plan Simplified Q8: "Other Advance Directive" reveals its description field', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Simplified Reveal Ward', 'planSimplified');

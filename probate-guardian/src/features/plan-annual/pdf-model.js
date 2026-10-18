@@ -210,7 +210,8 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q3MedPrimary, label: C.q3MedPrimary },
           { checked: !!d.q3MedDentist, label: C.q3MedDentist },
           { checked: !!d.q3MedOphthalmologist, label: C.q3MedOphthalmologist },
-          { checked: !!d.q3MedSpecialist, label: `${C.q3MedSpecialist}${d.q3MedSpecialistArea ? ': ' + d.q3MedSpecialistArea : ''}` },
+          // 2026-10-17: printed only under its answer, as the page shows it (hiding keeps the value, AGENTS.md section 4).
+          { checked: !!d.q3MedSpecialist, label: `${C.q3MedSpecialist}${d.q3MedSpecialist && d.q3MedSpecialistArea ? ': ' + d.q3MedSpecialistArea : ''}` },
           { checked: !!d.q3MedPhysicalTherapy, label: C.q3MedPhysicalTherapy },
           { checked: !!d.q3MedSpeechTherapy, label: C.q3MedSpeechTherapy },
           { checked: !!d.q3MedOccupationalTherapy, label: C.q3MedOccupationalTherapy },
@@ -465,7 +466,8 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q10ExecDNR, label: C.q10ExecDNR },
           { checked: !!d.q10ExecHealthcare, label: C.q10ExecHealthcare },
           { checked: !!d.q10ExecPOA, label: C.q10ExecPOA },
-          { checked: !!d.q10ExecOther, label: `${C.q10ExecOther}${d.q10ExecOtherText ? ' ' + d.q10ExecOtherText : ''}` },
+          // 2026-10-17: printed only under its answer, as the page shows it (hiding keeps the value, AGENTS.md section 4).
+          { checked: !!d.q10ExecOther, label: `${C.q10ExecOther}${d.q10ExecOther && d.q10ExecOtherText ? ' ' + d.q10ExecOtherText : ''}` },
         ],
       }] : []),
       ...(dirs.length ? [{ type: 'notice', title: T.q10ForAny, text: '' }] : []),
@@ -481,7 +483,9 @@ export function buildPlanAnnualModel(D) {
           { label: DL.relationship, value: r.relationship || '' },
           { label: DL.contact, value: r.contact || '' },
           { label: DL.courtRevoked, value: r.courtRevoked || '' },
-          ...(r.orderDate || r.orderCounty ? [{ label: DL.orderDate, value: `${r.orderDate ? fmtDate(r.orderDate) : BLANK_DATE_LINE}${r.orderCounty ? ' entered ' + r.orderCounty : ''}` }] : []),
+          // 2026-10-17: the order only under "suspended or revoked" Yes, as the
+          // page shows it -- it printed after a No.
+          ...(r.courtRevoked === 'Yes' && (r.orderDate || r.orderCounty) ? [{ label: DL.orderDate, value: `${r.orderDate ? fmtDate(r.orderDate) : BLANK_DATE_LINE}${r.orderCounty ? ' entered ' + r.orderCounty : ''}` }] : []),
         ],
       })) : []),
     ],

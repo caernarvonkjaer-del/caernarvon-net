@@ -9,6 +9,7 @@ import { readCellText } from '../cell-reader.js';
 import { remunerationEntered, remunerationLine, splitRemuneration } from './remuneration-line.js';
 import { compareImportedCertificate, readIndicateIfBox } from '../../filing/certificate-migrations.js';
 import { rowStarted } from '../../validation/row-started.js';
+import { isAttorneyStarted } from '../../validation/attorney-block.js';
 import { sameName } from '../import-keep.js';
 import { RECIPIENT_FIELDS, emptyRecipient, recipientSlots } from '../../filing/recipient-shape.js';
 
@@ -128,7 +129,9 @@ export const SIMPLIFIED_CONTRACT = Object.freeze({
       exportIf: (row, i, f) => f.certNoRecipients !== 'Yes',
       keep: (row) => rowStarted(row),
     },
-    field('certAttySignDate', P56, 'H41', date),
+    // 2026-10-17: the attorney's date only while an attorney is entered, as
+    // the page shows the attorney's certificate.
+    field('certAttySignDate', P56, 'H41', date, { exportIf: (f) => isAttorneyStarted(f, 'simplified') }),
     // The certificate's attorney boxes repeat Part V's (Milestone 72H).
     ...CERT_ATTORNEY.map(([, attorneyKey, certKey, cell]) => field(certKey, P56, cell, text, { value: (f) => f[attorneyKey] })),
 

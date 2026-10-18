@@ -17,6 +17,7 @@ import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { bondAmountCellValue, bondAmountFromCell, inferBondDepositoryState, revealsBond, revealsDepository } from '../../filing/bond-depository.js';
 import { readIndicateIfBox } from '../../filing/certificate-migrations.js';
 import { rowStarted } from '../../validation/row-started.js';
+import { isAttorneyStarted } from '../../validation/attorney-block.js';
 import { createBankAccountId } from '../../accounting/bank-accounts.js';
 import { annualReconcileState } from '../../accounting/annual-totals.js';
 import { filedOffice } from '../../form/same-address.js';
@@ -345,11 +346,17 @@ export const ANNUAL_CONTRACT = Object.freeze({
       kind: 'slots', path: 'certRecipients', sheet: 'PART X', slots: RECIPIENT_SLOTS,
       fields: Object.fromEntries(RECIPIENT_FIELDS.map((k) => [k, { codec: text }])),
       exportFilter: (r) => rowStarted(r),
+      // 2026-10-17: none under "no one needs to be served", as the page and
+      // the PDF show it (the Simplified's contract the same).
+      exportIf: (row, i, f) => f.certNoRecipients !== 'Yes',
       keep: (row) => rowStarted(row),
     },
     field('certDate', 'PART X', 'G23', date),
     indicateIf,
-    field('certAttySignDate', 'PART X', 'G25', date),
+    // 2026-10-17: the attorney's date only while an attorney is entered --
+    // without one the page shows the guardian's certificate and the PDF the
+    // guardian's signature.
+    field('certAttySignDate', 'PART X', 'G25', date, { exportIf: (f) => isAttorneyStarted(f, 'annual') }),
 
     // PART XI -- remuneration, one entry per line on A6:A32 (73T-2), as the
     // Simplified does on its PART VII. A workbook with no line (every one
@@ -418,6 +425,11 @@ export const ANNUAL_CONTRACT = Object.freeze({
   // writes); one that shows a different office address unticks it, so the
   // address the workbook carries is the one filed.
   reconcile(draft, filing) {
+    // 2026-10-17, as the Simplified's and the Inventory's: "no recipients are
+    // required" has no box, so the filing keeps its answer -- except a "Yes"
+    // the workbook contradicts by listing recipients, which goes back to
+    // unanswered (the page would hide them under the Yes).
+    if (filing?.certNoRecipients === 'Yes' && (draft.certRecipients || []).some((r) => rowStarted(r))) draft.certNoRecipients = '';
     const same = (a, b) => String(a ?? '').trim() === String(b ?? '').trim();
     (draft.guardians || []).forEach((row, i) => {
       if (filing?.guardians?.[i]?.officeSameAsMailing !== true) return;

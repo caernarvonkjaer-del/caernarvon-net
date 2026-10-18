@@ -95,3 +95,102 @@ describe("Part VIII's trusts reach the court output only under a Yes", () => {
     }, 240_000);
   });
 });
+
+// 2026-10-17, the requester's choice after the check across the forms: eight
+// more places where an answer the page hides, and keeps, still reached the
+// filed document. Each output now leaves out what the page hides.
+describe('the PDFs leave out what the page hides', () => {
+  const allItems = (model) => model.sections.flatMap((s) => (s.blocks || []).flatMap((b) => b.items || []));
+  const labels = (model) => allItems(model).map((i) => i.label);
+
+  test('Annual Part IX: the restricted-depository receipt date prints under a depository, not under a waived bond', async () => {
+    const { buildAnnualAccountingModel } = await import('../../src/features/annual-accounting/pdf-model.js');
+    const receipt = (state) => allItems(buildAnnualAccountingModel(typed('annual', { bondDepositoryState: state, restrictedDepositoryReceiptDate: '2026-03-01' })))
+      .find((i) => i.label === 'Date of Restricted Depository Receipt').value;
+    expect(receipt('bond-waived')).toBe('');
+    expect(receipt('bond-only')).toBe('');
+    expect(receipt('depository-only')).toBe('03/01/2026');
+    expect(receipt('bond-and-depository')).toBe('03/01/2026');
+  });
+
+  test("the Annual Plan: Question 10's Other text, a directive's revoking order and Question 3's specialty print only under their answer", async () => {
+    const { buildPlanAnnualModel } = await import('../../src/features/plan-annual/pdf-model.js');
+    const directive = { title: 'Durable Power of Attorney', dateSigned: '2019-05-01', signedBy: 'Ward', agents: '', alternates: '', relationship: '', contact: '', orderDate: '2024-02-02', orderCounty: 'Pinellas' };
+    const model = (extra) => buildPlanAnnualModel(typed('planAnnual', { q10Executed: true, q10ExecOtherText: 'Old directive', q3MedSpecialistArea: 'Neurology', ...extra }));
+    const hidden = labels(model({ q10ExecOther: false, q3MedSpecialist: false, q10Directives: [{ ...directive, courtRevoked: 'No' }] }));
+    expect(hidden.filter((l) => /Old directive|Neurology|Date of Order/.test(String(l)))).toEqual([]);
+    const shown = labels(model({ q10ExecOther: true, q3MedSpecialist: true, q10Directives: [{ ...directive, courtRevoked: 'Yes' }] }));
+    expect(shown.filter((l) => /Old directive|Neurology|Date of Order/.test(String(l))).length).toBe(3);
+  });
+
+  test("the Initial Plan: Question 3's specialty prints only under a ticked Specialist", async () => {
+    const { buildPlanInitialModel } = await import('../../src/features/plan-initial/pdf-model.js');
+    const specialty = (ticked) => labels(buildPlanInitialModel(typed('planInitial', { q3MedSpecialist: ticked, q3MedSpecialistArea: 'Neurology' })))
+      .filter((l) => /Neurology/.test(String(l))).length;
+    expect([specialty(false), specialty(true)]).toEqual([0, 1]);
+  });
+
+  test("the Plan for Minors: Question 4's frequency prints only beside a ticked examination", async () => {
+    const { buildPlanMinorModel } = await import('../../src/features/plan-minor/pdf-model.js');
+    const freq = (ticked) => labels(buildPlanMinorModel(typed('planMinor', { q4Primary: ticked, q4PrimaryFreq: 'Monthly', q4Dentist: ticked, q4DentistFreq: 'Annually', q4Specialist: ticked, q4SpecialistFreq: 'Weekly' })))
+      .filter((l) => / — (Monthly|Annually|Weekly)$/.test(String(l))).length;
+    expect([freq(false), freq(true)]).toEqual([0, 3]);
+  });
+});
+
+describe("the courts' workbooks leave out what the page hides", () => {
+  let write, read;
+  beforeAll(async () => {
+    const { loadExcelJS, templateWorkbook } = await import('./support/exceljs-node.js');
+    const { writeContract } = await import('../../src/core/excel/workbook-contract/engine.js');
+    const { ANNUAL_CONTRACT } = await import('../../src/core/excel/workbook-contract/annual.js');
+    const { GUARDIAN_CONTRACT } = await import('../../src/core/excel/workbook-contract/guardian.js');
+    const { SIMPLIFIED_CONTRACT } = await import('../../src/core/excel/workbook-contract/simplified.js');
+    const contracts = { annual: ANNUAL_CONTRACT, guardian: GUARDIAN_CONTRACT, simplified: SIMPLIFIED_CONTRACT };
+    const contractIndex = await import('../../src/core/excel/workbook-contract/index.js');
+    const written = async (template, d) => {
+      const wb = await templateWorkbook(template);
+      writeContract(wb, contracts[template], d, {});
+      const back = new (loadExcelJS().Workbook)();
+      await back.xlsx.load(await wb.xlsx.writeBuffer());
+      return back;
+    };
+    write = async (template, d, sheet, cells) => {
+      const ws = (await written(template, d)).getWorksheet(sheet);
+      return cells.map((c) => ws.getCell(c).value ?? null);
+    };
+    read = async (template, d, into) => contractIndex.readWorkbookDraft(await written(template, d), template, { filing: into }).draft;
+  }, 240_000);
+
+  const RECIPIENT = { name: 'Jane Heir', line2: '5 Oak Ave', line3: 'Clearwater, FL 33755', line4: '', line5: '' };
+
+  test('the Annual family Part X: under "no one needs to be served", no recipient is written; an import listing recipients asks the question again', async () => {
+    expect(await write('annual', typed('annual', { certNoRecipients: 'Yes', certRecipients: [RECIPIENT] }), 'PART X', ['B11'])).toEqual([null]);
+    expect(await write('annual', typed('annual', { certNoRecipients: '', certRecipients: [RECIPIENT] }), 'PART X', ['B11'])).toEqual(['Jane Heir']);
+    const draft = await read('annual', typed('annual', { certRecipients: [RECIPIENT] }), typed('annual', { certNoRecipients: 'Yes' }));
+    expect(draft.certNoRecipients).toBe('');
+  }, 240_000);
+
+  test('the Initial Inventory Part VI: under "no one needs to be served", no recipient is written', async () => {
+    expect(await write('guardian', typed('guardian', { serviceNoRecipients: 'Yes', serviceRecipients: [RECIPIENT] }), 'PART VI', ['B13'])).toEqual([null]);
+    expect(await write('guardian', typed('guardian', { serviceNoRecipients: '', serviceRecipients: [RECIPIENT] }), 'PART VI', ['B13'])).toEqual(['Jane Heir']);
+  }, 240_000);
+
+  test("the certificate's attorney signature date is written only while an attorney is entered", async () => {
+    const date = '2026-01-15';
+    const cell = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : v);
+    const cases = [
+      ['annual', 'PART X', 'G25', { certAttySignDate: date }, { attorney: 'Ann Lawyer' }],
+      ['guardian', 'PART VI', 'G27', { serviceAttorney: { signatureDate: date } }, { attorney: { name: 'Ann Lawyer' } }],
+      ['simplified', 'PARTS V, VI ', 'H41', { certAttySignDate: date }, { attorney: 'Ann Lawyer' }],
+    ];
+    for (const [type, sheet, addr, dated, attorney] of cases) {
+      const base = json(initializeEmptyData(type));
+      const merge = (extra) => typed(type, Object.fromEntries(Object.entries(extra).map(([k, v]) => [k, v && typeof v === 'object' && !Array.isArray(v) ? { ...(base[k] || {}), ...v } : v])));
+      const [none] = await write(type, merge(dated), sheet, [addr]);
+      expect(none, `${type}: no attorney`).toBeNull();
+      const [withAttorney] = await write(type, merge({ ...dated, ...attorney }), sheet, [addr]);
+      expect(cell(withAttorney), `${type}: an attorney entered`).toBe(date);
+    }
+  }, 240_000);
+});

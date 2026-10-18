@@ -620,14 +620,17 @@ function pagePlanIDirectives(){
   return `<div class="schedule-page">
     <h1>11. Advance Directives</h1>
     ${planQ('11a',T.q11NoDirectives,
-      chkP('q11NoDirectives','There are no pre-existing orders or advance directives',d.q11NoDirectives)
-      +planCheckGroup('',
+      // 2026-10-17 (the requester's choice): the steps taken to verify there
+      // are none appear under the "no directives" tick, as on the Annual
+      // Plan -- they print only under it, and were always on the page.
+      chkP('q11NoDirectives','There are no pre-existing orders or advance directives',d.q11NoDirectives,'/p8')
+      +(d.q11NoDirectives?planCheckGroup('',
         cb('q11StepResidence',C.q11StepResidence)
         +cb('q11StepSafeDeposit',C.q11StepSafeDeposit)
         +cb('q11StepInterviewed',C.q11StepInterviewed)
         +cb('q11StepMedicalProviders',C.q11StepMedicalProviders)
         +cb('q11StepAttorney',C.q11StepAttorney),
-        null,null,false))}
+        null,null,false):''))}
     ${planQ('11b',T.q11Executed,
       // Milestone 37-4: a plain chkP() checkbox doesn't re-render this page
       // on change (no data-form-route), which is fine for most checkboxes

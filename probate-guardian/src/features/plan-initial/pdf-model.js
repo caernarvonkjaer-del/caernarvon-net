@@ -149,7 +149,8 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.q3MedPrimary, label: C.q3MedPrimary },
           { checked: !!d.q3MedDentist, label: C.q3MedDentist },
           { checked: !!d.q3MedOphthalmologist, label: C.q3MedOphthalmologist },
-          { checked: !!d.q3MedSpecialist, label: `${C.q3MedSpecialist}${d.q3MedSpecialistArea ? ' ' + d.q3MedSpecialistArea : ''}` },
+          // 2026-10-17: printed only under its answer, as the page shows it (hiding keeps the value, AGENTS.md section 4).
+          { checked: !!d.q3MedSpecialist, label: `${C.q3MedSpecialist}${d.q3MedSpecialist && d.q3MedSpecialistArea ? ' ' + d.q3MedSpecialistArea : ''}` },
           { checked: !!d.q3MedPT, label: C.q3MedPT },
           { checked: !!d.q3MedST, label: C.q3MedST },
           { checked: !!d.q3MedOT, label: C.q3MedOT },

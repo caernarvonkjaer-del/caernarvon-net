@@ -174,9 +174,11 @@ export function buildPlanMinorModel(D) {
         type: 'checklist',
         title: '4. Provision of Medical Services for the Plan Period',
         items: [
-          { checked: !!d.q4Primary, label: `Routine examination by primary care physician${d.q4PrimaryFreq ? ' — ' + d.q4PrimaryFreq : ''}` },
-          { checked: !!d.q4Dentist, label: `Routine examination by dentist${d.q4DentistFreq ? ' — ' + d.q4DentistFreq : ''}` },
-          { checked: !!d.q4Specialist, label: `Routine examination by specialist${d.q4SpecialistFreq ? ' — ' + d.q4SpecialistFreq : ''}` },
+          // 2026-10-17: a frequency only beside its ticked examination, as the
+          // page shows it (hiding keeps the value, AGENTS.md section 4).
+          { checked: !!d.q4Primary, label: `Routine examination by primary care physician${d.q4Primary && d.q4PrimaryFreq ? ' — ' + d.q4PrimaryFreq : ''}` },
+          { checked: !!d.q4Dentist, label: `Routine examination by dentist${d.q4Dentist && d.q4DentistFreq ? ' — ' + d.q4DentistFreq : ''}` },
+          { checked: !!d.q4Specialist, label: `Routine examination by specialist${d.q4Specialist && d.q4SpecialistFreq ? ' — ' + d.q4SpecialistFreq : ''}` },
           { checked: !!d.q4PT, label: 'Physical Therapy' },
           { checked: !!d.q4ST, label: 'Speech Therapy' },
           { checked: !!d.q4OT, label: 'Occupational Therapy' },

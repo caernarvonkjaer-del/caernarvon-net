@@ -8,6 +8,7 @@ import { readCellText, unwrapCellValue } from '../cell-reader.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { bondAmountFromCell, inferBondDepositoryState, revealsBond, revealsWaiver } from '../../filing/bond-depository.js';
 import { rowStarted } from '../../validation/row-started.js';
+import { isAttorneyStarted } from '../../validation/attorney-block.js';
 import { sameName } from '../import-keep.js';
 import { compareImportedCertificate } from '../../filing/certificate-migrations.js';
 import { b2ItemDescription, mk } from '../../filing/models/guardian.js';
@@ -141,14 +142,18 @@ export const GUARDIAN_CONTRACT = Object.freeze({
     {
       kind: 'slots', path: 'serviceRecipients', sheet: 'PART VI', slots: RECIPIENT_SLOTS,
       fields: Object.fromEntries(RECIPIENT_FIELDS.map((k) => [k, { codec: text }])),
-      exportIf: (row) => row != null,
+      // 2026-10-17: none under "no one needs to be served", as the page and
+      // the PDF show it.
+      exportIf: (row, i, f) => row != null && f.serviceNoRecipients !== 'Yes',
       keep: (row) => recipientListed(row),
     },
     // "No recipients are required" has no box: kept, unless the workbook lists
     // recipients (afterRead). Milestone 73T part 2 (row 14).
     field('serviceDate', 'PART VI', 'G25', date),
     field('serviceIndicateIf', 'PART VI', 'J25', text),
-    field('serviceAttorney.signatureDate', 'PART VI', 'G27', date),
+    // 2026-10-17: the attorney's date only while an attorney is entered, as
+    // the page shows the attorney's certificate.
+    field('serviceAttorney.signatureDate', 'PART VI', 'G27', date, { exportIf: (f) => isAttorneyStarted(f, 'guardian') }),
     // Milestone 72H: the certificate's attorney is D-2's; its boxes repeat
     // PART IV's, and an older workbook's differing details are compared on
     // import (afterRead below).

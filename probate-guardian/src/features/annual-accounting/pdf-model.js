@@ -15,7 +15,7 @@ import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
-import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
+import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond, revealsDepository } from '../../core/filing/bond-depository.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { withSameAddresses } from '../../core/form/same-address.js';
@@ -1097,7 +1097,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
           { label: "Guardian's Relationship to Ward", value: d.guardianRelationship || '' },
           // Milestone 73H: no line here -- the row prints on every filing, with or
           // without a depository, and 73B-N2 settled that a blank is blank.
-          { label: 'Date of Restricted Depository Receipt', value: fmtD(d.restrictedDepositoryReceiptDate) },
+          // 2026-10-17: the date only under a depository, as the page shows it
+          // and the workbook writes it -- after a switch to a waived bond it
+          // printed beside "Bond waived".
+          { label: 'Date of Restricted Depository Receipt', value: revealsDepository(inferBondDepositoryState(d)) ? fmtD(d.restrictedDepositoryReceiptDate) : '' },
         ],
       },
       {
