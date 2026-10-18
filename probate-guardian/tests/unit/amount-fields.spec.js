@@ -51,11 +51,16 @@ describe('the list of amounts is the data model\'s', () => {
       expect(type, `a currency field on a form this list doesn't cover: ${row.scope} ${row.field_path}`).toBeTruthy();
       (fromCsv[type] ||= []).push(row.field_path);
     }
+    // Milestone 74J-2's Final Report amount is in the Annual family's rows of
+    // the data model, and on the Final Accounting's list alone (2026-10-17:
+    // an Annual or Trust holding the rows has no page for them).
+    const FINAL_ONLY = ['finalReserved[].amount'];
+    const named = (type) => amountFieldsFor(type).map((e) => (e.path ? e.path : `${e.list}[].${e.field}`));
     for (const type of Object.values(SCOPE_TYPE)) {
-      const listed = amountFieldsFor(type).map((e) => (e.path ? e.path : `${e.list}[].${e.field}`));
-      expect([...listed].sort(), type).toEqual([...(fromCsv[type] || [])].sort());
+      const expected = (fromCsv[type] || []).filter((p) => type !== 'annual' || !FINAL_ONLY.includes(p));
+      expect([...named(type)].sort(), type).toEqual([...expected].sort());
     }
-    expect(amountFieldsFor('finalAccounting')).toBe(amountFieldsFor('annual'));
+    expect(named('finalAccounting')).toEqual([...named('annual'), ...FINAL_ONLY]);
     expect(amountFieldsFor('trustAccounting')).toBe(amountFieldsFor('annual'));
     expect(amountFieldsFor('planMinor')).toEqual([]);
   });

@@ -15,10 +15,19 @@
 // that is not an amount is kept as it was and named before anything is
 // filed, as an impossible date is.
 import { amountForStore, isUnreadableAmount, UNREADABLE_AMOUNT_HINT } from '../form/amount-codec.js';
+import { inferBondDepositoryState, revealsBond } from './bond-depository.js';
 
 // One entry per amount: `path` for a single field, `list` + `field` for a
 // column of a repeating list (`row` names a row the way the form's checks do;
-// `inline` for the Inventory's "A-1 row 2").
+// `inline` for the Inventory's "A-1 row 2"). `inUse` (2026-10-17): for a box
+// another answer can hide, whether the page shows it or the court output
+// carries it -- the checks that name an amount skip it otherwise, since the
+// filer can't see the box and nothing files it (hiding keeps the value,
+// AGENTS.md section 4, so an old value can sit behind the answer).
+const trustsInUse = (d) => d?.trusts?.[0]?.hasTrust === 'Yes';
+// The bond details print, and fill the workbook, while the bond question is
+// unanswered too (bond-depository.js), so the amount is checked then.
+const bondInUse = (d) => { const state = inferBondDepositoryState(d); return revealsBond(state) || !state; };
 const ANNUAL_FAMILY = [
   { path: 'startingBalance', route: '/p2', section: 'Part II', label: 'Starting Balance' },
   { list: 'schA', field: 'amount', route: '/scha', section: 'Schedule A', row: 'Line', label: 'Amount' },
@@ -46,10 +55,17 @@ const ANNUAL_FAMILY = [
   { list: 'schE', field: 'transferOutAmt', route: '/sche', section: 'Schedule E', row: 'Line', label: 'Transfer Out Amount' },
   { list: 'schF1', field: 'salePrice', route: '/schf1', section: 'Schedule F-1', row: 'Line', label: 'Sale Price' },
   { list: 'schF2', field: 'salePrice', route: '/schf2', section: 'Schedule F-2', row: 'Line', label: 'Sale Price' },
-  { list: 'trusts', field: 'wardAmount', route: '/p8', section: 'Part VIII', row: 'Trust', label: "Amount (Ward's Interest)" },
-  { path: 'bondAmount', route: '/p9', section: 'Part IX', label: 'Bond Amount' },
+  { list: 'trusts', field: 'wardAmount', route: '/p8', section: 'Part VIII', row: 'Trust', label: "Amount (Ward's Interest)", inUse: trustsInUse },
+  { path: 'bondAmount', route: '/p9', section: 'Part IX', label: 'Bond Amount', inUse: bondInUse },
   { list: 'remuneration', field: 'amount', route: '/p11', section: 'Part XI', row: 'Line', label: 'Amount' },
-  // Milestone 74J-2: the Final Report's amounts reserved (only a Final Accounting holds the list).
+];
+
+// Milestone 74J-2: the Final Report's amounts reserved, on the Final
+// Accounting's page. Its own list since 2026-10-17: an Annual or Trust
+// Accounting keeps the rows after a Filing Type change but has no such page,
+// so it never reads them.
+const FINAL_ACCOUNTING = [
+  ...ANNUAL_FAMILY,
   { list: 'finalReserved', field: 'amount', route: '/final', section: 'Final Report — Amounts Reserved', row: 'Line', label: 'Amount' },
 ];
 
@@ -74,17 +90,18 @@ const INVENTORY = [
   { list: 'scheduleC3', field: 'estimatedSettlement', inline: true, route: '/c3', section: 'C-3', label: 'Estimated Settlement' },
   { list: 'scheduleC4', field: 'trustAmount', inline: true, route: '/c4', section: 'C-4', label: 'Trust Amount' },
   { list: 'scheduleC5', field: 'totalAssetValue', inline: true, route: '/c5', section: 'C-5', label: 'Total Asset Value' },
-  { path: 'bondAmount', inline: true, route: '/d4', section: 'D-4', label: 'Bond Amount' },
+  { path: 'bondAmount', inline: true, route: '/d4', section: 'D-4', label: 'Bond Amount', inUse: bondInUse },
 ];
 
 const PLAN_ANNUAL = [
-  { path: 'q11Amount', route: '/p10', section: '11. Remuneration', label: 'Amount received' },
+  // Hidden, and left off the plan, while "no remuneration" is ticked.
+  { path: 'q11Amount', route: '/p10', section: '11. Remuneration', label: 'Amount received', inUse: (d) => !d?.q11NoRemuneration },
 ];
 
 // By filing type; the other Plans keep no amount.
 const BY_TYPE = {
   annual: ANNUAL_FAMILY,
-  finalAccounting: ANNUAL_FAMILY,
+  finalAccounting: FINAL_ACCOUNTING,
   trustAccounting: ANNUAL_FAMILY,
   simplified: SIMPLIFIED,
   guardian: INVENTORY,
@@ -95,6 +112,9 @@ const BY_TYPE = {
 export function amountFieldsFor(type) {
   return Object.hasOwn(BY_TYPE, type) ? BY_TYPE[type] : [];
 }
+
+/** Whether an amount's box is in use on this filing: shown by the page, or carried by the court output (`inUse`). */
+export const amountInUse = (entry, d) => !entry.inUse || entry.inUse(d);
 
 // Every stored amount of a filing, as { entry, path, value, index, holder, key }.
 // (Milestone 73G part 2: sign-advisories.js reads it too.)
@@ -130,7 +150,8 @@ export function amountEntryFor(type, path) {
  * When a filing opens: every amount saved as readable text becomes its
  * number ("$1,234.56" becomes 1234.56, "(1000)" -1000); text that is not an
  * amount stays exactly as it was, for amountFieldIssues() to name; numbers
- * and blanks are untouched. Idempotent. (Decision 73G-N2 for the
+ * and blanks are untouched -- in a hidden box too, so the value is a number
+ * when its answer shows it again. Idempotent. (Decision 73G-N2 for the
  * Simplified's remuneration Amount; every other amount the same way, in
  * place of the clamp that used to run on every page drawn.)
  *
@@ -153,7 +174,7 @@ export function normalizeAmountFields(d) {
 export function amountFieldIssues(d) {
   const issues = [];
   for (const { entry, path, value, index } of storedAmounts(d)) {
-    if (!isUnreadableAmount(value)) continue;
+    if (!isUnreadableAmount(value) || !amountInUse(entry, d)) continue;
     // The Inventory's checks say "A-1 row 2"; the others "Schedule A — Line 2".
     const where = index === undefined ? '' : (entry.inline ? ` row ${index + 1}` : ` — ${entry.row} ${index + 1}`);
     const label = `${entry.label}: "${String(value).trim()}" can't be read as an amount. ${UNREADABLE_AMOUNT_HINT}`;

@@ -325,7 +325,9 @@ export const ANNUAL_CONTRACT = Object.freeze({
         wardPct: { codec: share, fallback: oldTrustCell('wardPct', legacyTrustShare) },
         wardAmount: { codec: amount, fallback: oldTrustCell('wardAmount', legacyTrustAmount) },
       },
-      exportIf: (row) => row != null,
+      // 2026-10-17: written only under a Yes (the PDF the same); answered No,
+      // the hidden, kept cards stay out of the court's workbook.
+      exportIf: (row, i, filing) => row != null && filing?.trusts?.[0]?.hasTrust === 'Yes',
     },
 
     // PART IX -- the bond. The Bond Period boxes E21/G21 are the form's own

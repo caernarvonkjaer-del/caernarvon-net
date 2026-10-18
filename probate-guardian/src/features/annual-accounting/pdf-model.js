@@ -1025,7 +1025,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
       ],
     },
   ];
-  if (trustList.length > 0) {
+  // 2026-10-17: the trusts print only under a Yes. Answered No, the cards
+  // are hidden and kept (AGENTS.md section 4) -- they printed after the
+  // "No", so the filed PDF contradicted itself.
+  if (hasAnyTrust && trustList.length > 0) {
     const trustRows = trustList.map((t, i) => [
       String(i + 1),
       t.name || '',

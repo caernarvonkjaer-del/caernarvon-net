@@ -216,7 +216,8 @@ describe('Milestone 64B-2, item 10.2: Part VIII prints Date Created and Type of 
   test('a trust with no date or type entered leaves those cells blank, not "undefined"', () => {
     const model = buildAnnualAccountingModel({
       inventoryType: 'annual',
-      trusts: [{ name: 'Older Trust', trustee: 'T', accountNo: '1', wardPct: 100, wardAmount: 1 }],
+      // (Answered Yes: since 2026-10-17 a trust prints only under a Yes.)
+      trusts: [{ hasTrust: 'Yes', name: 'Older Trust', trustee: 'T', accountNo: '1', wardPct: 100, wardAmount: 1 }],
     });
     const row = details(model).rows[0];
     expect(row[4]).toBe('');

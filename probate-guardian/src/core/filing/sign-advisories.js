@@ -18,7 +18,7 @@
 //     instruct ("e.g., 2500.50 or -2500.50"), with a note that it is unusual
 //     there -- a negative asset, income, debt, disbursement, bond or
 //     remuneration.
-import { amountEntryFor, storedAmounts } from './amount-fields.js';
+import { amountEntryFor, amountInUse, storedAmounts } from './amount-fields.js';
 import { amountForStore, presentAmount } from '../form/amount-codec.js';
 import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
 
@@ -81,6 +81,8 @@ export function signAdvisories(filing) {
   const type = filing.inventoryType;
   const out = [];
   for (const { entry, path, value, index } of storedAmounts(filing)) {
+    // (A box the page hides and the output leaves out is not filed.)
+    if (!amountInUse(entry, filing)) continue;
     const problem = signProblem(type, entry, value);
     if (!problem) continue;
     // The Inventory's checks say "A-1 row 2"; the others "Schedule A — Line 2".
