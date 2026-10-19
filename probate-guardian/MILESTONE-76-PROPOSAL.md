@@ -3,7 +3,7 @@
 ## Status
 
 **Draft, Revision 2 (2026-10-19). On hold for the requester's review.
-Authorizes no change.** Building any delivery, or any part of one, needs the
+Authorizes no change.** Every decision is settled (Appendix A). Building any delivery, or any part of one, needs the
 requester's named approval of that delivery (AGENTS.md §3).
 
 **What Revision 2 is.** Revision 1 (`b44e2cc0`) wrote up the whole-app
@@ -37,7 +37,10 @@ code line this revision cites. Revision 2 records what they found:
   already-answered decision if its cost changed"). 10 stand as settled, some
   with design detail added. 14 **new** decisions are added -- two of them
   (76A-3, 76A-4) for parts of 76A that Revision 1 proposed without asking
-  them. Appendix A lists all 37.
+  them. Appendix A lists all 37. The 27 reopened and new ones were put to
+  the requester one at a time on 2026-10-19 and are settled: 25 as
+  recommended, 76K-4 in the requester's own words, and 76I-7 (a question of
+  Clerk practice) answered "both, or not sure".
 - **Approval.** The approval of 76A–76D (2026-10-19) was given against
   Revision 1. 76A and 76D change substantially here, so that approval is
   **set aside** until the requester approves again. Nothing has been built.
@@ -129,7 +132,8 @@ too), so they are built in that order, not in parallel (AGENTS.md §2). 76B
 shares `input-hardening.js` with 76C and 76I. 76E's rule (design 1) comes
 before 76J item 2 and 76H item 14. 76J item 1 comes before 76I items 3–4
 (design 3). 76A-2 and 76D-1 share design 4. 76K-2 follows 76A (design 2).
-76F-2's data-model rows and 76L item 7 are written together.
+76F-2's data-model rows and 76L item 7 are written together. 76I item 1
+stands alone and can be built early (76I-7).
 
 ---
 
@@ -282,6 +286,8 @@ Each option includes "writes only when there are changes" (Proposed).
 3. **Nothing more.** *What a filer sees:* an idle tab no longer overwrites
    anything; two busy tabs still overwrite each other.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76A-3 — Work in no file when the app locks.** *New: Revision 1's
 "keep the work in memory behind the lock screen" was a parenthetical, never
 asked, and would reverse 70A's "cleared from memory while locked".*
@@ -296,6 +302,8 @@ asked, and would reverse 70A's "cleared from memory while locked".*
 3. **As today** (the shared browser-storage copy). *What a filer sees:* the
    losses in item 4 remain.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76A-4 — Firefox/Safari: does a download mark the case saved?** *New:
 Revision 1 listed "a download marks nothing saved" inside 76A without asking
 it. That would make the 15-minute "Save Your Work" reminder fire forever and
@@ -306,6 +314,8 @@ rule.*
    motivated the change is gone. *What a filer sees:* no change.
 2. **A download marks nothing saved.** *What a filer sees:* the reminder and
    the leave-page prompt after every download.
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 ### Checklist (AGENTS.md §8)
 
@@ -438,6 +448,8 @@ for imported workbooks, which Revision 1 cited only for the quote mark.*
    "Donation=500" into "D500"). *What a filer sees:* imported text loses
    those three characters, typed text doesn't.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 ### Checklist (AGENTS.md §8)
 
 | # | Answer |
@@ -506,6 +518,8 @@ Milestone 23 also asks for measurement.*
 2. **Cap all attachments per case** (sized to stay under the open limit
    with a password's 1.35×). *What a filer sees:* a refusal when attaching
    the statement that crosses the cap.
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 ### Checklist (AGENTS.md §8)
 
@@ -597,6 +611,8 @@ needs a reliable date the app doesn't store today.*
    filer sees:* today's action, with the choices shown.
 3. **As Revision 1:** merge only, never change the case's file. *What a
    filer sees:* no mid-session way to switch case files.
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 ### Checklist (AGENTS.md §8)
 
@@ -708,6 +724,8 @@ All come from one store, the filing's unfinished-date drafts
    finish.
 2. **It is removed with its draft.** *What a filer sees:* the half-typed date
    disappears when they leave the page.
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 ### Checklist (AGENTS.md §8)
 
@@ -822,6 +840,8 @@ into Year 2's guardian Carol's record.*
 2. **All links on the filing** (as settled). *What a filer sees:* the same,
    but an older year's guardian can be linked to the wrong person.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76F-3 — Two years with the same period.** *New.*
 1. **(Recommended)** **Keep documents by period; never delete a folder
    another year still uses, and say so.** 76F-1 removes the usual way a
@@ -830,6 +850,8 @@ into Year 2's guardian Carol's record.*
 2. **Keep documents by year and period** (a migration of every saved case's
    documents). *What a filer sees:* each year's documents fully separate.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76F-4 — Editing an older year and the shared records.** *New.*
 1. **(Recommended)** **An older year opened for correction behaves like a
    closed filing:** its edits don't update the shared ward, guardian or
@@ -837,6 +859,8 @@ into Year 2's guardian Carol's record.*
    filer sees:* fixing a typo in last year's filing can't change this year's.
 2. **As today:** an edit in an older year updates the shared records and the
    other filings.
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 ### Checklist (AGENTS.md §8)
 
@@ -979,6 +1003,8 @@ both its period and its balance wrong.*
    balance.
 3. **As today.** *What a filer sees:* the same-year case counted twice.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76G-2 — Initial Inventory → Annual, Schedule A.** *Settled 2026-10-19;
 stands:* leave Schedule A blank. (`describeConversion()` and
 `share-zero-paths.spec.js:74` change with it.)
@@ -994,6 +1020,8 @@ and widens 40H-I's "schedules correctly absent" without citing it.*
    Built in `carryOverFields()`, so Add Form's "Load Ward Info From" agrees.
    *What a filer sees:* the Final starts from the last Annual's holdings.
 2. **Today's carry, corrected notice only.**
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 **76G-4 — Add Form and a same-named ward.** *Settled 2026-10-19; stands,
 extended to the Simplified eligibility dialog:* ask before linking, showing
@@ -1166,6 +1194,8 @@ Romanian ș ț, or symbols such as ≥ →.*
    misspelled.
 2. **Warn only.** *What a filer sees:* a prompt to type the name another way.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76H-2 — The checklists' "Yes — / No — ".** *Reopened: the settled answer
 removes Milestone 19-1's accessibility design without saying what replaces
 it.*
@@ -1179,6 +1209,8 @@ it.*
 3. **Remove the prefix with nothing in its place.** *What a filer sees:* the
    same page; screen readers lose the state.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76H-3 — Overridden unreadable amounts and shares.** *Reopened: "out of
 totals" changes the shared calculators (screen, PDF, bond, audit fee --
 AGENTS.md §5), and shares conflict with 71D's rule.*
@@ -1190,6 +1222,11 @@ AGENTS.md §5), and shares conflict with 71D's rule.*
    total agrees.
 2. **Print as typed only; totals unchanged.** *What a filer sees:* the text
    as typed beside totals that still count a guessed figure.
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1** --
+a calculation change accepted by name (AGENTS.md §5), for the reason given:
+the filed PDF never shows a figure the filer didn't type, and every total
+agrees. The court's workbook never holds such an amount (76I-3).
 
 **76H-4 — Part IX's bond table.** *Settled 2026-10-19; stands:* the
 workbook's layout and words.
@@ -1209,6 +1246,8 @@ for BOND REQUIREMENT".
    label reads as the Clerk's form does.
 2. **Leave it.**
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76H-7 — Part XI / Part VII after an override.** *New.*
 1. **(Recommended)** **Always print the Part: entries, or the "none"
    declaration, or -- unanswered -- the statutory paragraph with blank lines
@@ -1218,10 +1257,14 @@ for BOND REQUIREMENT".
    sees:* the PDF can't be made until Part XI/VII is answered. (A legal
    reading of §744.367(3)(a); for a qualified person.)
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76H-8 — The attorney's "County" box.** *New: once the statement uses the
 filing's county, the box prints nowhere.*
 1. **(Recommended)** **Remove it from the page (the stored value is kept).**
 2. **Keep it, labelled "not printed".**
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 ### Checklist (AGENTS.md §8)
 
@@ -1390,11 +1433,15 @@ as CSV drops it.*
 2. **Remove the guard for the cells the court reads.** *What a filer sees:*
    "-Refund"; a clerk who re-saves as CSV loses the protection.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76I-5 — A workbook that matches no form.** *New: an unrelated spreadsheet
 empties an Annual-family filing's schedules today (item 2).*
 1. **(Recommended)** **Refuse it:** "This isn't a court workbook this app can
    read." *What a filer sees:* nothing in the filing changes.
 2. **Import it after a warning naming what will be emptied.**
+
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
 
 **76I-6 — Part XI / Part VII lines.** *New.*
 1. **(Recommended)** **Write each line so it reads back and never shows
@@ -1403,10 +1450,17 @@ empties an Annual-family filing's schedules today (item 2).*
 2. **Fix only how lines read back.** *What a filer sees:* the court's form
    keeps "  —    —  $500.00".
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76I-7 — Which Annual workbook do guardians fill by hand?** *New; a
 question of Clerk practice.*
 1. The Clerk's 58-sheet original (then item 1 is minor).
 2. The twelve-account 90-sheet version.
+
+**Answered 2026-10-19 by the requester (Clerk practice): both, or not
+sure.** The fix is cheap either way (a limit that covers the app's own 90
+sheets), so item 1 stands alone and can be built early, ahead of the rest
+of 76I.
 
 ### Checklist (AGENTS.md §8)
 
@@ -1529,6 +1583,8 @@ steering the filer to answer "no one needs to be served".
    listed.
 2. **Keep "Recipient 1 only"** (D17). *What a filer sees:* as today.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 ### Checklist (AGENTS.md §8)
 
 | # | Answer |
@@ -1624,8 +1680,8 @@ page whose only way out -- reloading -- can lose unsaved work.
   still works). Binding each part to its place, and authenticating the
   "protected" mark, are a further format change -- listed as residual risk,
   not proposed here.
-- **Item 2:** decision 76K-1 (settled); the open-file prompt gets the same
-  lockout (decision 76K-4).
+- **Item 2:** decision 76K-1 (settled); the open-file prompt gets a lockout
+  (decision 76K-4).
 - **Item 3:** decision 76K-3.
 - **Item 4:** the browser-storage copy is retired with 76A-3 (decision 76K-2);
   the lock screen clears the names from the page and closes every dialog.
@@ -1653,6 +1709,8 @@ startup" would wipe a live tab's copy (the slot is shared).*
    storage.
 2. **Keep it** as today.
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76K-3 — Ward names in browser storage.** *New: a disclosed design (56B)
 against the requester's Milestone 57 instruction.*
 1. **(Recommended)** **Stop storing names; send them only over the tabs'
@@ -1661,10 +1719,18 @@ against the requester's Milestone 57 instruction.*
    golden change as a recorded decision.
 2. **Keep it disclosed** (56B).
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 **76K-4 — The open-file password prompt.** *New: the lockout design (40D)
 never covered it.*
 1. **(Recommended)** **Apply the same lockout.**
 2. **Leave it.**
+
+**Settled 2026-10-19 by the requester, in their own words: "5 wrong
+triggers a 1 minute lockout".** Five wrong passwords at the open-file
+prompt start a flat one-minute lockout. Confirmed the same day: the unlock
+screen keeps its own lockout (30 seconds at the fifth wrong password,
+doubling with each further one, up to 5 minutes; `app-lock.js:201-203`).
 
 ### Checklist (AGENTS.md §8)
 
@@ -1764,6 +1830,8 @@ further option: no New Year on the Initial Plan.*
    Annual Plan, its next filing.
 3. **As today.**
 
+**Settled 2026-10-19 by the requester (put again one at a time): option 1.**
+
 ### Checklist (AGENTS.md §8)
 
 | # | Answer |
@@ -1782,50 +1850,52 @@ further option: no New Year on the Initial Plan.*
 
 ## Appendix A — Every decision
 
-Settled = answered 2026-10-19 by the requester and still standing (76G-4
-is also applied to the Simplified eligibility dialog, which works the same
-way). Reopened = to be put again (the reason is in its section). New = not
-yet asked. 37 in all: 10 settled, 13 reopened, 14 new.
+Settled = answered 2026-10-19 on Revision 1 and still standing (76G-4 is
+also applied to the Simplified eligibility dialog, which works the same
+way). Re-asked = reopened by Revision 2 (the reason is in its section). New
+= first asked in Revision 2. Every re-asked and new decision was put to the
+requester one at a time on 2026-10-19. 37 in all: 10 settled, 13 re-asked,
+14 new -- all now answered.
 
-| Decision | Status | Recommended |
+| Decision | Status | Answer (2026-10-19) |
 | --- | --- | --- |
 | 76A-1 How an unlock reloads | Settled | No save until the reload finishes |
-| 76A-2 Two tabs and one file | **Reopened** | Merge by filing |
-| 76A-3 Work in no file at a lock | **New** | An encrypted copy in this tab's memory |
-| 76A-4 Firefox/Safari downloads | **New** | As today: a download marks the case saved |
-| 76B-1 How text is made safe | **Reopened** | Keep everything; escape on display (reverses 73T-3's import stripping) |
-| 76C-1 Large case files | **Reopened** | Measure; limit at the ceiling; refuse saves above it; banner |
-| 76D-1 Open Backup | **Reopened** | Two actions: Open Case File / Restore from Backup |
-| 76E-1 A row holding only a draft | **New** | Counts as touched (Milestone 25) |
+| 76A-2 Two tabs and one file | Re-asked, settled | Merge by filing |
+| 76A-3 Work in no file at a lock | New, settled | An encrypted copy in this tab's memory |
+| 76A-4 Firefox/Safari downloads | New, settled | As today: a download marks the case saved |
+| 76B-1 How text is made safe | Re-asked, settled | Keep everything; escape on display (reverses 73T-3's import stripping) |
+| 76C-1 Large case files | Re-asked, settled | Measure; limit at the ceiling; refuse saves above it; banner |
+| 76D-1 Open Backup | Re-asked, settled | Two actions: Open Case File / Restore from Backup |
+| 76E-1 A row holding only a draft | New, settled | Counts as touched (Milestone 25) |
 | 76F-1 New Year from an earlier year | Settled | Build from the latest year |
-| 76F-2 Where links live | **Reopened** | Case and ward links on the filing; others per year |
-| 76F-3 Two years, one period | **New** | Never delete a folder another year uses |
-| 76F-4 Editing an older year | **New** | Behaves like a closed filing |
-| 76G-1 Same-period Starting Balance | **Reopened** | Convert asks "same period or next?" |
+| 76F-2 Where links live | Re-asked, settled | Case and ward links on the filing; others per year |
+| 76F-3 Two years, one period | New, settled | Never delete a folder another year uses |
+| 76F-4 Editing an older year | New, settled | Behaves like a closed filing |
+| 76G-1 Same-period Starting Balance | Re-asked, settled | Convert asks "same period or next?" |
 | 76G-2 Inventory → Annual Schedule A | Settled | Leave blank |
-| 76G-3 Annual → Final | **Reopened** | Carry holdings, accounts, trusts, bond, relationship -- not the ward's status |
+| 76G-3 Annual → Final | Re-asked, settled | Carry holdings, accounts, trusts, bond, relationship -- not the ward's status |
 | 76G-4 A same-named ward | Settled | Ask before linking (with the eligibility dialog) |
-| 76H-1 Letters the PDF can't print | **Reopened** | Embed Latin Extended-A and -B, and warn |
-| 76H-2 Checklist prefix | **Reopened** | State in the accessibility tags, no visible prefix |
-| 76H-3 Unreadable amounts and shares | **Reopened** | Count as 0 everywhere; print as typed with a note |
+| 76H-1 Letters the PDF can't print | Re-asked, settled | Embed Latin Extended-A and -B, and warn |
+| 76H-2 Checklist prefix | Re-asked, settled | State in the accessibility tags, no visible prefix |
+| 76H-3 Unreadable amounts and shares | Re-asked, settled | Count as 0 everywhere; print as typed with a note |
 | 76H-4 Part IX bond table | Settled | The workbook's layout and words |
 | 76H-5 Plan for Minors caption | Settled | The original form's words; still flagged for a qualified person |
-| 76H-6 The Inventory's bond total | **New** | Match its workbook |
-| 76H-7 Part XI/VII after an override | **New** | Always print the Part; blank lines when unanswered |
-| 76H-8 The attorney's County box | **New** | Remove from the page (value kept) |
+| 76H-6 The Inventory's bond total | New, settled | Match its workbook |
+| 76H-7 Part XI/VII after an override | New, settled | Always print the Part; blank lines when unanswered |
+| 76H-8 The attorney's County box | New, settled | Remove from the page (value kept) |
 | 76I-1 Another form's workbook | Settled | Refuse, naming it (the Annual family as one form) |
 | 76I-2 A B-4 row the workbook can't total | Settled | Excel-only block for started rows |
 | 76I-3 Unreadable amounts and Excel | Settled | Excel-only block for written amounts in use |
-| 76I-4 The apostrophe | **Reopened** | Keep the guard as it is |
-| 76I-5 A workbook that matches no form | **New** | Refuse it |
-| 76I-6 Part XI/VII lines | **New** | Write lines that read back and never show empty dashes |
-| 76I-7 Which Annual workbook guardians fill | **New** | (A question of Clerk practice) |
-| 76J-5 A recipient on a later card | **New** | Any listed recipient answers (D16; reverses D17) |
+| 76I-4 The apostrophe | Re-asked, settled | Keep the guard as it is |
+| 76I-5 A workbook that matches no form | New, settled | Refuse it |
+| 76I-6 Part XI/VII lines | New, settled | Write lines that read back and never show empty dashes |
+| 76I-7 Which Annual workbook guardians fill | New, answered | Both, or not sure (Clerk practice); item 1 can go early |
+| 76J-5 A recipient on a later card | New, settled | Any listed recipient answers (D16; reverses D17) |
 | 76K-1 Key strengthening | Settled | Record it; 600,000; raise the format version |
-| 76K-2 Browser-storage recovery copy | **Reopened** | Retire it with 76A-3 |
-| 76K-3 Ward names in browser storage | **New** | Stop storing; the message channel only |
-| 76K-4 The open-file password prompt | **New** | The same lockout |
-| 76L-1 Initial Plan new year | **Reopened** | Keep the ward's details and the guardianship's facts |
+| 76K-2 Browser-storage recovery copy | Re-asked, settled | Retire it with 76A-3 |
+| 76K-3 Ward names in browser storage | New, settled | Stop storing; the message channel only |
+| 76K-4 The open-file password prompt | New, settled | 5 wrong passwords, then a flat 1-minute lockout (the requester's words); unlock unchanged |
+| 76L-1 Initial Plan new year | Re-asked, settled | Keep the ward's details and the guardianship's facts |
 
 ## Appendix B — Checked and found sound
 
