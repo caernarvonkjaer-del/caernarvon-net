@@ -12,10 +12,12 @@ they change a filed figure or filed wording: 76G-1 (a same-period
 conversion carries the source's own Starting Balance) and 76H-2 (the
 checklists print just the box and the text). See Appendix A.
 
-**Approved to build: 76A, 76B, 76C and 76D** (the requester, 2026-10-19:
-"76A–76D, data loss"), in that order, each with red-first tests; a full
-regression only with the requester's go-ahead. Every other delivery stays
-Draft.
+**On hold for the requester's review** (2026-10-19). Nothing in this
+milestone may be built until the requester says to go ahead, although
+76A–76D were approved earlier the same day ("76A–76D, data loss"), in that
+order, each with red-first tests and a full regression only on the
+requester's go-ahead. Every other delivery stays Draft. Nothing has been
+built.
 
 ## Where these came from
 
