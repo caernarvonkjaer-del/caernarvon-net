@@ -11,7 +11,7 @@ import { handleSwitchWardClick, onWardSelectorFocus, onWardSelectorInput, onWard
 import { toggleTheme } from './core/theme-preference.js';
 import { initializeEmptyData } from './core/filing/filing-registry.js';
 import { confirmModal } from './core/ui/dialogs.js';
-import { handleBackupImportChange, triggerOpenBackupSav } from './core/persistence/case-import.js';
+import { handleBackupImportChange, openAnotherCaseFile, triggerOpenBackupSav } from './core/persistence/case-import.js';
 import { lockApp } from './core/security/app-lock.js';
 // Milestone 70, 70H: this module's document listeners are collected here and
 // added by installShellEvents(), once, from main.js -- not as a side effect of
@@ -36,7 +36,8 @@ function handleShellClick(event) {
     case 'lock': collapseSaveControls?.(); lockApp(); break;
     case 'new-form': collapseWardControls?.(); navigate('/inventory-select'); break;
     case 'next-walkthrough': nextWalkthroughStep(); break;
-    case 'open-backup-sav': collapseSaveControls?.(); triggerOpenBackupSav?.(); break;
+    case 'open-case-file': collapseSaveControls?.(); openAnotherCaseFile(); break;
+    case 'restore-backup-sav': collapseSaveControls?.(); triggerOpenBackupSav?.(); break;
     case 'party-management': toggleHelpPanel(); navigate('/party-management'); break;
     case 'save-backup': collapseSaveControls?.(); saveBackupNow(); break;
     case 'skip-walkthrough': skipWalkthrough(); break;

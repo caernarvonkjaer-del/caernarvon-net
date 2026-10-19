@@ -77,7 +77,7 @@ test.describe('a case file saved in a newer format', () => {
     await context.close();
   });
 
-  test('is refused by Open backup, and never becomes the save file', async ({ browser }) => {
+  test('is refused by Restore from Backup, and never becomes the save file', async ({ browser }) => {
     const writer = await browser.newContext();
     const b64 = await newerFormatFile(await writer.newPage());
     await writer.close();
@@ -92,9 +92,9 @@ test.describe('a case file saved in a newer format', () => {
     await installPicker(page, b64, 'newer-backup.sav');
     const toggle = page.locator('#save-controls-toggle-btn');
     if (await toggle.isVisible() && ((await toggle.textContent()) || '').includes('Show')) await toggle.click();
-    await page.click('[data-shell-action="open-backup-sav"]');
+    await page.click('[data-shell-action="restore-backup-sav"]');
     const box = page.locator(DYN);
-    await expect(box.locator('.modal-box-intro')).toContainText('Could not open backup file: This file was saved by a newer version of Guardian Forms');
+    await expect(box.locator('.modal-box-intro')).toContainText('Could not restore from that backup: This file was saved by a newer version of Guardian Forms');
     await box.locator('[data-dyn-action="ok"]').click();
     await expect(page.locator(DYN)).toHaveCount(0);
     expect(await filingCount(page), 'nothing imported').toBe(1);

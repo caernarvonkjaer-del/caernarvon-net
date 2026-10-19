@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9859,
-  "tests": 2929
+  "expects": 9886,
+  "tests": 2936
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -67,8 +67,8 @@
    "expects": 13
   },
   "tests/e2e/backup-restore-sav.spec.ts": {
-   "tests": 6,
-   "expects": 29
+   "tests": 7,
+   "expects": 35
   },
   "tests/e2e/blank-card-pruning.spec.ts": {
    "tests": 4,
@@ -108,7 +108,7 @@
   },
   "tests/e2e/case-file-protection.spec.ts": {
    "tests": 4,
-   "expects": 11
+   "expects": 13
   },
   "tests/e2e/case-file-roundtrip.spec.ts": {
    "tests": 3,
@@ -1136,7 +1136,7 @@
   },
   "tests/unit/guided-tour-content.spec.js": {
    "tests": 4,
-   "expects": 16
+   "expects": 18
   },
   "tests/unit/help-guide-pdf-orphan.spec.js": {
    "tests": 2,
@@ -1451,8 +1451,8 @@
    "expects": 16
   },
   "tests/unit/save-safety.spec.js": {
-   "tests": 18,
-   "expects": 42
+   "tests": 24,
+   "expects": 59
   },
   "tests/unit/schedule-definitions.spec.js": {
    "tests": 6,

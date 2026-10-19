@@ -741,7 +741,12 @@ export async function exportOutput(
   return clickExport(button, timeout);
 }
 
-export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?: string } = {}): { stop: () => void; messages: string[] } {
+// Milestone 76D: Restore from Backup asks, per filing, which copy to keep
+// (choicesModal()'s radio questions). `choices` answers each question by the
+// first of its values that the question offers -- by default the backup's
+// copy, and adding what only the backup has: what a restore in these specs
+// is for.
+export function autoAcceptDynDialogs(page: Page, { promptValue, choices = ['backup', 'add'] }: { promptValue?: string; choices?: string[] } = {}): { stop: () => void; messages: string[] } {
   let stopped = false;
   const messages: string[] = [];
   const loop = (async () => {
@@ -750,7 +755,16 @@ export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?
       const appeared = await box.waitFor({ timeout: 200 }).then(() => true).catch(() => false);
       if (!appeared || stopped) continue;
       const text = (await box.locator('.modal-box-intro').textContent().catch(() => '')) ?? '';
-      if (await box.locator('input').count() > 0) {
+      if (await box.locator('fieldset[data-dyn-question]').count() > 0) {
+        await box.evaluate((el, wanted) => {
+          for (const set of el.querySelectorAll('fieldset[data-dyn-question]')) {
+            const radios = [...set.querySelectorAll('input[type="radio"]')] as HTMLInputElement[];
+            const pick = radios.find((r) => wanted.includes(r.value)) || radios[0];
+            if (pick) pick.click();
+          }
+        }, choices).catch(() => {});
+        await box.locator('[data-dyn-action="confirm"]').click().catch(() => {});
+      } else if (await box.locator('input').count() > 0) {
         await fillDynPrompt(page, promptValue ?? null).catch(() => {});
       } else {
         await box.locator('[data-dyn-action="confirm"], [data-dyn-action="ok"]').click().catch(() => {});

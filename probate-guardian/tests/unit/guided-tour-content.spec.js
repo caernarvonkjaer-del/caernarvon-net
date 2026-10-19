@@ -10,7 +10,10 @@ describe('guided tour content', () => {
     expect(dashboard).toContain('Starting a new case also asks how to protect the case data');
     expect(dashboard).toContain('local .sav file');
     expect(dashboard).toContain('Save Backup (.sav)');
-    expect(dashboard).toContain('Open Backup (.sav)');
+    // Milestone 76D: Open Backup became Restore from Backup and Open Case File.
+    expect(dashboard).toContain('Restore from Backup (.sav)');
+    expect(dashboard).toContain('Open Case File (.sav)');
+    expect(dashboard).not.toContain('Open Backup');
     expect(dashboard).toContain('Automatic saving depends on the browser');
     for (const label of [
       'Initial Inventory', 'Simplified Annual Accounting', 'Annual Accounting',

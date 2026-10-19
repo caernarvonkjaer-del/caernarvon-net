@@ -141,7 +141,9 @@ test.describe('a case file with a part that cannot be read', () => {
     await context.close();
   });
 
-  test('restored through Open backup: the prompt says what will not be imported, and the file never becomes the save file', async ({ browser }) => {
+  // Milestone 76D: through Restore from Backup, which asks which filings to
+  // bring in (the backup's readable filing is not in this case: offered).
+  test('restored through Restore from Backup: the prompt says what will not be restored, and the file never becomes the save file', async ({ browser }) => {
     const writer = await browser.newContext();
     const writerPage = await writer.newPage();
     const b64 = await damage(writerPage, await writeCaseFile(writerPage));
@@ -159,17 +161,18 @@ test.describe('a case file with a part that cannot be read', () => {
     await installPicker(page, b64, 'damaged-backup.sav');
     const toggle = page.locator('#save-controls-toggle-btn');
     if (await toggle.isVisible() && ((await toggle.textContent()) || '').includes('Show')) await toggle.click();
-    await page.click('[data-shell-action="open-backup-sav"]');
+    await page.click('[data-shell-action="restore-backup-sav"]');
 
     const { message } = await dialogText(page);
-    expect(message).toContain('Part of this file could not be read and will not be imported:');
+    expect(message).toContain('Part of this backup could not be read and will not be restored:');
     expect(message).toContain('• The filing for "Damage Ward Two"');
     expect(message).toContain('• The case records (case numbers and counties)');
-    expect(message).toContain('The file itself will not be changed or saved over.');
+    expect(message).toContain('The backup itself will not be changed or saved over.');
+    await page.locator(`${DYN} input[type="radio"][value="add"]`).check();
     await accept(page);
     // Then the closing notice, once the restore is done.
     await expect(page.locator(DYN)).toHaveCount(0);
-    expect((await dialogText(page)).message).toContain('Backup restored');
+    expect((await dialogText(page)).message).toContain('1 added');
     await accept(page);
     expect(await filings(page)).toEqual(['Existing Filing', 'Damage Ward One']);
     expect(await saveTarget(page), 'the damaged backup is not the file auto-save writes to').toEqual({ target: null, writesToOriginal: 0 });

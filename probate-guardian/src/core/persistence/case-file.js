@@ -441,6 +441,31 @@ export async function beginRecordingExport(message, wardId = null, { log = true 
   };
 }
 
+// Milestone 76D: no file is written with a weaker password than it had. Save
+// As from a case with no password onto a password-protected case file would
+// replace it with one anyone can read; the filer is asked first.
+async function keepsPasswordStrength(handle) {
+  if (getSecurityMode() !== 'none') return true;
+  try {
+    const file = await handle.getFile();
+    if (!file || !file.size) return true;
+    const zip = await getJSZip().loadAsync(file);
+    const entry = zip.file('manifest.json');
+    if (!entry) return true;
+    const manifest = JSON.parse(await entry.async('string'));
+    if (!manifest || !manifest.securityMode || manifest.securityMode === 'none') return true;
+  } catch (e) {
+    return true; // not a case file: nothing protected is replaced
+  }
+  return confirmModal({
+    title: 'Replace a password-protected file?',
+    message: `"${handle.name}" is a password-protected case file, and this case has no password. Saving here replaces it with a file anyone who has it can read.`,
+    confirmLabel: 'Replace it',
+    cancelLabel: 'Choose another file',
+    danger: true,
+  });
+}
+
 export async function exportCaseFileZip() {
   const caseFile = getCaseFile();
   if (!caseFile.wards || caseFile.wards.length === 0) {
@@ -468,7 +493,7 @@ export async function exportCaseFileZip() {
         throw tooLarge;
       }
       const name = suggestedCaseFileName();
-      const picked = await saveBlobAs(blob, name);
+      const picked = await saveBlobAs(blob, name, keepsPasswordStrength);
       if (picked) {
         await rememberCaseFileHandle(picked);
         markCaseOpenedBefore();
@@ -807,9 +832,33 @@ export function writeCaseToHandle(handle, viaTimer) {
   return oneSaveAtATime(() => writeCaseNow(handle, viaTimer));
 }
 
+// Milestone 76D (design 4): when the filer last changed each filing -- a
+// stored field, `lastEdited`, set as a save finds a filing changed since its
+// file last held it (case-merge.js's fingerprints, which leave the stamps
+// out). `lastModified` could not say this: it is restamped on every save of
+// the open filing, changed or not, and on every filing an import brings in.
+// Restore from Backup shows it beside each copy. With nothing known of the
+// file yet, the open filing is stamped when the case has changes.
+async function stampEditedFilings() {
+  const caseFile = getCaseFile();
+  const now = new Date().toISOString();
+  const base = getDiskBase();
+  if (!base || !base.fp) {
+    const active = getActiveWard();
+    if (active && isDirtySinceExport()) active.lastEdited = now;
+    return;
+  }
+  const fp = await fingerprintCase({ wards: caseFile.wards });
+  for (const ward of caseFile.wards || []) {
+    const id = ward && ward.wardId != null ? String(ward.wardId) : '';
+    if (id && fp.wards.get(id) !== base.fp.wards.get(id)) ward.lastEdited = now;
+  }
+}
+
 async function writeCaseNow(handle, viaTimer) {
   if (_savesHeld > 0) return null;
   const generation = dirtyGenerationNow();
+  await stampEditedFilings();
   const merged = await mergeWithFile(handle);
   if (merged && merged.refused) return null;
   const caseFile = getCaseFile();

@@ -755,6 +755,42 @@ needs a reliable date the app doesn't store today.*
 | 8 Legal | None. |
 | 9 Cross-form | Not form-specific. |
 
+### Build record — BUILT 2026-10-19
+
+Approved by name on Revision 2. What a filer now sees in Save Controls: **Open
+Case File (.sav)** and **Restore from Backup (.sav)** in place of Open Backup.
+
+- **Restore from Backup** merges into the open case as the filer chooses. Each
+  filing in both that differs is asked about -- "Keep this case's copy
+  (edited …)" or "Use the backup's copy (edited …)"; filings only the backup
+  has (a filing deleted since, say) are offered, never added unasked; people
+  and case records the case lacks are added, as before; the guardian's name
+  stays (a blank one is filled). The case's file and password never change,
+  so no file is ever rewritten with a weaker password this way. A protected
+  backup restored into a case with no password is said so, in the question,
+  before anything is restored. A case with no filings yet confirms once and
+  takes them all. A file dropped on the window does the same.
+- **Open Case File** saves the open case first; if it can't (no file it can
+  write, or a refused or failed save) it asks before the changes are lost.
+  It then closes the case to the start screen, where the other file is
+  chosen and opens with its own password -- the launch path, already tested,
+  rather than a second copy of it mid-session.
+- **Last-edited dates (design 4):** a stored `lastEdited` on each filing, set
+  as a save finds the filing changed since its file last held it (76A's
+  fingerprints, which leave both stamps out). A filing saved before 76D shows
+  its last save, marked approximate. Data-model row `wards[].lastEdited`.
+- **Save As** from a case with no password onto a password-protected case
+  file asks first ("Replace a password-protected file?").
+- A different-password backup's password is now typed into a hidden box.
+
+Tests: six 76D cases in `save-safety.spec.js` (each red first on the code
+before 76D: replaced, added, remembered or not warned unasked; no
+last-edited date; no Open Case File); `backup-restore-sav` (the two buttons;
+Open Case File asking, then the start screen); `case-file-damaged-open` and
+`case-file-newer-format` through Restore from Backup; `case-file-protection`'s
+Open Backup test reversed (the backup never becomes the case's file); the
+`autoAcceptDynDialogs()` helper answers the new per-filing questions.
+
 ---
 
 ## 76E — A date the filer can always fix

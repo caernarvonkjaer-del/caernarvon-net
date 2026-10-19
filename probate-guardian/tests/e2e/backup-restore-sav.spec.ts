@@ -54,7 +54,9 @@ async function captureDownload(page: import('@playwright/test').Page, trigger: (
 
 test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: '@origin-state' }, () => {
 
-  test('Save Controls has Save Backup and Open Backup buttons with correct attributes', async ({ browser }) => {
+  // Milestone 76D (decision 76D-1): Open Backup became two actions -- Open
+  // Case File (switch cases) and Restore from Backup (merge, filing by filing).
+  test('Save Controls has Save Backup, Open Case File and Restore from Backup buttons with correct attributes', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -69,9 +71,13 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await expect(backupAllBtn).toBeVisible();
       await expect(backupAllBtn).toHaveText(/Save Backup \(\.sav\)/);
 
-      const openBackupBtn = page.locator('button[data-shell-action="open-backup-sav"]');
-      await expect(openBackupBtn).toBeVisible();
-      await expect(openBackupBtn).toHaveText(/Open Backup \(\.sav\)/);
+      await expect(page.locator('button[data-shell-action="open-backup-sav"]')).toHaveCount(0);
+      const openCaseBtn = page.locator('button[data-shell-action="open-case-file"]');
+      await expect(openCaseBtn).toBeVisible();
+      await expect(openCaseBtn).toHaveText(/Open Case File \(\.sav\)/);
+      const restoreBtn = page.locator('button[data-shell-action="restore-backup-sav"]');
+      await expect(restoreBtn).toBeVisible();
+      await expect(restoreBtn).toHaveText(/Restore from Backup \(\.sav\)/);
 
       const backupInput = page.locator('#backup-import-input');
       await expect(backupInput).toHaveAttribute('type', 'file');
@@ -407,5 +413,35 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
     }
   });
 
-});
+  // Milestone 76D (decision 76D-1): Open Case File switches cases. With
+  // unsaved changes it can't write, it asks first ("Go back" keeps the case
+  // open); then it closes the case to the start screen -- nothing remembered,
+  // so the other file is chosen there and opens with its own password.
+  test('Open Case File asks before losing unsaved changes, then closes the case to the start screen', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Switch Away Ward');
+      await page.evaluate(() => (window as any).GuardianForms.testing.save.markDirty());
+      await ensureSaveControlsOpen(page);
+      const openCase = page.locator('button[data-shell-action="open-case-file"]');
+      const box = page.locator('.modal-overlay[id^="dyn-dialog-"].show .modal-box');
 
+      await openCase.click();
+      await expect(box.locator('.modal-box-intro')).toContainText('changes that are not saved to its file');
+      await box.locator('[data-dyn-action="cancel"]').click();
+      await expect(page.locator('#startup-choice-overlay.show')).toHaveCount(0);
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBe(1);
+
+      await ensureSaveControlsOpen(page);
+      await openCase.click();
+      await box.locator('[data-dyn-action="confirm"]').click();
+      await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+    } finally {
+      await context.close();
+    }
+  });
+});

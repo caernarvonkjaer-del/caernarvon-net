@@ -25,9 +25,14 @@ const opened = [];
 vi.mock('../../src/core/navigation/filing-lifecycle.js', () => ({ filingLifecycle: { open: async (w) => { opened.push(w && w.wardId); return true; }, unload: async () => {} } }));
 vi.mock('../../src/core/navigation/router.js', () => ({ handleHash: () => {}, setRouteHash: () => {}, navigate: async () => {}, renderPage: async () => {}, getCurrentPage: () => '/' }));
 const alerts = [];
+// What the dialogs answer, and what they were asked (Milestone 76D).
+const dialog = { choices: null, prompt: null, confirm: true, asked: [] };
 vi.mock('../../src/core/ui/dialogs.js', () => ({
   alertModal: async (m) => { alerts.push(typeof m === 'string' ? m : `${m.title || ''} ${m.message || ''}`); },
-  confirmModal: async () => true, promptModal: async () => null, choicesModal: async () => null, closeAllPopups: () => {}, showModal: () => {},
+  confirmModal: async (m) => { dialog.asked.push(m); return dialog.confirm; },
+  promptModal: async () => dialog.prompt,
+  choicesModal: async (o) => { dialog.asked.push(o); return dialog.choices; },
+  closeAllPopups: () => {}, showModal: () => {},
 }));
 vi.mock('../../src/core/ward-lock.js', () => ({ releaseWardLock: async () => {}, acquireWardLock: async () => true }));
 
@@ -407,5 +412,128 @@ describe('76C: a case is saved only if it can be opened again', () => {
     } finally {
       M.hard.IMPORT_SIZE_LIMITS.sav = limit;
     }
+  });
+});
+
+// Milestone 76D (decision 76D-1, the requester's): Open Backup did two jobs
+// badly. It replaced each filing in both with the backup's copy however much
+// older, unasked; brought back filings the filer had deleted; made the backup
+// the case's file (and so rewrote it with this case's password, or none); and
+// merged a protected backup into a case with no password without a word.
+// Now Restore from Backup asks per filing, with both copies' last-edited
+// dates (a stored field a save sets when a filing changed), offers what only
+// the backup has, never changes the case's file or password, and says when
+// protected filings are going into an unprotected case; Open Case File
+// switches cases. Red first: on the code before 76D each restore case below
+// replaced, added or remembered without asking, and no filing had a
+// last-edited date.
+describe('76D: Restore from Backup and Open Case File', () => {
+  beforeEach(() => { dialog.choices = null; dialog.prompt = null; dialog.confirm = true; dialog.asked.length = 0; });
+
+  /** A backup of the case as it is now, changed by `change`, optionally password-protected. */
+  async function backupOf(change, { password = null } = {}) {
+    const mine = M.state.getCaseFile();
+    const theirs = structuredClone(mine);
+    change(theirs);
+    M.state.replaceCaseFile(theirs);
+    const mode = M.crypto.getSecurityMode();
+    const salt = M.state.getAppState('cryptoSalt');
+    if (password) {
+      const backupSalt = M.crypto.generateSaltB64();
+      M.crypto.setSecurityMode('encrypted');
+      M.crypto.setCryptoKey(await M.crypto.deriveKeyFromPassword(password, backupSalt));
+      M.state.setAppState('cryptoSalt', backupSalt);
+    }
+    const { blob } = await M.cf.buildCaseFileBlob();
+    if (password) {
+      M.crypto.setSecurityMode(mode);
+      M.crypto.clearCryptoKey();
+      M.state.setAppState('cryptoSalt', salt);
+    }
+    M.state.replaceCaseFile(mine);
+    return new File([blob], 'backup.sav');
+  }
+  const question = () => dialog.asked.find((a) => a && a.questions);
+
+  test('a filing in both is replaced only by the filer\'s choice, with both copies\' last-edited dates shown', async () => {
+    plainCase();
+    const { handle } = diskHandle();
+    await opensWith(handle);
+    const backup = await backupOf((c) => { c.wards[0].wardName = 'Jane Roe (older backup)'; c.wards[0].lastEdited = '2026-09-28T16:00:00.000Z'; });
+    M.state.getCaseFile().wards[0].lastEdited = '2026-10-19T16:00:00.000Z';
+    await M.imp.restoreBackupSavFile(backup);
+    expect(names(M.state.getCaseFile().wards).w_1, 'not answered: nothing changes').toBe('Jane Roe');
+    expect(question().questions.map((q) => q.id)).toEqual(['both:w_1']);
+    expect(question().questions[0].options.map((o) => o.label).join(' | '))
+      .toMatch(/Keep this case's copy \(edited 10\/19\/2026.*\| Use the backup's copy \(edited 09\/28\/2026/);
+    dialog.choices = { 'both:w_1': 'keep' };
+    await M.imp.restoreBackupSavFile(backup);
+    expect(names(M.state.getCaseFile().wards).w_1).toBe('Jane Roe');
+    dialog.choices = { 'both:w_1': 'backup' };
+    await M.imp.restoreBackupSavFile(backup);
+    expect(names(M.state.getCaseFile().wards).w_1).toBe('Jane Roe (older backup)');
+  });
+
+  test('a filing only the backup has is offered, not added unasked', async () => {
+    plainCase();
+    const { handle } = diskHandle();
+    await opensWith(handle);
+    const backup = await backupOf((c) => { c.wards.push({ wardId: 'w_3', inventoryType: 'annual', wardName: 'Deleted Since', caseNumber: '24-003-GD' }); });
+    dialog.choices = { 'added:w_3': 'skip' };
+    await M.imp.restoreBackupSavFile(backup);
+    expect(Object.keys(names(M.state.getCaseFile().wards))).toEqual(['w_1', 'w_2']);
+    dialog.choices = { 'added:w_3': 'add' };
+    await M.imp.restoreBackupSavFile(backup);
+    expect(Object.keys(names(M.state.getCaseFile().wards))).toEqual(['w_1', 'w_2', 'w_3']);
+  });
+
+  test('restoring never changes the case\'s file', async () => {
+    plainCase();
+    const { handle } = diskHandle();
+    await opensWith(handle);
+    const other = diskHandle();
+    const backup = await backupOf((c) => { c.wards[1].wardName = 'John Doe (backup)'; });
+    dialog.choices = { 'both:w_2': 'backup' };
+    await M.imp.restoreBackupSavFile(backup, other.handle);
+    expect(M.cf.getCaseFileHandle()).toBe(handle);
+  });
+
+  test('a password-protected backup restored into a case with no password is warned about first', async () => {
+    plainCase();
+    const { handle } = diskHandle();
+    await opensWith(handle);
+    const backup = await backupOf((c) => { c.wards[0].wardName = 'Jane Roe (protected backup)'; }, { password: 'backup-password-76d' });
+    dialog.prompt = 'backup-password-76d';
+    await M.imp.restoreBackupSavFile(backup);
+    const told = dialog.asked.map((a) => (typeof a === 'string' ? a : a && a.message) || '').join(' ');
+    expect(told).toMatch(/password-protected, and this case has no password/);
+  });
+
+  test('a save stamps the last-edited date on a filing it changed, and on no other', async () => {
+    plainCase();
+    const { handle } = diskHandle();
+    await opensWith(handle);
+    M.state.getCaseFile().wards[1].wardName = 'John Doe, edited';
+    M.es.setDirtySinceExport(true);
+    await M.cf.saveData();
+    const [w1, w2] = M.state.getCaseFile().wards;
+    expect(w2.lastEdited).toMatch(/^\d{4}-\d\d-\d\dT/);
+    expect(w1.lastEdited).toBeUndefined();
+  });
+
+  test('Open Case File asks before losing unsaved changes, then closes the case to the start screen', async () => {
+    plainCase();
+    M.cf.setCaseFileHandle(null);
+    M.es.setDirtySinceExport(true);
+    const reload = vi.fn();
+    vi.stubGlobal('location', { reload });
+    dialog.confirm = false;
+    expect(await M.imp.openAnotherCaseFile()).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+    expect(M.es.isDirtySinceExport()).toBe(true);
+    dialog.confirm = true;
+    expect(await M.imp.openAnotherCaseFile()).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(M.es.isDirtySinceExport()).toBe(false);
   });
 });

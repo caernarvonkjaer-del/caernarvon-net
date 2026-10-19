@@ -171,7 +171,13 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
   // directly -- a function no button has called since Milestone 41B
   // consolidated save and backup to two buttons, 4cd5723. The button runs
   // triggerOpenBackupSav().)
-  test('the sidebar\'s Open Backup button arms a writable case-file handle via showOpenFilePicker', async ({ browser }) => {
+  // Milestone 76D (decision 76D-1, the requester's): reversed. Open Backup
+  // made the picked backup the case's file -- reopened at the next launch, and
+  // the next Save Backup rewrote it with this case's password, or none.
+  // Restore from Backup never changes the case's file; Open Case File is how
+  // a filer switches files. Red first: on the code before 76D the case's file
+  // became 'opened-case.sav'.
+  test('the sidebar\'s Restore from Backup button never makes the backup the case\'s file', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -196,11 +202,14 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
 
       const saveToggle = page.locator('#save-controls-toggle-btn');
       if ((await saveToggle.textContent())?.includes('Show')) await saveToggle.click();
-      await page.locator('button[data-shell-action="open-backup-sav"]').click();
-      await acceptDynDialog(page); // "replace the existing ward(s)?"
-      await acceptDynDialog(page); // trailing "Backup restored" alert
+      const before = await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.caseFileName());
+      await page.locator('button[data-shell-action="restore-backup-sav"]').click();
+      // The backup is this case as it is: nothing differs, so nothing to restore.
+      expect(await acceptDynDialog(page)).toContain('is the same as in this case');
 
-      expect(await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.caseFileName())).toBe('opened-case.sav');
+      const after = await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.caseFileName());
+      expect(after).not.toBe('opened-case.sav');
+      expect(after).toBe(before);
     } finally {
       await context.close();
     }

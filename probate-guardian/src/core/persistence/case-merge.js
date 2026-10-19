@@ -22,8 +22,15 @@
 /** The lists merged record by record, and the field that names a record. */
 export const MERGED_LISTS = Object.freeze({ wards: 'wardId', parties: 'id', cases: 'id' });
 
+// The save stamps -- lastModified (every save) and lastEdited (Milestone 76D,
+// set when a filing changed) -- are not part of what a record holds.
 function stableText(value) {
-  return JSON.stringify(value === undefined ? null : value, (k, v) => (k === 'lastModified' ? undefined : v));
+  return JSON.stringify(value === undefined ? null : value, (k, v) => (k === 'lastModified' || k === 'lastEdited' ? undefined : v));
+}
+
+/** A record as compared: its content, without the save stamps (Restore from Backup asks only about filings that differ). */
+export function recordText(record) {
+  return stableText(record);
 }
 
 async function digest(text) {
