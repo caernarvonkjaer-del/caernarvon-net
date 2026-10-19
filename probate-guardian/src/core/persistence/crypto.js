@@ -40,15 +40,26 @@ export function setSecurityMode(mode) {
   securityMode = mode;
 }
 
+// Milestone 76C: base64 of every encrypted part of a case file. It was built
+// one character per byte -- 60 MB of attached statements took 18-38 seconds
+// here alone, on every save (and on every lock with unsaved work), and the
+// string it built piece by piece is the likeliest reason a case near 200 MB
+// could not be saved at all. The browser's own encoder where it has one;
+// otherwise 32 KB at a time. The output is the same.
+const B64_CHUNK = 0x8000;
 export function _b64FromBytes(bytes) {
+  const native = /** @type {any} */ (bytes).toBase64;
+  if (typeof native === 'function') return native.call(bytes);
   let bin = '';
-  bytes.forEach((b) => {
-    bin += String.fromCharCode(b);
-  });
+  for (let i = 0; i < bytes.length; i += B64_CHUNK) {
+    bin += String.fromCharCode.apply(null, /** @type {any} */ (bytes.subarray(i, i + B64_CHUNK)));
+  }
   return btoa(bin);
 }
 
 export function _bytesFromB64(b64) {
+  const fromBase64 = /** @type {any} */ (Uint8Array).fromBase64;
+  if (typeof fromBase64 === 'function') return fromBase64.call(Uint8Array, b64);
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);

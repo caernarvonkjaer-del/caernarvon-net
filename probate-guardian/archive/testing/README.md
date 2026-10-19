@@ -40,6 +40,7 @@ the git root; a copy on C: cannot run git). The commit message says why.
 
 | Path (as it was) | Retired | Why (the commit) | Read it back |
 | --- | --- | --- | --- |
+| `tests/unit/sanitize-keeps-stored-files.spec.js` | 2026-10-19 `ef6b165` | fix(76B): text is kept as typed, and escaped wherever it is shown | `git show ef6b165^:probate-guardian/tests/unit/sanitize-keeps-stored-files.spec.js` |
 | `scripts/ms70-ledger-guard.mjs` | 2026-10-14 `cc66ae4` | test(protocol 2): the three governance guards read the suite as syntax trees and paths; the pre-merge comparison moves to tests/historical;  | `git show cc66ae4^:probate-guardian/scripts/ms70-ledger-guard.mjs` |
 | `tests/unit/ms70-ledger-guard.spec.js` | 2026-10-14 `cc66ae4` | test(protocol 2): the three governance guards read the suite as syntax trees and paths; the pre-merge comparison moves to tests/historical;  | `git show cc66ae4^:probate-guardian/tests/unit/ms70-ledger-guard.spec.js` |
 | `tests/unit/checklist-export-parity.spec.js` | 2026-10-06 `d01edd4` | feat(73F part 2): the sidebar, dashboard and Preview read the export checks | `git show d01edd4^:probate-guardian/tests/unit/checklist-export-parity.spec.js` |

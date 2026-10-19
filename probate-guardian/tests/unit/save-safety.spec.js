@@ -37,7 +37,7 @@ function el(id) {
   if (!els[id]) {
     const classes = new Set();
     els[id] = { id, value: '', textContent: '', innerHTML: '', title: '', style: {}, dataset: {}, disabled: false, focus() {}, click() {}, remove() {},
-      classList: { add: (c) => classes.add(c), remove: (c) => classes.delete(c), contains: (c) => classes.has(c) } };
+      classList: { add: (c) => classes.add(c), remove: (c) => classes.delete(c), contains: (c) => classes.has(c), toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)) } };
   }
   return els[id];
 }
@@ -65,6 +65,7 @@ beforeAll(async () => {
     es: await import('../../src/core/persistence/export-state.js'),
     state: await import('../../src/core/state.js'),
     lock: await import('../../src/core/security/app-lock.js'),
+    hard: await import('../../src/core/security/input-hardening.js'),
   };
   M.state.configureCaseStore({ save: M.cf.autoSave });
 }, 120000);
@@ -330,5 +331,81 @@ describe('case-merge: record by record', () => {
   test('"not the same person" decisions made on both sides are all kept', async () => {
     const r = await merge({ base: { wards: [], pairs: [] }, mine: { wards: [], pairs: [['p1', 'p2']] }, theirs: { wards: [], pairs: [['p3', 'p4']] } });
     expect(r.written.dismissedPartyPairs).toEqual([['p1', 'p2'], ['p3', 'p4']]);
+  });
+});
+
+// Milestone 76C (decision 76C-1): every case this app saves opens again. The
+// open limit is the measured 250 MB (it was an unmeasured 50 MB, under which
+// a case with about 37 MB of statements saved but never opened again), and a
+// case above it is never written. Red first: on the code before 76C a file
+// over 50 MB was refused, and a case over the limit was written anyway.
+describe('76C: a case is saved only if it can be opened again', () => {
+  const STATEMENT = { name: 'bank-statement-march.pdf', dataUrl: 'data:application/pdf;base64,JVBERi0xLjQK', size: 3_200_000 };
+  const withStatement = () => {
+    plainCase();
+    M.state.getCaseFile().wards[1].scheduleDocs = { schA: { '2026-01-01_2026-12-31': { comment: '', files: [STATEMENT] } } };
+  };
+
+  test('a case file over the old 50 MB limit opens', async () => {
+    const zipHead = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+    const big = { size: 120 * 1024 * 1024, slice: () => new Blob([zipHead]) };
+    expect(await M.hard.validateImportFile(big, 'sav')).toEqual({ ok: true });
+  });
+
+  test('a case over the limit is not written: the file stays as it was, the case stays unsaved, and the largest document is named', async () => {
+    withStatement();
+    const { handle, disk } = diskHandle();
+    await opensWith(handle);
+    const before = disk.blob;
+    const limit = M.hard.IMPORT_SIZE_LIMITS.sav;
+    M.hard.IMPORT_SIZE_LIMITS.sav = 1000;
+    try {
+      M.state.getCaseFile().wards[0].wardName = 'Jane Roe (larger now)';
+      M.es.setDirtySinceExport(true);
+      expect(await M.cf.saveData()).toBe(false);
+    } finally {
+      M.hard.IMPORT_SIZE_LIMITS.sav = limit;
+    }
+    expect(disk.blob, 'nothing written').toBe(before);
+    expect(M.es.isDirtySinceExport()).toBe(true);
+    expect(el('case-size-banner').classList.contains('over')).toBe(true);
+    expect(el('case-size-banner-text').textContent).toMatch(/too large to save.*bank-statement-march\.pdf \(3\.1 MB, John Doe\)/);
+  });
+
+  test('Save Backup on a case over the limit says it was not saved', async () => {
+    withStatement();
+    const { handle } = diskHandle();
+    await opensWith(handle);
+    const limit = M.hard.IMPORT_SIZE_LIMITS.sav;
+    M.hard.IMPORT_SIZE_LIMITS.sav = 1000;
+    try {
+      await M.cf.saveBackupNow();
+    } finally {
+      M.hard.IMPORT_SIZE_LIMITS.sav = limit;
+    }
+    expect(alerts.join(' ')).toMatch(/Not saved.*too large to save/);
+  });
+
+  test('a case nearing the limit is warned about once, by banner, and still saved', async () => {
+    withStatement();
+    const { handle, disk } = diskHandle();
+    await opensWith(handle);
+    const size = disk.blob.size;
+    const limit = M.hard.IMPORT_SIZE_LIMITS.sav;
+    M.hard.IMPORT_SIZE_LIMITS.sav = Math.ceil(size * 1.1);
+    try {
+      M.cf.hideCaseSizeBanner();
+      M.es.setDirtySinceExport(true);
+      expect(await M.cf.saveData()).toBe(true);
+      expect(el('case-size-banner').style.display).toBe('block');
+      expect(el('case-size-banner').classList.contains('over')).toBe(false);
+      expect(el('case-size-banner-text').textContent).toMatch(/the most this app can open again/);
+      M.cf.hideCaseSizeBanner();
+      M.es.setDirtySinceExport(true);
+      expect(await M.cf.saveData()).toBe(true);
+      expect(el('case-size-banner').style.display, 'once a session').toBe('none');
+    } finally {
+      M.hard.IMPORT_SIZE_LIMITS.sav = limit;
+    }
   });
 });

@@ -22,6 +22,7 @@ import { auditLog, auditLogLength, loadAuditLogEntries, truncateAuditLog } from 
 // the modules that import it from here.
 export { getLastExportAt, isDirtySinceExport, setDirtySinceExport, setLastExportAt };
 import { migratePlanTriState } from '../filing/plan-tristate.js';
+import { IMPORT_SIZE_LIMITS } from '../security/input-hardening.js';
 import { alertModal, confirmModal, showModal } from '../ui/dialogs.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 import { commitStoredDateDrafts } from '../form/commit-coordinator.js';
@@ -461,6 +462,11 @@ export async function exportCaseFileZip() {
       rollback = await beginRecordingExport(`Exported ${count} form(s) to backup file`);
       const state = caseRecords(getCaseFile());
       const { blob } = await buildCaseFileBlob({ state });
+      if (!caseSizeAllowsWrite(blob)) {
+        const tooLarge = new Error(_lastSizeRefusal);
+        tooLarge.name = 'CaseTooLarge';
+        throw tooLarge;
+      }
       const name = suggestedCaseFileName();
       const picked = await saveBlobAs(blob, name);
       if (picked) {
@@ -485,6 +491,10 @@ export async function exportCaseFileZip() {
   } catch (e) {
     if (rollback) rollback();
     if (e && e.name === 'AbortError') return;
+    if (e && e.name === 'CaseTooLarge') {
+      await alertModal({ title: 'This case is too large to save', message: e.message });
+      return;
+    }
     console.error('export failed', e);
     auditLog('DATA_EXPORT', String((e && e.message) || e), false);
     await alertModal('Export failed: ' + ((e && e.message) || e));
@@ -499,6 +509,78 @@ export async function exportCaseFileZip() {
 // purely on which path happened to trigger the write.
 let _consecutiveSaveFailures = 0;
 const SAVE_FAILURE_THRESHOLD = 2;
+
+// Milestone 76C (decision 76C-1): every case this app saves opens again. The
+// open limit is the size measured to save and reopen in every browser
+// (input-hardening.js's IMPORT_SIZE_LIMITS.sav); a case above it is never
+// written -- the file stays as it was and the filer is told what is largest --
+// and a case nearing it is warned about once a session, by banner (saves run
+// after every edit, so never a dialog). Before 76C a case grown past the open
+// limit saved normally and could never be opened again.
+const CASE_SIZE_WARN_SHARE = 0.8;
+let _caseSizeWarned = false;
+let _lastSizeRefusal = '';
+
+function megabytes(bytes) {
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+
+/** The case's largest supporting documents, biggest first: [{ name, filing, size }]. */
+export function largestAttachments(caseFile = getCaseFile(), count = 3) {
+  const found = [];
+  for (const ward of (caseFile && caseFile.wards) || []) {
+    for (const byPeriod of Object.values((ward && ward.scheduleDocs) || {})) {
+      for (const slot of Object.values(byPeriod || {})) {
+        const files = Array.isArray(slot) ? slot : (slot && Array.isArray(slot.files) ? slot.files : []);
+        for (const f of files) {
+          if (f && f.size > 0) found.push({ name: f.name || '(unnamed)', filing: ward.wardName || '(unnamed)', size: f.size });
+        }
+      }
+    }
+  }
+  return found.sort((a, b) => b.size - a.size).slice(0, count);
+}
+
+function largestNote() {
+  const big = largestAttachments();
+  return big.length ? ` Its largest supporting documents: ${big.map((d) => `${d.name} (${megabytes(d.size)}, ${d.filing})`).join('; ')}.` : '';
+}
+
+function showCaseSizeBanner(message, over) {
+  if (typeof document === 'undefined') return;
+  const el = document.getElementById('case-size-banner');
+  const text = document.getElementById('case-size-banner-text');
+  if (!el || !text) return;
+  text.textContent = message;
+  el.classList.toggle('over', !!over);
+  el.style.display = 'block';
+}
+
+export function hideCaseSizeBanner() {
+  if (typeof document === 'undefined') return;
+  const el = document.getElementById('case-size-banner');
+  if (el) el.style.display = 'none';
+}
+
+function caseSizeAllowsWrite(blob) {
+  const limit = IMPORT_SIZE_LIMITS.sav;
+  if (blob.size > limit) {
+    _lastSizeRefusal = `This case is too large to save: ${megabytes(blob.size)}, more than the ${megabytes(limit)} this app can open again. `
+      + `Nothing was written, so your case file is as it was, and your latest changes are not saved. `
+      + `Remove supporting documents to bring it under ${megabytes(limit)}.${largestNote()}`;
+    showCaseSizeBanner(_lastSizeRefusal, true);
+    return false;
+  }
+  _lastSizeRefusal = '';
+  const banner = typeof document !== 'undefined' ? document.getElementById('case-size-banner') : null;
+  if (banner && banner.classList.contains('over')) hideCaseSizeBanner();
+  if (blob.size >= limit * CASE_SIZE_WARN_SHARE && !_caseSizeWarned) {
+    _caseSizeWarned = true;
+    showCaseSizeBanner(`This case file is ${megabytes(blob.size)}; the most this app can open again is ${megabytes(limit)}, and a larger case will not be saved.`
+      + `${largestNote()} Removing documents you no longer need keeps it well under the limit.`, false);
+  }
+  return true;
+}
 
 // Milestone 76A: one save at a time. Saves started together -- the debounce,
 // a tab being hidden, a lock, an import -- used to run at once and finish in
@@ -741,6 +823,10 @@ async function writeCaseNow(handle, viaTimer) {
   const state = merged ? merged.written : caseRecords(caseFile);
   try {
     const { blob } = await buildCaseFileBlob({ state });
+    if (!caseSizeAllowsWrite(blob)) {
+      rollback();
+      return null;
+    }
     const writable = await handle.createWritable();
     await writable.write(blob);
     await writable.close();
@@ -839,8 +925,8 @@ export async function saveBackupNow() {
     if (handle && handle.requestPermission) {
       const perm = await handle.requestPermission({ mode: 'readwrite' });
       if (perm === 'granted') {
-        await writeCaseToHandle(handle, false);
-        await alertModal('Backup saved.');
+        if ((await writeCaseToHandle(handle, false)) != null) await alertModal('Backup saved.');
+        else await alertModal({ title: 'Not saved', message: _lastSizeRefusal || 'Nothing was saved. Try again in a moment.' });
         return;
       }
     }

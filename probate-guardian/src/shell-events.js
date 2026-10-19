@@ -1,6 +1,6 @@
 import { getActiveWard, getCaseFile } from './core/state.js';
 import { closeMobileSidebar, navigate, toggleMobileSidebar } from './core/navigation/router.js';
-import { hideAutoExportReminder, markDirtySinceExport, saveAutoExportIntervalPref, saveBackupNow, saveData } from './core/persistence/case-file.js';
+import { hideAutoExportReminder, hideCaseSizeBanner, markDirtySinceExport, saveAutoExportIntervalPref, saveBackupNow, saveData } from './core/persistence/case-file.js';
 import { filingLifecycle } from './core/navigation/filing-lifecycle.js';
 import { confirmDeleteWard } from './core/modals/filing-dialogs.js';
 import { toggleHelpPanel } from './core/help/help-panel.js';
@@ -32,6 +32,7 @@ function handleShellClick(event) {
     case 'delete-ward': collapseWardControls?.(); confirmDeleteWard(); break;
     case 'export-help': openUserGuide(); break;
     case 'hide-auto-export-reminder': hideAutoExportReminder(); break;
+    case 'dismiss-case-size': hideCaseSizeBanner(); break;
     case 'lock': collapseSaveControls?.(); lockApp(); break;
     case 'new-form': collapseWardControls?.(); navigate('/inventory-select'); break;
     case 'next-walkthrough': nextWalkthroughStep(); break;

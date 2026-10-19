@@ -623,6 +623,45 @@ Milestone 23 also asks for measurement.*
 | 8 Legal | None. |
 | 9 Cross-form | Not form-specific. |
 
+### Build record — BUILT 2026-10-19
+
+Approved by name on Revision 2. **Measured first, as decided.** A
+password-protected case with one filing's attached statements, saved and
+reopened through the app's own code in each browser on this workstation:
+
+| Statements | File | Chrome save / open | Firefox | WebKit (Windows build) |
+| --- | --- | --- | --- | --- |
+| 120 MB | 162 MB | 22 s / 7 s | 26 s / 5 s | 3.5 / 2.7 min |
+| 200 MB | 283 MB | 38 s / 12 s | 47 s / 10 s | 6.2 / 4.8 min |
+| 280 MB | 384 MB | -- | 68 s / 22 s | 8.4 / 6.6 min |
+| 400 MB | 545 MB | -- | 92 s / 19 s | -- |
+
+Each column's last row is the last step taken; the next stopped in the
+measuring script itself, not in the app. The first measurement found that
+Chrome and Firefox **hung past an hour at a 220 MB file**, and
+profiling a save found why most of its time went: `crypto.js` built every
+encrypted part's base64 one character per byte (18-38 s of each save for 60
+MB of statements, in Node; the whole filing's encryption 33.5 s, now 1.06 s).
+The requester weighed storing each attachment as its own encrypted zip entry
+(a file-format change) against fixing that one function, and chose the fix,
+inside 76C, with no format change, keeping compression (2026-10-19).
+WebKit here is Playwright's Windows build, much slower than Safari on a Mac;
+its figures bound the ceiling, not the timings a Mac filer sees.
+
+**The limit is 250 MB** (it was an unmeasured 50 MB): every size up to 283
+MB saved and reopened in all three, and about 10% is kept back for computers
+with less memory. A case above it is never written -- the file stays as it
+was, the case stays unsaved, and the filer is told, with its three largest
+supporting documents; Save Backup and Save As say so in a dialog. A case past
+200 MB (80%) is warned about once a session by a banner.
+
+Still true, and worth knowing: every save writes the whole case, so a case
+with 200 MB of statements takes 30-50 s to save in Chrome and Firefox.
+
+Tests: `save-safety.spec.js` gains four 76C cases (three red first for the
+stated reasons; the fourth's warning did not exist); `base64-chunks.spec.js`
+(new; red first: 1,048,576 calls for a megabyte).
+
 ---
 
 ## 76D — Open Backup

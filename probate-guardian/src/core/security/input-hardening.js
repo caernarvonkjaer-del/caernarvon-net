@@ -23,7 +23,15 @@
 // matches the content, or that the content is well-formed.
 export const IMPORT_SIZE_LIMITS = {
   xlsx:10*1024*1024,  // court templates run well under 1MB; 10MB is generous headroom
-  sav:50*1024*1024    // a .sav can bundle many wards plus attachments (15MB cap each, see SCHEDULE_DOC_MAX_FILE_BYTES)
+  // Milestone 76C (decision 76C-1): the largest case file this app can save
+  // AND open again, measured 2026-10-19 in Chrome, Firefox and WebKit (a
+  // password-protected case, one filing's attached statements): every size
+  // up to 283 MB saved and reopened in all three (Firefox to 545 MB, WebKit
+  // to 384 MB), with about 10% kept back for computers with less memory than
+  // the one measured. case-file.js refuses to write a case above it, so no
+  // case it saves is one it can't open. It was 50 MB, unmeasured: a case with
+  // about 37 MB of statements saved but could never be opened again.
+  sav:250*1024*1024
 };
 export const ZIP_MAGIC = [0x50,0x4B,0x03,0x04]; // local-file-header signature 'PK\x03\x04' — every .xlsx and .sav is a ZIP container
 

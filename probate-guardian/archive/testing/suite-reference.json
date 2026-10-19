@@ -21,6 +21,14 @@
  },
  "retired": [
   {
+   "path": "tests/unit/sanitize-keeps-stored-files.spec.js",
+   "retiredBy": "ef6b165",
+   "retiredOn": "2026-10-19",
+   "subject": "fix(76B): text is kept as typed, and escaped wherever it is shown",
+   "lastVersion": "ef6b165^:probate-guardian/tests/unit/sanitize-keeps-stored-files.spec.js",
+   "readBack": "git show ef6b165^:probate-guardian/tests/unit/sanitize-keeps-stored-files.spec.js"
+  },
+  {
    "path": "scripts/ms70-ledger-guard.mjs",
    "retiredBy": "cc66ae4",
    "retiredOn": "2026-10-14",
