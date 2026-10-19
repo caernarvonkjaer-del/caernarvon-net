@@ -22,16 +22,13 @@ import {
   newerCaseFileFormatMessage,
   flushPendingSave,
   getJSZip,
-  hideAutoExportReminder,
   rememberCaseFileHandle,
   saveData,
   saveWardToState,
-  setDirtySinceExport,
   updateLastSavedIndicator,
 } from './case-file.js';
 import { decryptJSONWithKey, deriveKeyFromPassword, getCryptoKey, getSecurityMode } from './crypto.js';
 import { loadAppState } from './launch-preferences.js';
-import { clearSessionRestoreCache } from './recovery-cache.js';
 
 export async function importSavArchiveOrWard(file, options = {}) {
   const { handle = null, isBackupFlow = false } = options;
@@ -200,9 +197,10 @@ export async function importSavArchiveOrWard(file, options = {}) {
       : `Imported ${imported.length} form(s) from "${file.name}"`;
     await auditLog('DATA_IMPORT', auditMsg, true);
 
-    setDirtySinceExport(false);
-    await clearSessionRestoreCache();
-    hideAutoExportReminder();
+    // Milestone 76A item 6: saved only if the save above wrote the case (it
+    // marks it saved itself). With no file to write to -- no handle, no
+    // permission, a failed write -- the case stays unsaved: it used to be
+    // marked saved regardless, taking away the leave-page warning.
     updateLastSavedIndicator();
     if (typeof window !== 'undefined') {
       notifyProbateGuardianTabStateChanged();

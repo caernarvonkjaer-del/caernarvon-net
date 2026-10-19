@@ -334,6 +334,52 @@ rule.*
 | 8 Legal | None. |
 | 9 Cross-form | Not form-specific. |
 
+### Build record — BUILT 2026-10-19
+
+Approved by name on Revision 2 (2026-10-19). What a filer now sees:
+
+- **A lock never loses or empties the case.** No save runs while a lock is
+  being undone (`holdSaves()`); a file that can't be read again after the
+  unlock is left as it was, auto-save is detached, and the filer is told to
+  reload the page. Work the file doesn't hold is sealed with the key into the
+  tab's own memory before the key goes, and comes back at the unlock (76A-3);
+  the recovery snapshot in browser storage is no longer read (76K-2 retires
+  it). The filing that was open opens again.
+- **Saves run one at a time**, a save writes only a case with changes, and the
+  case is marked saved only up to the change the save began with. Open Backup
+  and drop-import no longer mark it saved unless their save wrote it.
+- **Two tabs merge filing by filing** (76A-2). A record changed both here and
+  in another tab is asked about ("Changed in another tab too"); until the
+  filer chooses, the file keeps the other tab's copy and this tab its own.
+- Downloads mark the case saved as before (76A-4).
+
+**One mechanism differs from the design above, with the same result.** A
+save compares each record with the copy this tab last read from or wrote to
+the file (a SHA-256 fingerprint of each filing, person and case record, kept
+in memory -- `src/core/persistence/case-merge.js`), not with a stored
+last-edited time, so 76A adds **no stored field and no data-model row**.
+Design 4's last-edited time is still needed for 76D-1's dates and lands with
+76D. Other tabs announce their saves on a broadcast channel (the file name
+only); the file's size and time are checked as well.
+
+**Decided while building (the requester, 2026-10-19):** after an unlock the
+filer returns to the filing they had open, as approved here. Two tests
+(`unlock.spec.ts`, `persistence-recovery.contract.spec.ts`) had been updated
+in Milestone 38C to expect no filing open after an unlock; 38C's rule -- no
+editor opens from a saved file or an import -- is unchanged, and the two
+tests now expect the filing.
+
+Not changed: the snapshot is still written as before (retired by 76K-2,
+not approved yet); the appState preferences are this tab's on a merge;
+Activity Log entries from both tabs are kept.
+
+Tests: `tests/unit/save-safety.spec.js` (14; the ten flow cases red first on
+the code before 76A, each for its stated reason); `lock-and-save-state.contract`
+gains the shared-slot case (red first: the work was gone); the
+`persistence-owners` lock guard reads the whole lock. Targeted browser run of
+the 17 saving, locking, backup and tab specs: 134 cases, all passing after the
+two unlock tests were updated.
+
 ---
 
 ## 76B — Text is kept as typed

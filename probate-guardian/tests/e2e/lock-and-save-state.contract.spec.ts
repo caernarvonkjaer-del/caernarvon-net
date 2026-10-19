@@ -17,7 +17,11 @@ import { gotoApp, startNewCase, chooseEncrypted, freshStartNoPassword, createWar
 //     the recovery snapshot, not from the older file;
 //   - a lock restores only a snapshot this page wrote -- never one an earlier
 //     session left behind;
-//   - no key or password is left on the page or written to the case file.
+//   - no key or password is left on the page or written to the case file;
+//   - (Milestone 76A, decision 76A-3) a lock keeps work that is in no file even
+//     when another tab's save empties the recovery slot every tab shares, and
+//     the filing that was open opens again (seen failing on the code before
+//     76A: the work was gone and no filing was open).
 //
 // A remembered file is a stand-in handle armed through the test adapter (the
 // idiom backup-restore-sav.spec.ts established): Playwright cannot drive the
@@ -165,6 +169,40 @@ test('a lock never restores a recovery snapshot this page did not write', async 
   const after = (await snapshot(page)).caseFile;
   expect(after.wards.map((f: any) => f.wardName)).toEqual([]);
   expect(after.guardianName || '').not.toBe('Someone Else');
+});
+
+test('a lock keeps work in no file when another tab empties the shared recovery slot, and reopens the filing', async ({ page }) => {
+  await gotoApp(page);
+  await startNewCase(page);
+  await chooseEncrypted(page, PW);
+  await createWard(page, 'Sealed Work Filing', 'planAnnual');
+  const filingId = (await snapshot(page)).caseFile.wards[0].wardId;
+  await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), filingId);
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  expect((await snapshot(page)).activeFilingId).toBe(filingId);
+
+  await page.evaluate(() => { void (window as any).GuardianForms.testing.lock(); });
+  await page.locator('#unlock-overlay.show').waitFor({ state: 'visible' });
+  // Another tab of the app saves its own case while this one is locked: a save
+  // empties the one recovery slot every tab of the app shares.
+  await page.evaluate(async () => {
+    const db: IDBDatabase = await new Promise((resolve, reject) => {
+      const req = indexedDB.open('pg-session-cache', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('snapshot');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction('snapshot', 'readwrite');
+      tx.objectStore('snapshot').delete('current');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+    db.close();
+  });
+  await unlockWith(page, PW);
+  await expect.poll(async () => (await snapshot(page)).caseFile.wards.map((f: any) => f.wardName)).toEqual(['Sealed Work Filing']);
+  await expect.poll(async () => (await snapshot(page)).activeFilingId, 'the filing open before the lock').toBe(filingId);
 });
 
 test('no key or password is left on the page or written to the case file', async ({ page }) => {

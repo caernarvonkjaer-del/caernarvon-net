@@ -40,8 +40,13 @@ describe('the key and the security mode: crypto.js, closure memory only', () => 
     expect(unlock).toMatch(/catch\(e\)\{\s*clearCryptoKey\(\);/);
     const create = src.slice(src.indexOf("if(_unlockMode==='create'){"), src.indexOf("}else if(_unlockMode==='unlock'){"));
     expect(create.indexOf('setCryptoKey(key)'), 'held after the verifier is saved').toBeGreaterThan(create.indexOf("saveAppState('cryptoVerifier',verifier)"));
-    const lock = src.slice(src.indexOf('export async function lockApp(){'), src.indexOf('export async function lockApp(){') + 600);
+    const lockAt = src.indexOf('export async function lockApp(){');
+    const lock = src.slice(lockAt, src.indexOf('async function reloadCaseFileAfterUnlock', lockAt));
     expect(lock).toContain('clearCryptoKey();');
+    // Milestone 76A (decision 76A-3): work the file lacks is sealed with the
+    // key first; the key then goes before the password is asked again.
+    expect(lock.indexOf('encryptJSON(getCaseFile())'), 'sealed while the key is held').toBeLessThan(lock.indexOf('clearCryptoKey();'));
+    expect(lock.indexOf('clearCryptoKey();'), 'cleared before the unlock prompt').toBeLessThan(lock.indexOf('await ensureUnlocked();'));
   });
 });
 

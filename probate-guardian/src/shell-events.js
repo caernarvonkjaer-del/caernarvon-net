@@ -1,6 +1,6 @@
 import { getActiveWard, getCaseFile } from './core/state.js';
 import { closeMobileSidebar, navigate, toggleMobileSidebar } from './core/navigation/router.js';
-import { hideAutoExportReminder, saveAutoExportIntervalPref, saveBackupNow, saveData } from './core/persistence/case-file.js';
+import { hideAutoExportReminder, markDirtySinceExport, saveAutoExportIntervalPref, saveBackupNow, saveData } from './core/persistence/case-file.js';
 import { filingLifecycle } from './core/navigation/filing-lifecycle.js';
 import { confirmDeleteWard } from './core/modals/filing-dialogs.js';
 import { toggleHelpPanel } from './core/help/help-panel.js';
@@ -103,6 +103,7 @@ export async function clearAllData(){
   const {wardId,wardName,inventoryType,createdDate}=ward;
   Object.assign(ward,initializeEmptyData(ward.inventoryType));
   Object.assign(ward,{wardId,wardName,inventoryType,createdDate});
+  markDirtySinceExport(); // a change: a save writes only a case with changes (Milestone 76A)
   saveData();
   updateSidebar();
   navigate('/');

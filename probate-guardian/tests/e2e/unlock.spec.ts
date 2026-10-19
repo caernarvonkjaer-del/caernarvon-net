@@ -39,11 +39,10 @@ test.describe('unlock', () => {
     await page.click('#unlock-submit-btn');
     await expect(page.locator('#unlock-overlay')).not.toHaveClass(/show/);
     await expect(page.locator('#sidebar')).toBeVisible();
-    // Milestone 38C: unlocking reloads the case from its .sav but does not
-    // reopen an editor, so focus stays null. Switching explicitly is what
-    // proves the case data survived the lock cycle.
-    await expect(page.locator('#ward-selector')).toHaveValue('');
-    await page.evaluate(() => (() => { const t = (window as any).GuardianForms.testing; return t.activateFiling.open(t.snapshot().caseFile.wards[0].wardId); })());
+    // Milestone 76A (the requester, 2026-10-19): unlocking returns the filer to
+    // the filing they had open -- the case came back whole. Milestone 38C's
+    // rule, no editor opening from a saved file or an import, is unchanged;
+    // until 76A an unlock closed the filing and landed on the choice of forms.
     await expect(page.locator('#ward-selector')).toHaveValue('Test Ward');
   });
 });

@@ -13,8 +13,10 @@ import {
   markCaseOpenedBefore,
 } from './launch-preferences.js';
 import { clearSessionRestoreCache, saveSessionRestoreCache } from './recovery-cache.js';
-import { commitPendingEdits, getActiveWard, getCaseFile, getTemplateCache } from '../state.js';
-import { getAutoExportIntervalMinutes, getLastExportAt, isDirtySinceExport, setAutoExportIntervalMinutes, setDirtySinceExport, setLastExportAt } from './export-state.js';
+import { MERGED_LISTS, caseRecords, fingerprintCase, getDiskBase, mergeCase, setDiskBase } from './case-merge.js';
+import { readCaseFileZip } from './case-zip-read.js';
+import { commitPendingEdits, getActiveWard, getAppState, getCaseFile, getTemplateCache, requestSave } from '../state.js';
+import { dirtyGenerationNow, getAutoExportIntervalMinutes, getLastExportAt, isDirtySinceExport, markSavedIfUnchangedSince, setAutoExportIntervalMinutes, setDirtySinceExport, setLastExportAt } from './export-state.js';
 import { auditLog, auditLogLength, loadAuditLogEntries, truncateAuditLog } from '../activity/audit-log.js';
 // Milestone 70, 70H: the export state is ./export-state.js's; re-exported for
 // the modules that import it from here.
@@ -88,6 +90,14 @@ export async function saveBlobAs(blob, suggestedName, preWriteValidator) {
 
 export async function rememberCaseFileHandle(handle) {
   if (!handle) return;
+  // Milestone 76A: what this tab knows the file holds belongs to one file. A
+  // file just read takes the handle it was read from; any other file starts
+  // with nothing known, so its first save writes this tab's case whole.
+  const base = getDiskBase();
+  if (base && base.handle !== handle) {
+    if (base.handle === null) base.handle = handle;
+    else forgetFileContents();
+  }
   const caseFile = getCaseFile();
   if (handle.name) caseFile.lastSavedFileName = handle.name;
   setCaseFileHandle(handle);
@@ -112,6 +122,7 @@ export async function loadCaseFileHandle() {
 }
 
 export async function forgetCaseFileHandle() {
+  forgetFileContents();
   setCaseFileHandle(null);
   await forgetPersistedCaseFileHandle();
   await refreshAutoSaveArmedStatus();
@@ -238,7 +249,11 @@ export function newerCaseFileFormatMessage(manifest) {
     + 'this version could lose what the newer one saved. Refresh the page (Ctrl+F5) to load the current version, then open the file again.';
 }
 
-export async function buildCaseFileBlob() {
+// `state`: the records to write (case-merge.js's caseRecords()), when a save
+// writes something other than the open case's own -- a merged save keeps the
+// file's copy of a record both tabs changed until the filer chooses (Milestone
+// 76A). The open case's otherwise.
+export async function buildCaseFileBlob({ state = null } = {}) {
   // A save still pending from the debounce would only write this again.
   if (_saveTimer) {
     clearTimeout(_saveTimer);
@@ -250,8 +265,9 @@ export async function buildCaseFileBlob() {
   const zip = new JSZip();
   const wardIndex = [];
   const caseFile = getCaseFile();
+  const records = state || caseRecords(caseFile);
 
-  for (const ward of (caseFile.wards || [])) {
+  for (const ward of records.wards) {
     const file = `wards/${ward.wardId}.enc`;
     zip.file(file, await encryptJSON(ward));
     wardIndex.push(manifestWardEntry(ward, file));
@@ -296,10 +312,10 @@ export async function buildCaseFileBlob() {
   const auditLogEntries = await loadAuditLogEntries();
   zip.file('auditLog.enc', await encryptJSON(auditLogEntries));
   const core = await encryptCaseFileCore({
-    guardianInfo: { guardianName: caseFile.guardianName, guardianEmail: caseFile.guardianEmail },
-    parties: caseFile.parties,
-    cases: caseFile.cases,
-    dismissedPartyPairs: caseFile.dismissedPartyPairs,
+    guardianInfo: { guardianName: records.guardianName, guardianEmail: records.guardianEmail },
+    parties: records.parties,
+    cases: records.cases,
+    dismissedPartyPairs: records.dismissedPartyPairs,
   });
   zip.file('parties.enc', core.parties);
   zip.file('cases.enc', core.cases);
@@ -438,16 +454,25 @@ export async function exportCaseFileZip() {
   const count = caseFile.wards.length;
   let rollback = null;
   try {
-    rollback = await beginRecordingExport(`Exported ${count} form(s) to backup file`);
-    const { blob } = await buildCaseFileBlob();
-    const suggestedName = suggestedCaseFileName();
-    const handle = await saveBlobAs(blob, suggestedName);
-    if (handle) {
-      await rememberCaseFileHandle(handle);
-      markCaseOpenedBefore();
-    }
-    setDirtySinceExport(false);
-    await clearSessionRestoreCache();
+    // Milestone 76A: one save at a time, and saved only up to the change it
+    // wrote. A download (Firefox, Safari) marks the case saved as before
+    // (decision 76A-4).
+    const { handle, suggestedName } = await oneSaveAtATime(async () => {
+      const generation = dirtyGenerationNow();
+      rollback = await beginRecordingExport(`Exported ${count} form(s) to backup file`);
+      const state = caseRecords(getCaseFile());
+      const { blob } = await buildCaseFileBlob({ state });
+      const name = suggestedCaseFileName();
+      const picked = await saveBlobAs(blob, name);
+      if (picked) {
+        await rememberCaseFileHandle(picked);
+        markCaseOpenedBefore();
+        await rememberWritten(picked, state);
+        announceWrite(picked);
+      }
+      if (markSavedIfUnchangedSince(generation)) await clearSessionRestoreCache();
+      return { handle: picked, suggestedName: name };
+    });
     hideAutoExportReminder();
     updateLastSavedIndicator();
     if (typeof window !== 'undefined') {
@@ -476,7 +501,236 @@ export async function exportCaseFileZip() {
 let _consecutiveSaveFailures = 0;
 const SAVE_FAILURE_THRESHOLD = 2;
 
-export async function writeCaseToHandle(handle, viaTimer) {
+// Milestone 76A: one save at a time. Saves started together -- the debounce,
+// a tab being hidden, a lock, an import -- used to run at once and finish in
+// any order, so an older one could land last and be marked saved.
+let _saveQueue = Promise.resolve();
+/**
+ * @template T
+ * @param {() => Promise<T>} run
+ * @returns {Promise<T>}
+ */
+function oneSaveAtATime(run) {
+  const result = _saveQueue.then(run, run);
+  _saveQueue = result.then(() => {}, () => {});
+  return result;
+}
+
+// Milestone 76A (decision 76A-1): no save while a lock is being undone. An
+// unlock records itself (the failed-attempt count) and so asks for a save; it
+// used to land a second later while the lock was still reading the case back
+// into an emptied memory, and a case slow to read -- one with attached
+// statements -- was written over its file EMPTY. app-lock.js holds saves from
+// before it empties memory until the case is back.
+let _savesHeld = 0;
+export function holdSaves() {
+  _savesHeld += 1;
+  let released = false;
+  return () => {
+    if (!released) { released = true; _savesHeld -= 1; }
+  };
+}
+
+// Milestone 76A (decision 76A-2): records both this tab and another changed
+// since this tab last read or wrote the file. Each is written as the file has
+// it, this tab keeps its own, and the filer is asked (src/core/modals/
+// case-conflicts.js, through 'pg:case-conflicts') -- until then, every save
+// keeps the file's copy. `_announced`: the ones already asked about.
+const _pendingConflicts = new Map();
+const _announced = new Set();
+
+function forgetFileContents() {
+  setDiskBase(null);
+  _pendingConflicts.clear();
+  _announced.clear();
+}
+
+/** The records changed both here and in another tab, still unanswered. */
+export function pendingCaseConflicts() {
+  return [..._pendingConflicts.values()];
+}
+
+/**
+ * The filer's answers, by record key: 'mine' keeps this tab's copy (the next
+ * save writes it), 'theirs' takes the file's. null: not answered -- asked
+ * again at the next save.
+ */
+export function resolveCaseConflicts(answers) {
+  if (!answers) {
+    _announced.clear();
+    return;
+  }
+  let answered = false;
+  for (const [key, choice] of Object.entries(answers)) {
+    const conflict = _pendingConflicts.get(key);
+    if (!conflict || (choice !== 'mine' && choice !== 'theirs')) continue;
+    if (choice === 'theirs') useFileCopy(conflict);
+    _pendingConflicts.delete(key);
+    _announced.delete(key);
+    answered = true;
+  }
+  if (answered) requestSave();
+}
+
+function useFileCopy({ list, id, theirs }) {
+  const caseFile = getCaseFile();
+  const idKey = MERGED_LISTS[list];
+  const records = caseFile[list] || (caseFile[list] = []);
+  const at = records.findIndex((r) => r && String(r[idKey]) === id);
+  if (theirs) {
+    if (at >= 0) records[at] = theirs;
+    else records.push(theirs);
+  } else if (at >= 0) {
+    records.splice(at, 1);
+  }
+  announceMerged([{ list, id }]);
+}
+
+function announceMerged(pulled) {
+  if (typeof window === 'undefined' || !pulled.length) return;
+  const activeId = getCaseFile().activeWardId;
+  const active = pulled.find((p) => p.list === 'wards' && p.id === activeId);
+  window.dispatchEvent(new CustomEvent('pg:case-merged', {
+    detail: {
+      pulled: pulled.map(({ list, id }) => ({ list, id })),
+      activeChanged: !!active,
+      activeRemoved: !!active && !getActiveWard(),
+    },
+  }));
+}
+
+// Another tab says it wrote a case file: the next save reads the file again
+// even if its size and time look unchanged (a file system with 2-second
+// times; the same size by chance). Names only the file, never case data.
+const WRITES_CHANNEL = 'probate-guardian-case-writes';
+let _writesChannel = null;
+let _peerWrote = false;
+function writesChannel() {
+  if (_writesChannel !== null) return _writesChannel || null;
+  _writesChannel = false;
+  try {
+    if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel(WRITES_CHANNEL);
+      channel.addEventListener('message', () => { _peerWrote = true; });
+      // Node's channel would keep a unit test's process alive; browsers have no unref.
+      const unref = /** @type {any} */ (channel).unref;
+      if (typeof unref === 'function') unref.call(channel);
+      _writesChannel = channel;
+    }
+  } catch (e) {
+    /* no channel: size and time alone decide */
+  }
+  return _writesChannel || null;
+}
+
+function announceWrite(handle) {
+  try { writesChannel()?.postMessage({ type: 'case-file-written', name: handle && handle.name }); } catch (e) { /* non-critical */ }
+}
+
+// What this tab has just written to `handle`: the next save compares with it.
+async function rememberWritten(handle, state) {
+  let stat = null;
+  try {
+    const f = await handle.getFile();
+    stat = { size: f.size, lastModified: f.lastModified };
+  } catch (e) {
+    /* the next save reads the file instead */
+  }
+  setDiskBase({ handle, fp: await fingerprintCase(state), stat });
+}
+
+// Milestone 76A (decision 76A-2): before writing, see what another tab or
+// window saved since this tab last read or wrote the file, and merge record by
+// record (case-merge.js). Returns the records to write, or null to write this
+// tab's case as it is -- when nothing is known about the file, it is not the
+// same file or case, it has not changed, or it can't be read whole -- or
+// { refused } when a newer version of the app saved it.
+async function mergeWithFile(handle) {
+  const base = getDiskBase();
+  if (!base || base.handle !== handle) return null;
+  const peerWrote = _peerWrote;
+  _peerWrote = false;
+  let file;
+  try {
+    file = await handle.getFile();
+  } catch (e) {
+    return null;
+  }
+  const unchanged = !peerWrote && base.stat && base.stat.size === file.size && base.stat.lastModified === file.lastModified;
+  if (unchanged && !_pendingConflicts.size) return null;
+  let theirs;
+  try {
+    const zip = await getJSZip().loadAsync(file);
+    const manifestEntry = zip.file('manifest.json');
+    if (!manifestEntry) return null;
+    const manifest = JSON.parse(await manifestEntry.async('string'));
+    if (manifest.format !== 'probate-guardian-case') return null;
+    const newerFormat = newerCaseFileFormatMessage(manifest);
+    if (newerFormat) {
+      // Another tab on a newer version saved this file: never save over it.
+      await forgetCaseFileHandle();
+      void alertModal(newerFormat);
+      return { refused: true };
+    }
+    if ((manifest.salt || null) !== (getAppState('cryptoSalt') || null)) return null;
+    theirs = await readCaseFileZip(zip, manifest, getCryptoKey());
+  } catch (e) {
+    console.warn('Could not read the case file before saving; writing this tab\'s case', e);
+    return null;
+  }
+  if (theirs.unreadable.length) return null;
+  const caseFile = getCaseFile();
+  const mine = caseRecords(caseFile);
+  const theirsRecords = caseRecords(theirs.caseFile);
+  const [mineFp, theirsFp] = await Promise.all([fingerprintCase(mine), fingerprintCase(theirsRecords)]);
+  const result = mergeCase({
+    base: base.fp, mine, mineFp, theirs: theirsRecords, theirsFp,
+    pending: new Set(_pendingConflicts.keys()), activeWardId: caseFile.activeWardId,
+  });
+  if (result.pulled.length) {
+    for (const list of Object.keys(MERGED_LISTS)) caseFile[list] = result.next[list];
+  }
+  caseFile.guardianName = result.next.guardianName;
+  caseFile.guardianEmail = result.next.guardianEmail;
+  caseFile.dismissedPartyPairs = result.next.dismissedPartyPairs;
+  await mergeActivityLog(theirs.auditLog);
+  const templates = getTemplateCache();
+  for (const [type, b64] of Object.entries(theirs.templates || {})) {
+    if (!templates[type]) templates[type] = b64;
+  }
+  _pendingConflicts.clear();
+  for (const conflict of result.conflicts) _pendingConflicts.set(conflict.key, conflict);
+  for (const key of [..._announced]) if (!_pendingConflicts.has(key)) _announced.delete(key);
+  const unasked = result.conflicts.filter((c) => !_announced.has(c.key));
+  if (unasked.length && typeof window !== 'undefined') {
+    for (const c of unasked) _announced.add(c.key);
+    window.dispatchEvent(new CustomEvent('pg:case-conflicts', { detail: { conflicts: pendingCaseConflicts() } }));
+  }
+  announceMerged(result.pulled);
+  return { written: result.written };
+}
+
+// The Activity Log keeps both tabs' entries.
+async function mergeActivityLog(theirs) {
+  if (!Array.isArray(theirs) || !theirs.length) return;
+  const entries = await loadAuditLogEntries(); // the live list
+  const keyOf = (e) => e && `${e.timestamp}|${e.eventType}|${e.details}|${e.wardId || ''}`;
+  const known = new Set(entries.map(keyOf));
+  const added = theirs.filter((e) => e && !known.has(keyOf(e)));
+  if (!added.length) return;
+  entries.push(...added);
+  entries.sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
+}
+
+export function writeCaseToHandle(handle, viaTimer) {
+  return oneSaveAtATime(() => writeCaseNow(handle, viaTimer));
+}
+
+async function writeCaseNow(handle, viaTimer) {
+  if (_savesHeld > 0) return null;
+  const generation = dirtyGenerationNow();
+  const merged = await mergeWithFile(handle);
+  if (merged && merged.refused) return null;
   const caseFile = getCaseFile();
   const count = (caseFile.wards || []).length;
   // Milestone 62: automatic saves are not written to the Activity Log. `viaTimer`
@@ -485,8 +739,9 @@ export async function writeCaseToHandle(handle, viaTimer) {
   // bury the entries that matter -- unlocks, manual backups, restores -- and,
   // because the log rides inside every save, grow the file on each one.
   const rollback = await beginRecordingExport(`Saved ${count} form(s) to existing backup file`, null, { log: !viaTimer });
+  const state = merged ? merged.written : caseRecords(caseFile);
   try {
-    const { blob } = await buildCaseFileBlob();
+    const { blob } = await buildCaseFileBlob({ state });
     const writable = await handle.createWritable();
     await writable.write(blob);
     await writable.close();
@@ -498,9 +753,14 @@ export async function writeCaseToHandle(handle, viaTimer) {
   }
   _consecutiveSaveFailures = 0;
   hideSaveError();
-  setDirtySinceExport(false);
-  await clearSessionRestoreCache();
-  hideAutoExportReminder();
+  await rememberWritten(handle, state);
+  announceWrite(handle);
+  // Saved only up to the change this save began with, and not while a record
+  // changed in another tab too still waits for the filer (Milestone 76A).
+  if (!_pendingConflicts.size && markSavedIfUnchangedSince(generation)) {
+    await clearSessionRestoreCache();
+    hideAutoExportReminder();
+  }
   await refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
   if (typeof window !== 'undefined') {
@@ -827,12 +1087,18 @@ export function hideSaveError(){
 // archive toggle, workflow edits) because each ward could have its OWN
 // file; that distinction no longer exists, so there is nothing left to
 // track beyond the single "changed since the last save" flag (export-state.js).
+//
+// Returns whether it wrote the case file.
 export async function saveData(){
   // Nothing should be persisted while the app is locked — there's no
   // encryption key to write with. This isn't a failure (e.g. autoSave()
   // debounced from an edit made right before auto-lock kicked in), so it
   // must not trip the save-error banner the way an actual write problem would.
-  if(getSecurityMode()==='encrypted'&&!getCryptoKey())return;
+  if(getSecurityMode()==='encrypted'&&!getCryptoKey())return false;
+  // Milestone 76A: only a case with changes is written. A tab with nothing
+  // changed wrote its whole copy each time it was hidden, locked or closed --
+  // over whatever another tab had saved since.
+  if(!isDirtySinceExport())return false;
   const activeWard=getActiveWard();
   if(activeWard){
     commitStoredDateDrafts(activeWard,setPath);
@@ -853,18 +1119,19 @@ export async function saveData(){
   // no permission verified, and no write attempted. writeCaseToHandle()
   // records the save once it has actually written one.
   const handle=await loadCaseFileHandle();
-  if(!handle)return;
+  if(!handle)return false;
   try{
     const perm=await handle.queryPermission({mode:'readwrite'});
     if(perm!=='granted'){
       await refreshAutoSaveArmedStatus();
-      return;
+      return false;
     }
     // Failure counting and the error banner live in writeCaseToHandle() so
     // every caller reports a failed write identically.
-    await writeCaseToHandle(handle,true);
+    return (await writeCaseToHandle(handle,true))!=null;
   }catch(e){
     console.error('save failed',e);
+    return false;
   }
 }
 
@@ -872,6 +1139,7 @@ export async function saveData(){
 // Installed once by main.js (Milestone 70, 70I), not when the code loads.
 /** @param {{ signal?: AbortSignal }} [options] */
 export function installSaveListeners({signal}={}){
+  writesChannel(); // hear other tabs' saves from the start (Milestone 76A)
   window.addEventListener('beforeunload',flushPendingSave,{signal});
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden)flushPendingSave();

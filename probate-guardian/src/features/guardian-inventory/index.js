@@ -36,7 +36,7 @@ import { calc } from './totals.js';
 import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
 import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
 import { getD, requestSave } from '../../core/state.js';
-import { saveData } from '../../core/persistence/case-file.js';
+import { markDirtySinceExport, saveData } from '../../core/persistence/case-file.js';
 import { afterChange, bindForms } from './form-binding.js';
 import { defineLivePart, livePartHtml } from '../../core/ui/live-parts.js';
 import { attorneyEntryPaths, isAttorneyStarted } from '../../core/validation/attorney-block.js';
@@ -168,12 +168,14 @@ export async function mount(container, page, { signal } = {}) {
   // tri-state is dropped. Idempotent, so every mount may call it. window.D
   // itself, not this module's D proxy: the migration deletes a key, and the
   // proxy forwards reads and writes but not `in` or `delete`.
-  if (migrateBondDepository(getD())) saveData();
+  // Each migration is a change: a save writes only a case with changes (Milestone 76A).
+  if (migrateBondDepository(getD())) { markDirtySinceExport(); saveData(); }
   // Milestone 72H: once, each detail typed on the old D-5 attorney
   // certificate fills D-2's matching field where that one is blank; the log
   // names the fields, never their values (certificate-migrations.js).
   const certFilled = fillAttorneyFromOldCertificate(getD(), 'guardian');
   if (certFilled) {
+    markDirtySinceExport();
     saveData();
     if (certFilled.length) void auditLog('CERTIFICATE_MIGRATION', `D-2 attorney fields filled from the old D-5 certificate: ${certFilled.join(', ')}`, true);
   }

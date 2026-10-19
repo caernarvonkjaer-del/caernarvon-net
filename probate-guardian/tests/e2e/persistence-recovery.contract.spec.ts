@@ -136,8 +136,8 @@ test.describe('Persistence and recovery contract', () => {
     await page.fill('#unlock-password', password);
     await page.click('#unlock-submit-btn');
     await expect(page.locator('#unlock-overlay')).not.toHaveClass(/show/);
-    await expect(page.locator('#ward-selector')).toHaveValue('');
-    await page.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
+    // Milestone 76A: the filing open before the lock is open again (it was
+    // closed); the work comes back from the copy the lock kept in this tab.
     await expect(page.locator('#ward-selector')).toHaveValue('Encrypted Recovery Ward');
   });
 

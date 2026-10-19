@@ -1,0 +1,334 @@
+// Milestone 76A (approved by name by the requester, 2026-10-19, on Revision 2;
+// decisions 76A-1 to 76A-4): saving never loses a case. Found by the whole-app
+// review of 2026-10-18 and re-verified for Revision 2; each case below is the
+// app's own lock, unlock, save and import code run against a stand-in for the
+// browser's file handle:
+// - an unlock queued an auto-save one second out while the lock was still
+//   rebuilding the case from its file into an emptied memory, so a slow
+//   re-read wrote an EMPTY case over the file (76A-1);
+// - overlapping saves finished in any order, so an older one could land last;
+// - an idle tab wrote its copy whenever it was hidden, and a tab wrote its
+//   whole copy over filings another tab or window had saved since (76A-2: a
+//   tab merges filing by filing, and asks about a filing both changed);
+// - a lock emptied memory and trusted a recovery copy in browser storage that
+//   can be missing (76A-3: the work is kept, encrypted, in the tab itself);
+// - an edit made while a save was writing was marked as saved, and Open Backup
+//   marked the case saved even when nothing was written;
+// - after unlocking, the filer lost the filing they had open; a re-read that
+//   failed left an empty case that the next save wrote over the file.
+import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import JSZip from 'jszip';
+
+vi.mock('../../src/core/navigation/tab-state.js', () => ({ notifyProbateGuardianTabStateChanged: () => {}, getProbateGuardianTabState: () => ({}) }));
+vi.mock('../../src/core/shell/sidebar.js', () => ({ refreshWardInfoCard: () => {}, syncActiveWardNameDisplay: () => {}, syncGuardianNameDisplay: () => {}, updateSidebar: () => {} }));
+const opened = [];
+vi.mock('../../src/core/navigation/filing-lifecycle.js', () => ({ filingLifecycle: { open: async (w) => { opened.push(w && w.wardId); return true; }, unload: async () => {} } }));
+vi.mock('../../src/core/navigation/router.js', () => ({ handleHash: () => {}, setRouteHash: () => {}, navigate: async () => {}, renderPage: async () => {}, getCurrentPage: () => '/' }));
+const alerts = [];
+vi.mock('../../src/core/ui/dialogs.js', () => ({
+  alertModal: async (m) => { alerts.push(typeof m === 'string' ? m : `${m.title || ''} ${m.message || ''}`); },
+  confirmModal: async () => true, promptModal: async () => null, choicesModal: async () => null, closeAllPopups: () => {}, showModal: () => {},
+}));
+vi.mock('../../src/core/ward-lock.js', () => ({ releaseWardLock: async () => {}, acquireWardLock: async () => true }));
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const els = {};
+function el(id) {
+  if (!els[id]) {
+    const classes = new Set();
+    els[id] = { id, value: '', textContent: '', innerHTML: '', title: '', style: {}, dataset: {}, disabled: false, focus() {}, click() {}, remove() {},
+      classList: { add: (c) => classes.add(c), remove: (c) => classes.delete(c), contains: (c) => classes.has(c) } };
+  }
+  return els[id];
+}
+
+const events = [];
+let M;
+beforeAll(async () => {
+  vi.stubGlobal('window', globalThis);
+  vi.stubGlobal('document', {
+    getElementById: el, addEventListener() {}, dispatchEvent() {}, querySelector: () => null, querySelectorAll: () => [],
+    createElement: () => el(`created-${Math.random()}`), body: { appendChild() {} },
+    documentElement: { setAttribute() {}, getAttribute() { return null; } },
+  });
+  const store = {};
+  vi.stubGlobal('localStorage', { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: (k) => { delete store[k]; } });
+  globalThis.FileReader = class { readAsArrayBuffer(b) { Promise.resolve().then(() => b.arrayBuffer()).then((r) => { this.result = r; this.onload({ target: this }); }, (e) => { this.error = e; this.onerror({ target: this }); }); } };
+  globalThis.JSZip = JSZip;
+  globalThis.dispatchEvent = (e) => { events.push(e); return true; };
+  if (!URL.createObjectURL) URL.createObjectURL = () => 'blob:x';
+  if (!URL.revokeObjectURL) URL.revokeObjectURL = () => {};
+  M = {
+    crypto: await import('../../src/core/persistence/crypto.js'),
+    cf: await import('../../src/core/persistence/case-file.js'),
+    imp: await import('../../src/core/persistence/case-import.js'),
+    es: await import('../../src/core/persistence/export-state.js'),
+    state: await import('../../src/core/state.js'),
+    lock: await import('../../src/core/security/app-lock.js'),
+  };
+  M.state.configureCaseStore({ save: M.cf.autoSave });
+}, 120000);
+
+const PW = 'correct horse battery';
+const WARDS = () => [
+  { wardId: 'w_1', inventoryType: 'simplified', wardName: 'Jane Roe', caseNumber: '24-001-GD' },
+  { wardId: 'w_2', inventoryType: 'annual', wardName: 'John Doe', caseNumber: '24-002-GD' },
+];
+const names = (wards) => Object.fromEntries(wards.map((w) => [w.wardId, w.wardName]));
+
+/**
+ * A stand-in for the browser's file handle: one file on "disk", a version
+ * that every write (this tab's or another's) moves on, and Chrome's rule that
+ * a File read after its file changed can't be read. `readDelay` makes a read
+ * as slow as a case with attachments; `closeDelays` slows given writes.
+ */
+function diskHandle({ readDelay = 0 } = {}) {
+  const disk = { blob: null, version: 0, writes: 0, failReads: false, closeDelays: [] };
+  class DiskFile extends File {
+    constructor(parts, version) { super(parts, 'case.sav', { lastModified: 1_700_000_000_000 + version }); this._version = version; }
+    async arrayBuffer() {
+      await sleep(readDelay);
+      if (disk.failReads) throw new DOMException('The drive is not available', 'NotReadableError');
+      if (disk.version !== this._version) throw new DOMException('The file changed after getFile()', 'NotReadableError');
+      return super.arrayBuffer();
+    }
+  }
+  const handle = {
+    name: 'case.sav', kind: 'file',
+    queryPermission: async () => 'granted', requestPermission: async () => 'granted',
+    isSameEntry: async (o) => o === handle,
+    async getFile() { return new DiskFile([disk.blob || new Blob([])], disk.version); },
+    async createWritable() {
+      const chunks = [];
+      const delay = disk.closeDelays.shift() || 0;
+      return { write: async (b) => { chunks.push(b); }, close: async () => { await sleep(delay); disk.blob = new Blob(chunks); disk.version += 1; disk.writes += 1; } };
+    },
+  };
+  const read = async () => {
+    const z = await JSZip.loadAsync(await disk.blob.arrayBuffer());
+    const manifest = JSON.parse(await z.file('manifest.json').async('string'));
+    const wards = [];
+    for (const entry of manifest.wards) wards.push(await M.crypto.decryptJSONWithKey(await z.file(entry.file).async('string'), M.crypto.getCryptoKey()));
+    return wards;
+  };
+  /** Another tab or window saves the case after changing it with `change`. */
+  const saveElsewhere = async (change) => {
+    const mine = M.state.getCaseFile();
+    const theirs = structuredClone(mine);
+    change(theirs);
+    M.state.replaceCaseFile(theirs);
+    const { blob } = await M.cf.buildCaseFileBlob();
+    M.state.replaceCaseFile(mine);
+    disk.blob = blob; disk.version += 1;
+  };
+  return { handle, disk, read, saveElsewhere };
+}
+
+async function encryptedCase() {
+  const salt = M.crypto.generateSaltB64();
+  const key = await M.crypto.deriveKeyFromPassword(PW, salt);
+  M.crypto.setSecurityMode('encrypted');
+  M.crypto.setCryptoKey(key);
+  M.state.setAppState('securityMode', 'encrypted');
+  M.state.setAppState('cryptoSalt', salt);
+  M.state.setAppState('cryptoVerifier', await M.crypto.encryptJSON(M.crypto.CRYPTO_VERIFIER_PLAINTEXT, key, 'encrypted'));
+  M.state.replaceCaseFile({ ...M.state.blankCaseFile(), guardianName: 'G. Guardian', wards: WARDS() });
+}
+
+function plainCase() {
+  M.crypto.setSecurityMode('none');
+  M.crypto.clearCryptoKey();
+  M.state.replaceCaseFile({ ...M.state.blankCaseFile(), wards: WARDS() });
+}
+
+async function lockAndUnlock(beforeUnlock = () => {}) {
+  const done = M.lock.lockApp();
+  while (!el('unlock-overlay').classList.contains('show')) await sleep(5);
+  beforeUnlock();
+  el('unlock-password').value = PW;
+  await M.lock.submitUnlockForm();
+  await done;
+}
+
+async function opensWith(handle) {
+  await M.cf.rememberCaseFileHandle(handle);
+  await M.cf.writeCaseToHandle(handle, false);
+}
+
+beforeEach(() => { alerts.length = 0; events.length = 0; opened.length = 0; el('unlock-overlay').classList.remove('show'); });
+
+describe('76A-1: an unlock never writes an empty case over the file', () => {
+  test('a slow re-read after unlocking: the file still holds every filing, and so does the screen', async () => {
+    await encryptedCase();
+    const { handle, read } = diskHandle({ readDelay: 1300 });
+    await opensWith(handle);
+    await lockAndUnlock();
+    await sleep(2500); // past the auto-save the unlock queues
+    expect((await read()).length, 'the file').toBe(2);
+    expect(M.state.getCaseFile().wards.length, 'the screen').toBe(2);
+  }, 60000);
+
+  test('a re-read that fails leaves the file as it was, detaches auto-save, and says so', async () => {
+    await encryptedCase();
+    const { handle, disk, read } = diskHandle();
+    await opensWith(handle);
+    await lockAndUnlock(() => { disk.failReads = true; });
+    await sleep(1500);
+    disk.failReads = false;
+    expect((await read()).length, 'the file').toBe(2);
+    expect(M.cf.getCaseFileHandle(), 'auto-save is detached').toBe(null);
+    expect(alerts.join(' ')).toMatch(/could not be read again/);
+  }, 60000);
+
+  test('after unlocking, the filer is back in the filing they had open', async () => {
+    await encryptedCase();
+    const { handle } = diskHandle();
+    await opensWith(handle);
+    M.state.getCaseFile().activeWardId = 'w_2';
+    await lockAndUnlock();
+    expect(opened).toEqual(['w_2']);
+  }, 60000);
+});
+
+describe('76A: one save at a time', () => {
+  test('an older save never lands after a newer one', async () => {
+    plainCase();
+    const { handle, disk, read } = diskHandle();
+    await opensWith(handle);
+    disk.closeDelays.push(300); // the first save below is slow to finish
+    M.es.setDirtySinceExport(true);
+    const first = M.cf.saveData();
+    await sleep(50);
+    M.state.getCaseFile().wards[0].wardName = 'Jane Newer';
+    M.es.setDirtySinceExport(true);
+    const second = M.cf.saveData();
+    await Promise.all([first, second]);
+    expect(names(await read()).w_1).toBe('Jane Newer');
+  });
+});
+
+describe('76A-2: two tabs share one case file', () => {
+  test('with nothing changed, a save writes nothing', async () => {
+    plainCase();
+    const { handle, disk } = diskHandle();
+    await opensWith(handle);
+    const writes = disk.writes;
+    await M.cf.saveData();
+    expect(disk.writes).toBe(writes);
+  });
+
+  test('each tab keeps its own filing: the file ends with both tabs\' work', async () => {
+    plainCase();
+    const { handle, read, saveElsewhere } = diskHandle();
+    await opensWith(handle);
+    await saveElsewhere((c) => {
+      c.wards[1].wardName = 'John Doe (other tab)';
+      c.wards.push({ wardId: 'w_3', inventoryType: 'annual', wardName: 'New in the other tab', caseNumber: '24-003-GD' });
+    });
+    M.state.getCaseFile().wards[0].wardName = 'Jane Roe (this tab)';
+    M.es.setDirtySinceExport(true);
+    await M.cf.saveData();
+    const expected = { w_1: 'Jane Roe (this tab)', w_2: 'John Doe (other tab)', w_3: 'New in the other tab' };
+    expect(names(await read()), 'the file').toEqual(expected);
+    expect(names(M.state.getCaseFile().wards), 'this tab').toEqual(expected);
+    expect(M.es.isDirtySinceExport()).toBe(false);
+  });
+
+  test('a filing both tabs changed: the file keeps the other tab\'s until the filer chooses', async () => {
+    plainCase();
+    const { handle, read, saveElsewhere } = diskHandle();
+    await opensWith(handle);
+    await saveElsewhere((c) => { c.wards[0].wardName = 'Jane (other tab)'; });
+    M.state.getCaseFile().wards[0].wardName = 'Jane (this tab)';
+    M.es.setDirtySinceExport(true);
+    await M.cf.saveData();
+    expect(names(await read()).w_1, 'nothing is written over unasked').toBe('Jane (other tab)');
+    expect(names(M.state.getCaseFile().wards).w_1, 'this tab keeps its own').toBe('Jane (this tab)');
+    expect(M.es.isDirtySinceExport(), 'still unsaved').toBe(true);
+    const asked = events.find((e) => e.type === 'pg:case-conflicts');
+    expect(asked && asked.detail.conflicts.map((c) => c.key)).toEqual(['wards:w_1']);
+    // Asked again by the next save, not answered: still the other tab's.
+    await M.cf.saveData();
+    expect(names(await read()).w_1).toBe('Jane (other tab)');
+    M.cf.resolveCaseConflicts({ 'wards:w_1': 'mine' });
+    await M.cf.saveData();
+    expect(names(await read()).w_1, 'the filer kept this tab\'s').toBe('Jane (this tab)');
+  });
+});
+
+describe('76A-3: a lock keeps work that is in no file', () => {
+  test('a case never saved to a file comes back after unlocking, with no browser storage to fall back on', async () => {
+    await encryptedCase();
+    M.cf.setCaseFileHandle(null);
+    M.es.setDirtySinceExport(true);
+    await lockAndUnlock();
+    expect(M.state.getCaseFile().wards.map((w) => w.wardName)).toEqual(['Jane Roe', 'John Doe']);
+  }, 60000);
+});
+
+describe('"saved" only for what was written', () => {
+  test('an edit made while a save is writing keeps the case unsaved', async () => {
+    plainCase();
+    const { handle, disk } = diskHandle();
+    await opensWith(handle);
+    disk.closeDelays.push(100);
+    M.es.setDirtySinceExport(true);
+    const saving = M.cf.writeCaseToHandle(handle, true);
+    await sleep(30);
+    M.es.setDirtySinceExport(true); // the filer types while the save is writing
+    await saving;
+    expect(M.es.isDirtySinceExport()).toBe(true);
+  });
+
+  test('Open Backup with no file to write to leaves the case unsaved', async () => {
+    plainCase();
+    const { handle, disk } = diskHandle();
+    await opensWith(handle);
+    const backup = new File([disk.blob], 'backup.sav');
+    M.cf.setCaseFileHandle(null);
+    M.state.getCaseFile().guardianName = 'An unsaved edit';
+    M.es.setDirtySinceExport(true);
+    await M.imp.restoreBackupSavFile(backup, null);
+    expect(M.es.isDirtySinceExport()).toBe(true);
+  });
+});
+
+describe('case-merge: record by record', () => {
+  const rec = (id, name) => ({ wardId: id, wardName: name });
+  async function merge({ base, mine, theirs, pending, activeWardId }) {
+    const { caseRecords, fingerprintCase, mergeCase } = await import('../../src/core/persistence/case-merge.js');
+    const [b, m, t] = [base, mine, theirs].map((w) => caseRecords({ wards: w.wards, dismissedPartyPairs: w.pairs || [] }));
+    return mergeCase({ base: await fingerprintCase(b), mine: m, mineFp: await fingerprintCase(m), theirs: t, theirsFp: await fingerprintCase(t), pending, activeWardId });
+  }
+  const ids = (list) => list.map((w) => w.wardId);
+
+  test('a filing deleted here and untouched there stays deleted; one deleted there and untouched here goes', async () => {
+    const r = await merge({
+      base: { wards: [rec('a', 'A'), rec('b', 'B')] },
+      mine: { wards: [rec('b', 'B')] },
+      theirs: { wards: [rec('a', 'A')] },
+    });
+    expect(ids(r.next.wards)).toEqual([]);
+    expect(ids(r.written.wards)).toEqual([]);
+    expect(r.conflicts).toEqual([]);
+  });
+
+  test('the filing open here is never closed by a deletion elsewhere: it is asked', async () => {
+    const r = await merge({ base: { wards: [rec('a', 'A')] }, mine: { wards: [rec('a', 'A')] }, theirs: { wards: [] }, activeWardId: 'a' });
+    expect(ids(r.next.wards)).toEqual(['a']);
+    expect(r.conflicts.map((c) => c.key)).toEqual(['wards:a']);
+  });
+
+  test('the same change on both sides is no conflict; a pending one keeps the file\'s copy', async () => {
+    const same = await merge({ base: { wards: [rec('a', 'A')] }, mine: { wards: [rec('a', 'A2')] }, theirs: { wards: [rec('a', 'A2')] } });
+    expect(same.conflicts).toEqual([]);
+    const pending = await merge({ base: { wards: [rec('a', 'T')] }, mine: { wards: [rec('a', 'M')] }, theirs: { wards: [rec('a', 'T')] }, pending: new Set(['wards:a']) });
+    expect(pending.written.wards[0].wardName).toBe('T');
+    expect(pending.next.wards[0].wardName).toBe('M');
+  });
+
+  test('"not the same person" decisions made on both sides are all kept', async () => {
+    const r = await merge({ base: { wards: [], pairs: [] }, mine: { wards: [], pairs: [['p1', 'p2']] }, theirs: { wards: [], pairs: [['p3', 'p4']] } });
+    expect(r.written.dismissedPartyPairs).toEqual([['p1', 'p2'], ['p3', 'p4']]);
+  });
+});

@@ -9,6 +9,11 @@
 // the one the case file saved and loaded (legacy-app.js's). So a filer's
 // choice was never saved, and an opened file's was never used.
 let dirtySinceExport = false;
+// Milestone 76A item 5: counts every change, so a save can tell whether one
+// arrived while it was writing. A save clears the flag only if nothing changed
+// since it began; an edit made during the write used to be marked saved with
+// it, and was lost if the tab closed before its own save ran.
+let dirtyGeneration = 0;
 let lastExportAt = null; // ms epoch of the last successful save to the file, or null if never
 let autoExportIntervalMinutes = 10; // 0 means Off
 
@@ -18,6 +23,21 @@ export function isDirtySinceExport() {
 
 export function setDirtySinceExport(value) {
   dirtySinceExport = value;
+  if (value) dirtyGeneration += 1;
+}
+
+/** Which change the case is at: taken by a save as it begins (Milestone 76A). */
+export function dirtyGenerationNow() {
+  return dirtyGeneration;
+}
+
+/**
+ * A save of the case as it stood at change `generation` has landed: the case
+ * is saved unless something changed since. Returns whether it is now saved.
+ */
+export function markSavedIfUnchangedSince(generation) {
+  if (dirtyGeneration === generation) dirtySinceExport = false;
+  return !dirtySinceExport;
 }
 
 // The single "last successful save" clock: written when a save to the file is

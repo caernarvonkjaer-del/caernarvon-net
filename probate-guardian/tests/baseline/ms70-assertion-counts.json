@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9823,
-  "tests": 2909
+  "expects": 9855,
+  "tests": 2924
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -343,8 +343,8 @@
    "expects": 21
   },
   "tests/e2e/lock-and-save-state.contract.spec.ts": {
-   "tests": 5,
-   "expects": 12
+   "tests": 6,
+   "expects": 15
   },
   "tests/e2e/mixed-version.characterization.spec.ts": {
    "tests": 8,
@@ -448,7 +448,7 @@
   },
   "tests/e2e/persistence-recovery.contract.spec.ts": {
    "tests": 4,
-   "expects": 16
+   "expects": 15
   },
   "tests/e2e/plan-add-co-guardian.spec.ts": {
    "tests": 2,
@@ -732,7 +732,7 @@
   },
   "tests/e2e/unlock.spec.ts": {
    "tests": 1,
-   "expects": 9
+   "expects": 8
   },
   "tests/e2e/user-guide-wiring.spec.ts": {
    "tests": 7,
@@ -1300,7 +1300,7 @@
   },
   "tests/unit/persistence-owners.spec.js": {
    "tests": 5,
-   "expects": 19
+   "expects": 21
   },
   "tests/unit/plan-annual-benefits.spec.js": {
    "tests": 3,
@@ -1445,6 +1445,10 @@
   "tests/unit/sanitize-keeps-stored-files.spec.js": {
    "tests": 6,
    "expects": 19
+  },
+  "tests/unit/save-safety.spec.js": {
+   "tests": 14,
+   "expects": 29
   },
   "tests/unit/schedule-definitions.spec.js": {
    "tests": 6,
@@ -2185,6 +2189,22 @@
    "now": 0,
    "reason": "TEST-REVIEW.md Delivery 2 (T6, 2026-10-14): the pre-merge output comparison moved from tests/e2e to tests/historical, where only playwright.historical.config.ts finds it",
    "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/persistence-recovery.contract.spec.ts",
+   "kind": "expects",
+   "was": 16,
+   "now": 15,
+   "reason": "Milestone 76A (the requester, 2026-10-19): an unlock reopens the filing that was open, so unlock.spec.ts and persistence-recovery.contract.spec.ts no longer assert an empty selector before opening it by hand; each asserts the reopened filing instead",
+   "date": "2026-10-19"
+  },
+  {
+   "file": "tests/e2e/unlock.spec.ts",
+   "kind": "expects",
+   "was": 9,
+   "now": 8,
+   "reason": "Milestone 76A (the requester, 2026-10-19): an unlock reopens the filing that was open, so unlock.spec.ts and persistence-recovery.contract.spec.ts no longer assert an empty selector before opening it by hand; each asserts the reopened filing instead",
+   "date": "2026-10-19"
   }
  ]
 }

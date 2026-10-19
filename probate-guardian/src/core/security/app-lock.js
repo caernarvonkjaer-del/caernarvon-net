@@ -5,16 +5,15 @@
 // memory. Moved from legacy-app.js's ENCRYPTION AT REST.
 import { auditLog } from '../activity/audit-log.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
-import { decryptCaseFileCore, flushPendingSave, forgetCaseFileHandle, loadCaseFileHandle, newerCaseFileFormatMessage, protectPartiallyReadCaseFile } from '../persistence/case-file.js';
+import { flushPendingSave, forgetCaseFileHandle, holdSaves, loadCaseFileHandle, newerCaseFileFormatMessage, protectPartiallyReadCaseFile } from '../persistence/case-file.js';
+import { getDiskBase } from '../persistence/case-merge.js';
 import { isDirtySinceExport } from '../persistence/export-state.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
 import { CRYPTO_VERIFIER_PLAINTEXT, clearCryptoKey, decryptJSONWithKey, deriveAndVerifyKey, deriveKeyFromPassword, encryptJSON, generateSaltB64, getCryptoKey, getSecurityMode, setCryptoKey, setSecurityMode } from '../persistence/crypto.js';
 import { loadAppState, saveAppState } from '../persistence/launch-preferences.js';
-import { readOwnSessionRestoreCache } from '../persistence/recovery-cache.js';
 import { handleHash, setRouteHash } from '../navigation/router.js';
-import { sanitizeObjectData } from './input-hardening.js';
 import { updateSidebar } from '../shell/sidebar.js';
-import { blankCaseFile, getActiveWard, getCaseFile, replaceCaseFile } from '../state.js';
+import { blankCaseFile, getCaseFile, replaceCaseFile, requestSave } from '../state.js';
 import { alertModal, closeAllPopups } from '../ui/dialogs.js';
 import { releaseWardLock } from '../ward-lock.js';
 
@@ -309,13 +308,20 @@ export async function submitUnlockForm(){
 }
 
 // Flushes pending work, clears the key and decrypted case data from memory,
-// then requires the password again. After the unlock the case comes back from
-// the open .sav file when the flush wrote everything to it; otherwise -- no
-// file yet, or changes the file does not have because this browser may only
-// read it -- from the recovery snapshot the flush just wrote (the same
-// password derives the same key). Until Milestone 70's 70I it reloaded the
-// file whenever there was one, losing every edit the file lacked, and the
-// snapshot held only the filings and the guardian.
+// then requires the password again. After the unlock the case comes back:
+// - Work the case file does not hold -- no file yet, Firefox and Safari (which
+//   have none), or changes not yet written -- from a copy this tab sealed with
+//   the key before dropping it (Milestone 76A, decision 76A-3, the
+//   requester's): nothing readable stays in memory while locked, and nothing
+//   leaves the tab. It used to come from a recovery copy in browser storage
+//   that every tab shares, so a full disk, another tab's save, or a download
+//   just before the lock lost the work with no message.
+// - Otherwise from the case file. No save runs until the case is back
+//   (decision 76A-1): the unlock's own save used to land while the file was
+//   still being read, and wrote an empty case over it. A file that can't be
+//   read again is left as it was, auto-save is detached, and the filer is told.
+// The filing that was open is opened again (it used to close, leaving the
+// filer on the choice of forms).
 export async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
   // Milestone 73L: every pop-up closes first, each with its own "no" -- one
@@ -325,78 +331,69 @@ export async function lockApp(){
   await flushPendingSave();
   await releaseWardLock();
   const handleToReload=await loadCaseFileHandle();
-  const fileLacksChanges=isDirtySinceExport();
-  clearCryptoKey();
-  replaceCaseFile(blankCaseFile());
-  document.getElementById('sidebar').style.display='none';
-  document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
-  await ensureUnlocked();
-  const restored=(fileLacksChanges||!handleToReload)?await restoreRecoverySnapshot():false;
-  if(!restored&&handleToReload){
-    // Rebuild memory from the open .sav file now that the key is available.
-    try{
-      const handleFile=await handleToReload.getFile();
-      const zip=await JSZip.loadAsync(handleFile);
-      const manifestEntry=zip.file('manifest.json');
-      if(manifestEntry){
-        const manifest=JSON.parse(await manifestEntry.async('string'));
-        // Another tab on a newer version may have saved this file since it was
-        // opened: do not read it, and never save over it from this tab.
-        const newerFormat=newerCaseFileFormatMessage(manifest);
-        if(newerFormat){
-          await forgetCaseFileHandle();
-          await alertModal(newerFormat);
-        }else{
-          const loaded=await loadCaseFileFromZip(zip,manifest,getCryptoKey());
-          // The file on disk may have been damaged since it was opened.
-          await protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
-        }
-      }
-    }catch(e){console.error('Could not reload case data after unlocking',e);}
+  const returnTo=getCaseFile().activeWardId||null;
+  const sealed=(isDirtySinceExport()||!handleToReload)?await encryptJSON(getCaseFile()):null;
+  const releaseSaves=holdSaves();
+  try{
+    clearCryptoKey();
+    replaceCaseFile(blankCaseFile());
+    document.getElementById('sidebar').style.display='none';
+    document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
+    await ensureUnlocked();
+    if(sealed){
+      replaceCaseFile(await decryptJSONWithKey(sealed,getCryptoKey()));
+    }else if(handleToReload){
+      await reloadCaseFileAfterUnlock(handleToReload);
+    }
+  }finally{
+    releaseSaves();
   }
-  const activeWard=getActiveWard();
-  if(activeWard){
-    const ok = await filingLifecycle.open(activeWard);
+  // The unlock recorded itself, and sealed work may not be in the file yet:
+  // the save held back above runs now.
+  if(isDirtySinceExport())requestSave();
+  const ward=returnTo?getCaseFile().wards.find(w=>w.wardId===returnTo):null;
+  if(ward){
+    const ok = await filingLifecycle.open(ward);
     if (!ok) {
       setRouteHash('/dashboard');
     }
+  }else if(returnTo){
+    setRouteHash('/dashboard');
   }
   updateSidebar();
   handleHash();
 }
 
-// The case as the flush before a lock left it in this page's recovery
-// snapshot: its filings, the guardian and the circuit, and the shared records
-// (a snapshot written before 70I has none of those three, and restores as it
-// always did). Returns whether any filing came back.
-async function restoreRecoverySnapshot(){
+// Rebuild memory from the open .sav file now that the key is available.
+async function reloadCaseFileAfterUnlock(handle){
   try{
-    const cache=await readOwnSessionRestoreCache();
-    if(!cache||!Array.isArray(cache.wards)||!cache.wards.length)return false;
-    const key=getCryptoKey();
-    const restoredWards=[];
-    for(const w of cache.wards){
-      const ward=sanitizeObjectData(await decryptJSONWithKey(w.enc,key));
-      if(ward&&ward.wardId)restoredWards.push(ward);
+    const handleFile=await handle.getFile();
+    const zip=await JSZip.loadAsync(handleFile);
+    const manifestEntry=zip.file('manifest.json');
+    if(!manifestEntry)throw new Error('The case file has no manifest.');
+    const manifest=JSON.parse(await manifestEntry.async('string'));
+    // Another tab on a newer version may have saved this file since it was
+    // opened: do not read it, and never save over it from this tab.
+    const newerFormat=newerCaseFileFormatMessage(manifest);
+    if(newerFormat){
+      await forgetCaseFileHandle();
+      await alertModal(newerFormat);
+      return;
     }
-    if(!restoredWards.length)return false;
-    const g=await decryptJSONWithKey(cache.guardian,key);
-    const shared=await decryptCaseFileCore(cache,key,{source:'from the recovery snapshot'});
-    // Replaces the empty case the lock left, once and whole (Milestone 70, 70J).
-    replaceCaseFile({
-      ...blankCaseFile(),
-      wards:restoredWards,
-      guardianName:(g&&g.guardianName)||'',
-      guardianEmail:(g&&g.guardianEmail)||'',
-      ...(g&&g.selectedCircuit!=null?{selectedCircuit:g.selectedCircuit}:{}),
-      parties:shared.parties,
-      cases:shared.cases,
-      dismissedPartyPairs:shared.dismissedPartyPairs,
-    });
-    return true;
+    const loaded=await loadCaseFileFromZip(zip,manifest,getCryptoKey());
+    // What was read is this file's (case-merge.js): its next save compares with it.
+    const base=getDiskBase();
+    if(base&&base.handle===null)base.handle=handle;
+    // The file on disk may have been damaged since it was opened.
+    await protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
   }catch(e){
-    console.error('Could not reload case data from the recovery cache after unlocking',e);
-    return false;
+    console.error('Could not reload case data after unlocking',e);
+    await forgetCaseFileHandle();
+    await alertModal({
+      title:'Your case could not be reopened',
+      message:'After unlocking, the case file could not be read again, so the case was not reopened. The file has not been changed, '
+        +'and nothing will be saved over it from this tab. Reload this page (press F5) and open the case file again.',
+    });
   }
 }
 

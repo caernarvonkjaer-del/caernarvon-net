@@ -24,6 +24,7 @@ import './pwa-ui.js';
 
 import { configureCaseStore } from './core/state.js';
 import { autoSave, installSaveListeners } from './core/persistence/case-file.js';
+import { installCaseConflictPrompts } from './core/modals/case-conflicts.js';
 import { commitPendingFieldValues } from './core/form/form-contract.js';
 import { installAppLockListeners } from './core/security/app-lock.js';
 import { linkLabelsToInputs } from './core/form/form-runtime.js';
@@ -53,6 +54,9 @@ installGuardianForms();
 // holds off the inactivity lock, then saving before the page goes.
 installAppLockListeners();
 installSaveListeners();
+// Milestone 76A: another tab's saves merged into this one -- asked about where
+// both changed the same record, drawn where they came in.
+installCaseConflictPrompts();
 
 // Milestone 70, 70H: the delegated dispatchers' listeners -- the feedback
 // form, the shell's controls, the dialogs (with the observer that labels each

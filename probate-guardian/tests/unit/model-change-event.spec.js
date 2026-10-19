@@ -153,6 +153,8 @@ const SAVES_THAT_ANNOUNCE_NOTHING = {
   'src/core/pdf/pdf-preview.js': [2, "Preview's annotations: storing them must not undo the override the filer just gave"],
   'src/core/filing/schedule-docs.js': [3, 'a supporting document\'s background check finishing (a status, not a filer\'s change; the upload announced)'],
   'src/core/persistence/launch-preferences.js': [1, 'app preferences, not a filing'],
+  'src/core/persistence/case-file.js': [1, "76A: the filer's answer about a record changed in another tab too (the redraw and the revision follow 'pg:case-merged')"],
+  'src/core/security/app-lock.js': [1, '76A: the save an unlock held back until the case was back'],
   'src/core/persistence/templates.js': [1, 'a saved template, not a filing'],
   'src/core/testing/testing-adapter.js': [3, 'test hooks'],
   'src/features/annual-accounting/index.js': [2, 'repairs on opening the page (the bond answer, the ward status)'],
