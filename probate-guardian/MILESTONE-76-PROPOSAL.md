@@ -2,10 +2,20 @@
 
 ## Status
 
-**Draft. Authorizes no change.** Building any delivery, or any part of one,
-needs the requester's named approval of that delivery (AGENTS.md §3).
-Approving one delivery authorizes only that one. Every decision below is
-open; each lists its options with one recommended.
+**Draft.** Building any delivery, or any part of one, needs the requester's
+named approval of that delivery (AGENTS.md §3). Approving one delivery
+authorizes only that one.
+
+**Every decision is settled** (the requester, 2026-10-19, asked one at a
+time), each as recommended -- including the two accepted by name because
+they change a filed figure or filed wording: 76G-1 (a same-period
+conversion carries the source's own Starting Balance) and 76H-2 (the
+checklists print just the box and the text). See Appendix A.
+
+**Approved to build: 76A, 76B, 76C and 76D** (the requester, 2026-10-19:
+"76A–76D, data loss"), in that order, each with red-first tests; a full
+regression only with the requester's go-ahead. Every other delivery stays
+Draft.
 
 ## Where these came from
 
@@ -137,6 +147,8 @@ marked as saved.
 
 ### Decisions
 
+**Settled 2026-10-19 by the requester: each as recommended.**
+
 **76A-1 — How an unlock reloads the case.**
 1. **(Recommended)** No save runs until the reload has finished; a failed
    reload leaves the file as it was and tells the filer. *What a filer
@@ -226,6 +238,8 @@ and the blur-time erasing stop; annotated PDFs are left as stored.
 
 ### Decisions
 
+**Settled 2026-10-19 by the requester: each as recommended.**
+
 **76B-1 — How text is made safe.**
 1. **(Recommended)** Keep what's typed; escape it wherever it is displayed.
    *What a filer sees:* nothing they type or import is ever changed or erased.
@@ -275,6 +289,8 @@ The app opens any case file it could have saved itself, and tells the filer
 before a case grows too large to handle comfortably.
 
 ### Decisions
+
+**Settled 2026-10-19 by the requester: each as recommended.**
 
 **76C-1 — Large case files.**
 1. **(Recommended)** Raise the open limit well above what the app can save
@@ -336,6 +352,8 @@ each filing in both, the newer copy is kept, and the filer is asked when the
 backup's copy is older.
 
 ### Decisions
+
+**Settled 2026-10-19 by the requester: each as recommended.**
 
 **76D-1 — What Open Backup does.**
 1. **(Recommended)** Merge into the open case, keep the newer copy of each
@@ -491,6 +509,8 @@ supporting documents disappear after its first New Year.
 
 ### Decisions
 
+**Settled 2026-10-19 by the requester: each as recommended.**
+
 **76F-1 — New Year while an earlier year is open.**
 1. **(Recommended)** Always build the new year from the latest year, whichever
    is open. *What a filer sees:* the new year's period and Starting Balance
@@ -594,6 +614,8 @@ nothing the filer didn't answer; its notice says exactly what it carried.
 Detailed in the decisions.
 
 ### Decisions
+
+**Settled 2026-10-19 by the requester: each as recommended.**
 
 **76G-1 — A same-period conversion's Starting Balance.** *A calculation
 change: AGENTS.md §5 requires it be checked against the template, done
@@ -747,6 +769,8 @@ shows those boxes only under Yes). The rest need decisions.
 
 ### Decisions
 
+**Settled 2026-10-19 by the requester: each as recommended.**
+
 **76H-1 — Letters the PDF font lacks.**
 1. **(Recommended)** Embed Latin Extended-A as well (covers Czech, Polish,
    Turkish, Romanian and similar names). *What a filer sees:* those names
@@ -878,6 +902,8 @@ read back; re-import keeps a hidden office address; a C-3 row with an amount
 is kept. The rest need decisions.
 
 ### Decisions
+
+**Settled 2026-10-19 by the requester: each as recommended.**
 
 **76I-1 — Another form's workbook.**
 1. **(Recommended)** Recognise a workbook's form from its sheets, and refuse
@@ -1052,6 +1078,8 @@ runs on every open.
 
 ### Decisions
 
+**Settled 2026-10-19 by the requester: each as recommended.**
+
 **76K-1 — Key strengthening.**
 1. **(Recommended)** Record the setting in each file; new saves use 600,000;
    older files open with the setting they were saved with. *What a filer
@@ -1120,6 +1148,8 @@ list closes the whole dialog and loses what was typed.
 
 ### Decisions
 
+**Settled 2026-10-19 by the requester: each as recommended.**
+
 **76L-1 — The Initial Plan's new year.**
 1. **(Recommended)** Keep the ward's residence and mailing address, inception
    date and Letters date (they describe the ward and the guardianship);
@@ -1144,6 +1174,9 @@ list closes the whole dialog and loses what was typed.
 ---
 
 ## Appendix A — Every decision, with its recommendation
+
+All settled 2026-10-19 by the requester, each as recommended (76G-1 and
+76H-2 accepted by name).
 
 | Decision | Recommended |
 | --- | --- |
