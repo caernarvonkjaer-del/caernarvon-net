@@ -138,13 +138,21 @@ export const CASES = {
   encrypted: { password: TEST_PASSWORD, filings: CASELOAD.slice(0, 2), dismiss: null },
 };
 
-/** That commit's probate-guardian/, extracted once into the temp folder; returns its path. */
+/**
+ * That commit's probate-guardian/, extracted once into the temp folder;
+ * returns its path. The repository is the folder above this one -- or, from a
+ * copy of this folder elsewhere (the regression's NTFS copy on C:, which is
+ * not inside a repository), PG_GIT_ROOT, as tests/unit/archive-catalogue
+ * reads it. Without it a copy could extract nothing, and the two specs that
+ * compare against an older build failed whenever the temp folder had been
+ * cleared (2026-10-19).
+ */
 export function extract(sha) {
   const dir = path.join(os.tmpdir(), 'ms70-sav-corpus', sha);
   const app = path.join(dir, 'probate-guardian');
   if (fs.existsSync(path.join(app, 'index.html'))) return app;
   fs.mkdirSync(dir, { recursive: true });
-  execFileSync('git', ['archive', '--format=tar', '-o', path.join(dir, 'tree.tar'), sha, 'probate-guardian'], { cwd: path.dirname(ROOT), stdio: ['ignore', 'ignore', 'pipe'] });
+  execFileSync('git', ['archive', '--format=tar', '-o', path.join(dir, 'tree.tar'), sha, 'probate-guardian'], { cwd: process.env.PG_GIT_ROOT || path.dirname(ROOT), stdio: ['ignore', 'ignore', 'pipe'] });
   // Relative names: GNU tar reads a drive letter (C:) as a remote host.
   execFileSync('tar', ['-xf', 'tree.tar'], { cwd: dir });
   fs.rmSync(path.join(dir, 'tree.tar'));

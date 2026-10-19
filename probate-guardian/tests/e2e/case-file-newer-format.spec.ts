@@ -50,6 +50,11 @@ const saveTarget = (page: Page) => page.evaluate(async () => {
   const w = window as any;
   const t = w.GuardianForms.testing;
   const target = await t.persistenceState.caseFileName();
+  // Milestone 76A: a save writes only a case with changes, so the case is
+  // changed first -- what this asks is where a save would go, not whether one
+  // is due. (It passed before only when startup happened to mark the case
+  // changed in time.)
+  t.save.markDirty();
   await t.save.saveData();
   return { target, writesToFile: w.__writes };
 });

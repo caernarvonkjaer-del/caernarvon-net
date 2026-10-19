@@ -136,15 +136,18 @@ non-zero, so a later stage never runs against a broken prerequisite.
   reload once other files kept the server busy.
 - **A copy on C: can't run git against this repository**: git refuses a
   repository on a drive that records no file ownership ("dubious
-  ownership"). `mixed-version.characterization.spec.ts` extracts an old build
-  with `git archive` once and then reuses it from the temp folder
-  (`%TEMP%\ms70-sav-corpus\<sha>`), so from a C: copy it fails only when no
-  run on D: has extracted that build yet; run it from D: once in that case.
-  (The final Milestone 72 regression, 2026-10-03, passed it from C: this way.)
+  ownership"). `mixed-version.characterization.spec.ts` and
+  `rollback.contract.spec.ts` extract an old build with `git archive` once
+  and then reuse it from the temp folder (`%TEMP%\ms70-sav-corpus\<sha>`);
   `tests/unit/archive-catalogue.spec.js` reads git history too (TEST-REVIEW.md
-  Delivery 7): from a copy, set `PG_GIT_ROOT` to the repository that holds
-  the tree (`PG_GIT_ROOT=D:\caernarvon-net npm test`), or it fails naming
-  the variable -- the closing regression of 2026-10-15 ran from C: that way.
+  Delivery 7). From a copy, set `PG_GIT_ROOT` to the repository that holds
+  the tree (`PG_GIT_ROOT=D:\caernarvon-net npm test`): the catalogue fails
+  naming the variable without it, and since 2026-10-19 the old-build helper
+  (`scripts/ms70-sav-corpus.mjs`) reads it too -- before, a copy (not inside
+  a repository) could only reuse a build a D: run had extracted, and both
+  specs failed once the temp folder was cleared (the Milestone 76 regression,
+  2026-10-19). Verified from `C:\pg-73m` into an empty temp folder: no
+  extract without the variable, the build extracted with it.
 
 **Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
 Vanilla ES Modules (`src/main.js`, the composition root, with core and
