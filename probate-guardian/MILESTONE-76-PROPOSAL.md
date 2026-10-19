@@ -2,9 +2,11 @@
 
 ## Status
 
-**Draft, Revision 2 (2026-10-19). On hold for the requester's review.
-Authorizes no change.** Every decision is settled (Appendix A). Building any delivery, or any part of one, needs the
-requester's named approval of that delivery (AGENTS.md §3).
+**Draft, Revision 2 (2026-10-19). 76A, 76B, 76C and 76D approved to build
+(the requester, 2026-10-19, on Revision 2: "76A–76D, data loss"), in that
+order; the rest authorizes no change.** Every decision is settled (Appendix
+A). Building any other delivery, or any part of one, needs the requester's
+named approval of that delivery (AGENTS.md §3).
 
 **What Revision 2 is.** Revision 1 (`b44e2cc0`) wrote up the whole-app
 review of 2026-10-18. The requester settled its 23 decisions on 2026-10-19,
@@ -42,8 +44,9 @@ code line this revision cites. Revision 2 records what they found:
   recommended, 76K-4 in the requester's own words, and 76I-7 (a question of
   Clerk practice) answered "both, or not sure".
 - **Approval.** The approval of 76A–76D (2026-10-19) was given against
-  Revision 1. 76A and 76D change substantially here, so that approval is
-  **set aside** until the requester approves again. Nothing has been built.
+  Revision 1. 76A and 76D change substantially here, so that approval was
+  **set aside**; the requester approved 76A–76D again on Revision 2 the
+  same day, after every decision was settled.
 
 ## Where these came from
 
