@@ -372,6 +372,9 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
     // costs a second full page-render pass.
     let bytesToRender = finalizedBytes;
     let fingerprint = null;
+    // Why saved annotations were set aside, said again with "Preview ready."
+    // (which would otherwise replace it in the same status line at once).
+    let discardNotice = '';
     if (options.annotate) {
       const pdfjsLib = await ensurePdfjs();
       // No .destroy() here: PDFDocumentProxy doesn't have one (it lives on
@@ -386,13 +389,28 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
       const freshDoc = await pdfjsLib.getDocument({ data: finalizedBytes.slice() }).promise;
       fingerprint = await computeContentFingerprint(freshDoc);
       const stored = D.printAnnotations;
-      if (stored && stored.contentFingerprint === fingerprint && stored.pdfBytes) {
-        bytesToRender = await decodeAnnotationBytes(stored);
-      } else if (stored) {
+      const discard = (message) => {
         delete D.printAnnotations;
         markDirtySinceExport();
         requestSave();
-        announceStatus('This filing changed since your saved annotations were made, so they were discarded.', { priority: 'assertive', containerId: 'print-preview-status' });
+        discardNotice = message;
+        announceStatus(message, { priority: 'assertive', containerId: 'print-preview-status' });
+      };
+      if (stored && stored.contentFingerprint === fingerprint && stored.pdfBytes) {
+        // Milestone 76B: annotations a case-file open damaged before 76B
+        // (about 1 in 50 had their stored text cut) can't be read back; the
+        // whole Print Preview used to fail every time. They are discarded,
+        // and the preview shows the filing without them.
+        try {
+          const decoded = await decodeAnnotationBytes(stored);
+          await pdfjsLib.getDocument({ data: decoded.slice() }).promise;
+          bytesToRender = decoded;
+        } catch (e) {
+          console.warn('Saved annotations could not be read; discarded', e);
+          discard('Your saved annotations for this filing could not be read, so they were discarded. The preview shows the filing without them.');
+        }
+      } else if (stored) {
+        discard('This filing changed since your saved annotations were made, so they were discarded.');
       }
     }
 
@@ -416,7 +434,7 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
     preview.applyMode(mode, { remember: false });
 
     refreshPreviewPager();
-    announceStatus('Preview ready.', { containerId: 'print-preview-status' });
+    announceStatus(discardNotice ? `Preview ready. ${discardNotice}` : 'Preview ready.', { containerId: 'print-preview-status' });
   } catch (e) {
     destroyAnnotationSession();
     console.error('PDF preview render failed', e);

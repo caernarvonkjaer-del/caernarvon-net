@@ -32,7 +32,7 @@ export async function showPickPartyModal(role,index){
   const sel=document.getElementById('pick-party-existing');
   const matches=(getCaseFile().parties||[]).filter(p=>!p.mergedInto&&p.roles.includes(role));
   sel.innerHTML='<option value="">— Select —</option>'
-    +matches.map(p=>`<option value="${p.id}">${esc(p.name||'(unnamed)')}</option>`).join('');
+    +matches.map(p=>`<option value="${esc(p.id)}">${esc(p.name||'(unnamed)')}</option>`).join('');
   showModal('pickPartyModal');
 }
 
@@ -109,7 +109,7 @@ export async function showPickCaseModal(wardId){
       // Milestone 73P (D22): each name once -- a ward with three filings was listed three times.
       const refs=[...new Set(getCaseFile().wards.filter(w=>w.caseId===c.id).map(w=>w.wardName||'(unnamed)'))];
       const label=[c.caseNumber||'(no case number)',c.county,refs.length?`— ${refs.join(', ')}`:''].filter(Boolean).join(' ');
-      return `<option value="${c.id}">${esc(label)}</option>`;
+      return `<option value="${esc(c.id)}">${esc(label)}</option>`;
     }).join('');
   showModal('pickCaseModal');
 }

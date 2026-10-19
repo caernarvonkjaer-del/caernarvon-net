@@ -395,13 +395,13 @@ describe('the import adapter (workbook-contract/index.js)', () => {
     expect(index.workbookTypeOf(undefined, 'guardian')).toBe('guardian');
   });
 
-  test("a draft goes through the import's text passes: a name formatted as typing formats it, its quotation marks kept (73T rows 11 and 19); < > and backticks removed", async () => {
+  test("a draft goes through the import's text passes: a name formatted as typing formats it, its quotation marks kept (73T rows 11 and 19); < > and backticks kept too (76B-1)", async () => {
     const wb = await templateWorkbook('simplified');
     wb.getWorksheet('PARTS I, II ').getCell('C4').value = 'jane "jj" doe';
     wb.getWorksheet('PARTS I, II ').getCell('D17').value = 'plenary <b>`x`</b>';
     const draft = index.draftFromWorkbook(wb, 'simplified');
     expect(draft.wardName).toBe('Jane "jj" Doe');
-    expect(draft.typeOfGuardianship, 'not a name field: as typed, filtered').toBe('plenary bx/b');
+    expect(draft.typeOfGuardianship, 'not a name field: as typed').toBe('plenary <b>`x`</b>');
   });
 });
 
@@ -457,13 +457,13 @@ describe("the Inventory's 73T rows, fixed in part 2", () => {
     expect(result.guardians[0].isPreparer).toBe(true);
   });
 
-  test("row 11: a quotation mark survives the import, as typing keeps it (decision 73T-3); < > and backticks still don't", () => {
+  test('row 11: imported text comes back as typed in the workbook, < > and backticks too (decision 76B-1 reversed 73T-3\'s stripping)', () => {
     // Milestone 74E: a description comes back as typed, not title-cased.
     expect(read(wrote).draft.scheduleB2[0].description).toBe('30" Flat screen TV');
-    back.getWorksheet('B-2 PER PROP pg 1').getCell('C33').value = '<b>`30" TV`</b>';
-    const stripped = read(wrote).draft.scheduleB2[0].description;
-    expect(stripped).not.toMatch(/[<>`]/);
-    expect(stripped).toContain('30" TV');
+    // Milestone 76B: kept whole, and escaped wherever it is shown
+    // (tests/e2e/escaped-text.spec.ts). Red first: 73T-3's import removed < > `.
+    back.getWorksheet('B-2 PER PROP pg 1').getCell('C33').value = '<b>`30" TV`</b> Donation=500';
+    expect(read(wrote).draft.scheduleB2[0].description).toBe('<b>`30" TV`</b> Donation=500');
     back.getWorksheet('B-2 PER PROP pg 1').getCell('C33').value = '30" Flat screen TV';
   });
 

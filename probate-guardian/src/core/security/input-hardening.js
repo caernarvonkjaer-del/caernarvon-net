@@ -1,88 +1,19 @@
-// Input and imported-file hardening: the free-text injection checks the
-// Annual family's fields run on blur, and the gate every Excel and .sav import
-// passes before a parser sees the file. Moved from src/legacy-app.js by
-// Milestone 70's 70B, comments and all.
+// Imported-file hardening: the gate every Excel and .sav import passes
+// before a parser sees the file. Moved from src/legacy-app.js by Milestone
+// 70's 70B, comments and all.
 
-// ── SECURITY VALIDATION ──────────────────────────────
-// A SQL-injection keyword/pattern detector used to sit here (bare
-// \bupdate\b/\bdelete\b/\binsert\b/\bdrop\b/\bexec\b/-- matches) and ran on
-// every plain free-text field in Annual/Final/Trust Accounting on blur
-// (validateSecurityInput() below). This app has no SQL backend anywhere --
-// nothing it ever produces is a database query built from user input -- so
-// the check protected against a vector that doesn't exist here, while
-// blanking real filer text on a false-positive keyword match: a Schedule C
-// description reading "Update to appraisal value" or "Sale of lot -- see
-// attached" was silently wiped to empty on blur, with only a console.warn
-// no filer would ever see. Removed rather than narrowed: there is no SQL
-// query context downstream for any narrower pattern to legitimately guard.
-// detectXSSPayload() and detectPathTraversal() stay -- both match tag/URI
-// syntax unlikely to appear in ordinary legal narrative, not bare English
-// words, so they carry a much lower false-positive cost for whatever benefit
-// they still provide.
-
-
-// Detect and block XSS/HTML injection
-export function detectXSSPayload(s){
-  const xssPatterns=[/<script[^>]*>|javascript:|on\w+\s*=|<iframe|<object|<embed|<img[^>]+onerror|<svg[^>]+on|<body[^>]+on|eval\(|expression\(|vbscript:/i];
-  return xssPatterns.some(p=>p.test(String(s||'')));
-}
-
-// Detect and block path traversal attempts
-export function detectPathTraversal(s){
-  const pathPatterns=[/\.\.\//,/\.\.\\/,/^\/etc\//,/\/etc\//i,/^[a-z]:\\/i];
-  return pathPatterns.some(p=>p.test(String(s||'')));
-}
-
-// A drawn signature stamp or an attached supporting PDF, as stored: exactly
-// "data:<type>/<subtype>;base64," then base64. It can hold none of the
-// characters sanitizeInput() removes (<, >, ", `, or the colon of
-// "javascript:"), but its /on\w+=/ strip matched the end of about 1 in 50 of
-// them ("...onXk=") and cut it off, so the next save kept a stamp that no
-// longer decodes or a PDF that can no longer be read (found 2026-10-04;
-// tests/unit/sanitize-keeps-stored-files.spec.js). Left exactly as stored.
-const BASE64_DATA_URL=/^data:[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/]*={0,2}$/i;
-
-// Sanitize input: remove dangerous characters but preserve legitimate data
-// Milestone 40H-G: dropped the straight apostrophe from the stripped set --
-// it turned "ward's" into "wards" in ordinary narrative text. Only the
-// actual HTML/script-injection vectors stay stripped (<, >, ", and `);
-// detectXSSPayload() above matches on tag syntax, not quote characters, so
-// narrowing this doesn't reopen it.
-export function sanitizeInput(s){
-  if(!s)return s;
-  if(typeof s==='string'&&s.startsWith('data:')&&BASE64_DATA_URL.test(s))return s;
-  let cleaned=String(s);
-  cleaned=cleaned.replace(/[<>"`]/g,'');
-  cleaned=cleaned.replace(/javascript:/gi,'');
-  cleaned=cleaned.replace(/on\w+=/gi,'');
-  return cleaned;
-}
-
-// Milestone 73T part 2 (decision 73T-3): text read from an imported workbook
-// keeps the quotation mark typing keeps -- the Clerk's own example is
-// `30" Flat screen TV` -- and loses what sanitizeInput() removes otherwise
-// (< > and backticks, script URLs, inline handlers). Used by the workbook
-// contract's import (src/core/excel/workbook-contract/index.js) for each form
-// as it moves onto it.
-export function sanitizeImportedText(s){
-  if(!s)return s;
-  if(typeof s==='string'&&s.startsWith('data:')&&BASE64_DATA_URL.test(s))return s;
-  let cleaned=String(s);
-  cleaned=cleaned.replace(/[<>`]/g,'');
-  cleaned=cleaned.replace(/javascript:/gi,'');
-  cleaned=cleaned.replace(/on\w+=/gi,'');
-  return cleaned;
-}
-
-// Validate field value for security and format
-export function validateSecurityInput(fieldName,value){
-  const v=String(value||'');
-  if(detectXSSPayload(v)||detectPathTraversal(v)){
-    console.warn(`Security: Blocked dangerous input in ${fieldName}`);
-    return '';
-  }
-  return sanitizeInput(v);
-}
+// ── TEXT IS KEPT AS TYPED (Milestone 76B) ────────
+// Text is no longer changed to make it safe; it is escaped wherever it is
+// shown (decision 76B-1, the requester's, 2026-10-19). Until 76B this module
+// stripped it: every Annual, Final and Trust Accounting box emptied itself on
+// blur when its text matched a script pattern ("Pension (monthly = $1,200)",
+// "See ../2024 statement") and lost every quote mark otherwise; every filing's
+// text lost " < > ` and words were cut ("Donation=500 to church" opened as
+// "D500 to church") each time a case opened; and imported workbooks lost
+// < > ` (Milestone 73T-3, reversed by 76B-1). The stripping came in with a
+// real stored-script hole (32711165) and never covered the shared people
+// and case records -- a crafted file could put markup on the page anyway.
+// tests/e2e/escaped-text.spec.ts holds every page to drawing text as text.
 
 // ── IMPORTED FILE HARDENING ──────────────────────────
 // Every import entry point (the three Excel importers, their drag-and-drop
@@ -157,47 +88,4 @@ export function assertWorkbookWithinLimits(workbook){
       throw new Error(`Sheet "${ws.name}" has ${n} rows — far more than a Clerk of Court template ever has. It was not imported.`);
     }
   }
-}
-
-// Recursively sanitize all string fields in an object (for loaded data)
-export function sanitizeObjectData(obj){
-  if(!obj||typeof obj!=='object')return obj;
-  if(Array.isArray(obj))return obj.map(sanitizeObjectData);
-  const sanitized={};
-  for(const key in obj){
-    const val=obj[key];
-    if(typeof val==='string'){
-      sanitized[key]=sanitizeInput(val);
-    }else if(typeof val==='object'){
-      sanitized[key]=sanitizeObjectData(val);
-    }else{
-      sanitized[key]=val;
-    }
-  }
-  return sanitized;
-}
-
-// In-place counterpart to sanitizeObjectData, for a caller holding a live
-// reference that must keep its identity — window.D during an Excel import
-// is literally the object sitting in caseFile.wards, and sanitizeObjectData
-// returning a NEW object would silently detach window.D from that array
-// entry, so the next saveData() would persist the OLD, un-sanitized ward.
-// importExcelFile builds a fresh object and can use sanitizeObjectData
-// before ever touching window.D; the extracted Simplified and Annual importers
-// write straight onto window.D field-by-field, so this mutates it afterward.
-export function sanitizeObjectDataInPlace(obj){
-  if(!obj||typeof obj!=='object')return obj;
-  if(Array.isArray(obj)){
-    for(let i=0;i<obj.length;i++){
-      if(typeof obj[i]==='string')obj[i]=sanitizeInput(obj[i]);
-      else if(obj[i]&&typeof obj[i]==='object')sanitizeObjectDataInPlace(obj[i]);
-    }
-    return obj;
-  }
-  for(const key of Object.keys(obj)){
-    const val=obj[key];
-    if(typeof val==='string')obj[key]=sanitizeInput(val);
-    else if(val&&typeof val==='object')sanitizeObjectDataInPlace(val);
-  }
-  return obj;
 }

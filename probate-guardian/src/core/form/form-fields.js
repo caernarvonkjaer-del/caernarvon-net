@@ -114,14 +114,6 @@ export function renderFormField({
   // selector already tries data-bind as a fallback, so jump-to-field
   // navigation is unaffected.
   claimSharedWriteListener = true,
-  // Annual Accounting only (its inpD() passes it): stamps
-  // data-field-sanitize="security" on a plain free-text field so
-  // finalizeFieldValue() runs validateSecurityInput()
-  // (src/core/security/input-hardening.js) on blur -- what that family's own retired focusout handler did with the
-  // data-annual-format="security" this renderer stamps on every plain text
-  // field of every filing type. An opt-in rather than keyed off that format
-  // attribute, so the other eight filing types keep never running it.
-  securitySanitize = false,
   // Milestone 71C/71E: store '' for an empty box instead of money's 0, so an
   // unanswered field and an entered 0 stay distinguishable. Stamps
   // data-field-blank="keep", which finalizeFieldValue() reads. Percent fields
@@ -245,11 +237,10 @@ export function renderFormField({
     ? ` data-bind="${esc(path)}"`
     : ` data-form-path="${esc(path)}" data-annual-path="${esc(path)}"`;
   const inputTypeAttr = bindInputType ? ` data-input-type="${esc(bindInputType)}"` : '';
-  const sanitizeAttr = (securitySanitize && format === 'security') ? ' data-field-sanitize="security"' : '';
   const blankAttr = (keepBlank || isPercentKind) ? ' data-field-blank="keep"' : '';
 
   const fieldPathAttr = claimSharedWriteListener ? ` data-field-path="${esc(path)}"` : '';
-  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label || dataLabel)}" data-annual-label="${esc(label || dataLabel)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${sanitizeAttr}${blankAttr}${ariaDesc}>`;
+  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label || dataLabel)}" data-annual-label="${esc(label || dataLabel)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${blankAttr}${ariaDesc}>`;
 
   const lockIcon = ic('lock', 14);
 

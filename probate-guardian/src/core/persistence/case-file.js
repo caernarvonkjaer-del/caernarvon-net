@@ -23,7 +23,6 @@ import { auditLog, auditLogLength, loadAuditLogEntries, truncateAuditLog } from 
 export { getLastExportAt, isDirtySinceExport, setDirtySinceExport, setLastExportAt };
 import { migratePlanTriState } from '../filing/plan-tristate.js';
 import { alertModal, confirmModal, showModal } from '../ui/dialogs.js';
-import { sanitizeObjectData } from '../security/input-hardening.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 import { commitStoredDateDrafts } from '../form/commit-coordinator.js';
 import { setPath } from '../form/paths.js';
@@ -948,7 +947,8 @@ export function setupFallbackSaveReminder() {
 // importSavArchiveOrWard() below. Deliberately has no try/catch of its own
 // -- the caller wraps it to re-throw a specific per-ward message.
 export async function decodeWardRecord(encoded, key) {
-  return migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(encoded, key)));
+  // Kept as saved (Milestone 76B): text is escaped where it is shown.
+  return migratePlanTriState(await decryptJSONWithKey(encoded, key));
 }
 
 // Milestone 52B: the four-field encrypt fan-out shared by

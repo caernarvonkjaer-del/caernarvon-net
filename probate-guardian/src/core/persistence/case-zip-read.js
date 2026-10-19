@@ -5,7 +5,6 @@
 // reads the file through here too, to see what another tab or window saved
 // since (case-file.js), without disturbing the case that is open.
 import { decryptJSONWithKey } from './crypto.js';
-import { sanitizeObjectData } from '../security/input-hardening.js';
 import { blankCaseFile } from '../state.js';
 
 /**
@@ -47,7 +46,8 @@ export async function readCaseFileZip(zip, manifest, key) {
     const filing = { kind: 'filing', name: (entry && entry.wardName) || '', file: (entry && entry.file) || '' };
     if (!f) { console.warn('Case file entry missing:', entry.file); unreadable.push(filing); continue; }
     try {
-      const ward = sanitizeObjectData(await decryptJSONWithKey(await f.async('string'), key));
+      // Kept as saved (Milestone 76B): text is escaped where it is shown.
+      const ward = await decryptJSONWithKey(await f.async('string'), key);
       if (ward && ward.wardId) caseFile.wards.push(ward);
       else unreadable.push(filing);
     } catch (e) { console.warn('Skipping unreadable ward in .sav file', entry.file, e); unreadable.push(filing); }

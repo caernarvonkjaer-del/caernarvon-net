@@ -12,7 +12,7 @@ import { ANNUAL_CONTRACT, WORKBOOK_FILING_TYPE } from './annual.js';
 import { SIMPLIFIED_CONTRACT } from './simplified.js';
 import { getPath, readContract } from './engine.js';
 import { getExcelJS } from '../excel-engine.js';
-import { assertWorkbookWithinLimits, sanitizeImportedText } from '../../security/input-hardening.js';
+import { assertWorkbookWithinLimits } from '../../security/input-hardening.js';
 import { formatAddress, formatCityStateZip, formatName } from '../../form/form-contract.js';
 import { formEngine } from '../../filing/filing-registry.js';
 import { descriptorForAccountingFilingType } from '../../filing/filing-descriptor.js';
@@ -50,14 +50,15 @@ function deletePath(obj, dotted) {
 }
 
 /**
- * Text read from the workbook, as the import keeps it (73T part 2): the
- * quotation mark kept (73T-3, row 11); the apostrophe the export puts before
+ * Text read from the workbook, as the import keeps it (73T part 2): as typed
+ * there -- Milestone 76B (decision 76B-1) keeps < > and backticks too, which
+ * 73T-3 had stripped, now that every display escapes; the apostrophe the export puts before
  * text starting = + - @ to keep Excel from reading it as a formula taken off
  * again (row 17); and the casing typing gives the field, field by field, and
  * no other (row 19).
  */
 function importedText(draft, casing) {
-  eachString(draft, (s) => sanitizeImportedText(s.replace(/^'(?=[=+\-@\t\r\n])/, '')));
+  eachString(draft, (s) => s.replace(/^'(?=[=+\-@\t\r\n])/, ''));
   for (const [kind, patterns] of Object.entries(casing)) {
     for (const pattern of patterns) eachAt(draft, pattern.split('.'), FORMAT[kind]);
   }

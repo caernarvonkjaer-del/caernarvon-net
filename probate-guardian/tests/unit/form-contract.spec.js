@@ -548,14 +548,15 @@ describe('form-contract', () => {
       expect(zip.getAttribute('aria-invalid')).toBeNull();
     });
 
-    it('runs the security sanitizer only on fields stamped data-field-sanitize="security"', () => {
-      const optedIn = createMockInput({ dataset: { fieldPath: 'schC.0.description', fieldKind: 'text', fieldSanitize: 'security', fieldLabel: 'Description' }, value: '<b>Sale</b> of homestead' });
-      finalizeFieldValue(optedIn);
-      expect(getD().schC[0].description).toBe('bSale/b of homestead');
-
-      const plain = createMockInput({ dataset: { fieldPath: 'notes', fieldKind: 'text' }, value: '<b>Sale</b> of homestead' });
-      finalizeFieldValue(plain);
-      expect(getD().notes).toBe('<b>Sale</b> of homestead');
+    // Milestone 76B (decision 76B-1): no box changes typed text on blur. An
+    // Annual-family box (once stamped data-field-sanitize="security") emptied
+    // "Pension (monthly = $1,200)" and stripped quote marks (red first).
+    it('keeps typed text as typed, in an Annual-family box too', () => {
+      for (const typed of ['Pension (monthly = $1,200)', '30" Flat screen TV', '<b>Sale</b> of homestead', 'See ../2024 statement']) {
+        const box = createMockInput({ dataset: { fieldPath: 'schC.0.description', fieldKind: 'text', fieldSanitize: 'security', fieldLabel: 'Description' }, value: typed });
+        finalizeFieldValue(box);
+        expect(getD().schC[0].description).toBe(typed);
+      }
     });
   });
 });

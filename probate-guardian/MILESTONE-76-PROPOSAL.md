@@ -513,6 +513,45 @@ for imported workbooks, which Revision 1 cited only for the quote mark.*
 | 8 Legal | Filed text becomes exactly what the filer entered. |
 | 9 Cross-form | All nine forms; only the Annual family strips on blur, every form on open. |
 
+### Build record — BUILT 2026-10-19
+
+Approved by name on Revision 2. What a filer now sees: text stays exactly as
+typed, opened or imported -- "Pension (monthly = $1,200)" and "See ../2024
+statement" no longer empty their box, quote marks stay, "Donation=500 to
+church" no longer opens as "D500 to church", and an imported workbook keeps
+< > and backticks (decision 76B-1, reversing 73T-3's import stripping by
+name). Text is escaped where it is shown instead.
+
+How the displays were found: `tests/e2e/escaped-text.spec.ts` opens a case
+file crafted with markup in every text of all nine forms' complete filings
+and in the people's and cases' names and ids, draws every page, picker and
+list, and names each place markup reached the page. On the code before 76B
+it found the record pickers (people's and cases' ids -- injectable through a
+crafted file today). With the stripping removed it found four more: the
+"This page still needs" list, the supporting-documents heading (a period
+that can't be read), the Annual Part III declaration and the Summary's period
+row. All are escaped; so are two it could not reach with the fixtures' data
+-- the Annual schedule cards' headings (D-1's description) and the Load Ward
+Info From list's ids -- and a supporting document's page count and Download
+link (drawn only for a data: URL). Its coverage is what the fixtures fill: a
+schedule with no fixture row is not drawn.
+
+Saved annotations that can't be read (a pre-76B open cut about 1 in 50) are
+discarded with a notice, said again with "Preview ready." (the status line is
+for screen readers, as the existing notice is), and the preview draws.
+
+Removed: `validateSecurityInput`, `detectXSSPayload`, `detectPathTraversal`,
+`sanitizeInput`, `sanitizeImportedText`, `sanitizeObjectData(InPlace)` and the
+`securitySanitize` option. The import gates (size, ZIP signature, sheet
+limits) stay.
+
+Tests: `escaped-text.spec.ts` (new); `sanitize-keeps-stored-files.spec.js`
+renamed `text-kept-as-typed.spec.js` and rewritten (opening keeps text,
+stamps, PDFs and annotation bytes); `form-contract`, `form-fields`,
+`workbook-contract`, `annual-field-formatting`, `annual-mount` updated to keep
+text; a `pdf-annotate` case for unreadable annotations. Each new or changed
+case red first on the code before 76B.
+
 ---
 
 ## 76C — Large case files

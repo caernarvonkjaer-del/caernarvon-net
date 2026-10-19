@@ -13,7 +13,6 @@ import {
   getFieldDraftIssues,
   recordDateDraft,
 } from './commit-coordinator.js';
-import { validateSecurityInput } from '../security/input-hardening.js';
 import { getD, requestSave } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { getPath, setPath } from './paths.js';
@@ -506,21 +505,11 @@ export function finalizeFieldValue(control, options = {}) {
     control.value = formatted;
     if (setPath) setPath(getD(), path, formatted);
   } else if (policy === 'preserve') {
-    // data-field-sanitize="security" (renderFormField()'s securitySanitize
-    // option -- Annual Accounting's inpD() is its only caller) runs
-    // validateSecurityInput() (src/core/security/input-hardening.js) first: exactly what the
-    // accounting family's own focusout handler did before it was retired,
-    // and only for those fields -- no other filing type's free text was ever
-    // sanitized this way, and still isn't. It used to also blank a field
-    // outright on a bare SQL-keyword match ("Update to appraisal value"
-    // silently wiped on blur) -- that check was removed at the source
-    // (the monolith's detectSQLInjection()) since this app has no SQL
-    // backend for it to ever protect; only real XSS/path-traversal patterns
-    // can still trigger a block here.
-    const secured = control.dataset?.fieldSanitize === 'security'
-      ? validateSecurityInput(control.dataset.fieldLabel || control.dataset.annualLabel || path, rawValue)
-      : rawValue;
-    const cleaned = sanitizeStoredText(secured);
+    // Kept as typed on every form (Milestone 76B, decision 76B-1). Annual,
+    // Final and Trust Accounting boxes used to run a script-pattern check on
+    // blur that emptied "Pension (monthly = $1,200)" and stripped every quote
+    // mark; text is escaped where it is shown instead.
+    const cleaned = sanitizeStoredText(rawValue);
     if (setPath) setPath(getD(), path, cleaned);
     control.value = cleaned;
   } else if (kind === 'name' || kind === 'address' || policy === 'display-only') {
@@ -576,8 +565,7 @@ export function getFieldDraftIssueMessages(data = getD()) {
 // ── Field formatters and filters ─────────────────────────────
 // Moved from src/legacy-app.js by Milestone 70's 70B: the typing- and
 // blur-time formatting every field kind gets, beside the stored-text rules
-// above that they build on. validateSecurityInput() lives with the other
-// injection checks in src/core/security/input-hardening.js.
+// above that they build on.
 
 // Strip everything except digits and a single decimal point -- used for
 // percent fields instead of type="number" so we fully own character

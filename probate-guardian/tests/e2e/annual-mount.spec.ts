@@ -252,11 +252,9 @@ test.describe('annual-accounting feature module', () => {
   });
 
   // Milestone 40H-G: Schedule C's "Full Description and Identification" is a
-  // plain kind:'text' field, so it goes through the generic
-  // data-annual-format="security" blur handler (validateSecurityInput() ->
-  // sanitizeInput()) every other free-text field in this app shares.
-  // sanitizeInput() used to strip a straight apostrophe entirely with no
-  // replacement, turning "ward's" into "wards".
+  // plain kind:'text' field. The blur sanitizer this family ran used to strip
+  // a straight apostrophe entirely with no replacement, turning "ward's" into
+  // "wards"; since Milestone 76B nothing typed is changed on blur.
   test('Schedule C description preserves an apostrophe through the security-format blur handler', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Apostrophe Ward', 'annual');

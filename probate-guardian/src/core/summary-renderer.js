@@ -28,6 +28,7 @@
  */
 
 import { displayDate } from './form/date-parser.js';
+import { esc } from './filing/escape-html.js';
 
 /**
  * Maps one or more computeNavChecks() keys to the 3-value status string
@@ -73,8 +74,10 @@ export function navStatus(nav, keys) {
  */
 export function formatSummaryDate(value) {
   // Milestone 73H: MM/DD/YYYY, as every screen and PDF shows a date
-  // (displayDate()); it showed "2025-01-01". Blank is still "—".
-  return displayDate(value) || '—';
+  // (displayDate()); it showed "2025-01-01". Blank is still "—". Milestone
+  // 76B: a date that can't be read shows as typed, escaped -- the Summary
+  // draws this as markup.
+  return esc(displayDate(value)) || '—';
 }
 
 export function renderStatusBadge(status) {

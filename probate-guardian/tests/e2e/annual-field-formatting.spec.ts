@@ -155,8 +155,12 @@ test.describe('Annual Accounting on the shared write path', () => {
   // "--" against every plain free-text field in this family, blanking the
   // whole field on blur -- there is no SQL backend anywhere in this app for
   // that check to have ever protected. Removed at the source
-  // (then legacy-app.js's detectSQLInjection()); XSS/path-traversal detection is
-  // untouched and still fires.
+  // (then legacy-app.js's detectSQLInjection()). Milestone 76B (decision
+  // 76B-1) removed the rest: its script and path patterns emptied "Pension
+  // (monthly = $1,200)" and "See ../2024 statement", and stripped every quote
+  // mark from what it kept. Text is kept as typed and escaped where it is
+  // shown (red first: on the code before 76B each of the last four emptied
+  // or lost its quote mark).
   test('a free-text field is not blanked by an ordinary word that happens to be a SQL keyword', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Security Sanitize Ward', 'annual');
@@ -175,8 +179,11 @@ test.describe('Annual Accounting on the shared write path', () => {
     await description.blur();
     await expect(description).toHaveValue('Sale of lot -- see attached');
 
-    await description.fill('<script>alert(1)</script>');
-    await description.blur();
-    await expect(description).toHaveValue('');
+    for (const typed of ['Pension (monthly = $1,200)', 'See ../2024 statement', '30" Flat screen TV', '<script>alert(1)</script>']) {
+      await description.fill(typed);
+      await description.blur();
+      await expect(description).toHaveValue(typed);
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.description'))).toBe(typed);
+    }
   });
 });

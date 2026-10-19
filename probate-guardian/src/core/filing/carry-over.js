@@ -624,7 +624,7 @@ export function refreshCarrySourceSelect(sel,wrap,type,name,autonoteEl){
   const list=namedMatches.length?namedMatches:allMatches;
   sel.disabled=false;
   sel.innerHTML='<option value="">— Start Blank —</option>'
-    +list.map(w=>`<option value="${w.wardId}">${esc(w.wardName)}${w.caseNumber?' — '+esc(w.caseNumber):''} (${esc(INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType)})</option>`).join('');
+    +list.map(w=>`<option value="${esc(w.wardId)}">${esc(w.wardName)}${w.caseNumber?' — '+esc(w.caseNumber):''} (${esc(INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType)})</option>`).join('');
   if(namedMatches.length===1){
     sel.value=namedMatches[0].wardId;
     if(autonoteEl){

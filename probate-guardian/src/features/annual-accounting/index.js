@@ -488,12 +488,9 @@ function buildNavAnnual(container){
 // tests/unit/date-truncation-helpers.spec.js. Milestone 73H: displayDate()
 // (date-parser.js) carries that guard for this form's screens; the re-export
 // of the importer's fmtDate as fmtD, which did, is gone.
-// securitySanitize: this family's plain free-text fields keep running
-// validateSecurityInput() (src/core/security/input-hardening.js) on blur
-// (see the option's own
-// comment in form-fields.js) -- the behavior of the retired
-// persistAnnualControl() focusout handler, now declared per field rather
-// than assumed of everything inside this module's container.
+// Milestone 76B: this family's boxes keep their text as typed, as every
+// form's do (they ran a script-pattern check on blur that emptied ordinary
+// text such as "monthly = $1,200").
 // Milestone 71E: `opts` passes a field kind and keepBlank through to the
 // renderer (the Starting Balance is a signed amount that keeps a blank).
 function inpD(label,val,setter,req=false,type='text',opts={}){
@@ -503,7 +500,6 @@ function inpD(label,val,setter,req=false,type='text',opts={}){
     value: val,
     type,
     required: req,
-    securitySanitize: true,
     ...opts,
   });
 }
@@ -534,7 +530,6 @@ function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text',kind=
     kind,
     required: req,
     tooltipKey,
-    securitySanitize: true,
   });
 }
 // Milestone 73O part 4 (decision 73O-4): the shared footer, as every form's.
@@ -674,7 +669,7 @@ function pagePart1Annual(){
           <div class="col-md-6">${inpD('Guardianship Inception Date (GID)',d.gid,"D.gid=this.value",true,'date')}</div>
         </div>
         <div class="row g-2">
-          <div class="col-md-6">${renderUcnField(d.ucn,{securitySanitize:true})}</div>
+          <div class="col-md-6">${renderUcnField(d.ucn)}</div>
         </div>
         <div class="row g-2">
           ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'Period From', toLabel: 'Period To' })}
@@ -769,7 +764,7 @@ function pagePart3Annual(){
   return `<div class="schedule-page">
   <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
   ${preparerNoteHTML()}
-  <div class="attestation-text">${ANNUAL_DECLARATION.before} <strong>${displayDate(d.periodFrom)||'—'}</strong> through <strong>${displayDate(d.periodTo)||'—'}</strong> ${ANNUAL_DECLARATION.after}</div>
+  <div class="attestation-text">${ANNUAL_DECLARATION.before} <strong>${esc(displayDate(d.periodFrom))||'—'}</strong> through <strong>${esc(displayDate(d.periodTo))||'—'}</strong> ${ANNUAL_DECLARATION.after}</div>
   <div class="row g-3 card-grid-2col mb-3">${cards}</div>
   ${addCoBtn}
   ${pageNavAnnual('/p2','/p4')}
@@ -914,7 +909,7 @@ function pagePart5Annual(){
 
 function entryCardHeaderAnnual(title, collection, idx, route) {
   return `<div class="entry-card-header">
-    <span>${title}</span>
+    <span>${esc(title)}</span>
     <span class="entry-card-actions">
       <button class="btn btn-sm btn-outline-secondary" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="${collection}" data-index="${idx}" data-route="${route}">${ic('copy',13)} Duplicate</button>
       <button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="${collection}" data-index="${idx}" data-route="${route}">✕ Remove</button>

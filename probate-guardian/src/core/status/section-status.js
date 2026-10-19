@@ -5,6 +5,7 @@
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { pageAlsoOwns } from './section-guidance-policy.js';
 import { issueItemText } from '../validation/issue-groups.js';
+import { esc } from '../filing/escape-html.js';
 
 /**
  * Computes section-level status and local missing fields.
@@ -83,10 +84,10 @@ export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItem
         class="btn btn-link btn-sm p-0 text-decoration-none text-start"
         style="font-size:0.85rem;color:var(--primary-color, #0d6efd);"
         data-form-action="jump-to-field"
-        data-route="${err.route}"
-        data-field-path="${err.path}"
+        data-route="${esc(err.route)}"
+        data-field-path="${esc(err.path)}"
       >
-        👉 ${itemText(err)}
+        👉 ${esc(itemText(err))}
       </button>
     </li>`;
   }).join('');

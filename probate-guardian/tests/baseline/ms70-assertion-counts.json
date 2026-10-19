@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9855,
-  "tests": 2924
+  "expects": 9843,
+  "tests": 2923
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -36,7 +36,7 @@
   },
   "tests/e2e/annual-field-formatting.spec.ts": {
    "tests": 7,
-   "expects": 27
+   "expects": 28
   },
   "tests/e2e/annual-import-ward-percentage.spec.ts": {
    "tests": 1,
@@ -181,6 +181,10 @@
   "tests/e2e/entry-helpers.spec.ts": {
    "tests": 4,
    "expects": 26
+  },
+  "tests/e2e/escaped-text.spec.ts": {
+   "tests": 1,
+   "expects": 2
   },
   "tests/e2e/excel-b4-multi-account.spec.ts": {
    "tests": 3,
@@ -403,8 +407,8 @@
    "expects": 59
   },
   "tests/e2e/pdf-annotate.spec.ts": {
-   "tests": 11,
-   "expects": 70
+   "tests": 12,
+   "expects": 73
   },
   "tests/e2e/pdf-cover-geometry.spec.ts": {
    "tests": 1,
@@ -1060,7 +1064,7 @@
   },
   "tests/unit/form-contract.spec.js": {
    "tests": 43,
-   "expects": 159
+   "expects": 158
   },
   "tests/unit/form-derived-fields.spec.js": {
    "tests": 22,
@@ -1072,7 +1076,7 @@
   },
   "tests/unit/form-fields.spec.js": {
    "tests": 29,
-   "expects": 96
+   "expects": 93
   },
   "tests/unit/form-services-import.spec.js": {
    "tests": 1,
@@ -1442,10 +1446,6 @@
    "tests": 6,
    "expects": 16
   },
-  "tests/unit/sanitize-keeps-stored-files.spec.js": {
-   "tests": 6,
-   "expects": 19
-  },
   "tests/unit/save-safety.spec.js": {
    "tests": 14,
    "expects": 29
@@ -1594,6 +1594,10 @@
    "tests": 18,
    "expects": 64
   },
+  "tests/unit/text-kept-as-typed.spec.js": {
+   "tests": 3,
+   "expects": 6
+  },
   "tests/unit/theme-persistence.spec.js": {
    "tests": 20,
    "expects": 43
@@ -1668,7 +1672,7 @@
   },
   "tests/unit/workbook-contract.spec.js": {
    "tests": 46,
-   "expects": 125
+   "expects": 124
   },
   "tests/unit/workbook-recalc-on-open.spec.js": {
    "tests": 1,
@@ -2204,6 +2208,38 @@
    "was": 9,
    "now": 8,
    "reason": "Milestone 76A (the requester, 2026-10-19): an unlock reopens the filing that was open, so unlock.spec.ts and persistence-recovery.contract.spec.ts no longer assert an empty selector before opening it by hand; each asserts the reopened filing instead",
+   "date": "2026-10-19"
+  },
+  {
+   "file": "tests/unit/form-contract.spec.js",
+   "kind": "expects",
+   "was": 159,
+   "now": 158,
+   "reason": "Milestone 76B (decision 76B-1): the retired text stripping's own assertions went -- form-contract.spec.js and form-fields.spec.js no longer check what the blur sanitizer removed, workbook-contract.spec.js no longer checks < > and backticks removed (each now asserts the text kept); sanitize-keeps-stored-files.spec.js is renamed text-kept-as-typed.spec.js",
+   "date": "2026-10-19"
+  },
+  {
+   "file": "tests/unit/form-fields.spec.js",
+   "kind": "expects",
+   "was": 96,
+   "now": 93,
+   "reason": "Milestone 76B (decision 76B-1): the retired text stripping's own assertions went -- form-contract.spec.js and form-fields.spec.js no longer check what the blur sanitizer removed, workbook-contract.spec.js no longer checks < > and backticks removed (each now asserts the text kept); sanitize-keeps-stored-files.spec.js is renamed text-kept-as-typed.spec.js",
+   "date": "2026-10-19"
+  },
+  {
+   "file": "tests/unit/workbook-contract.spec.js",
+   "kind": "expects",
+   "was": 125,
+   "now": 124,
+   "reason": "Milestone 76B (decision 76B-1): the retired text stripping's own assertions went -- form-contract.spec.js and form-fields.spec.js no longer check what the blur sanitizer removed, workbook-contract.spec.js no longer checks < > and backticks removed (each now asserts the text kept); sanitize-keeps-stored-files.spec.js is renamed text-kept-as-typed.spec.js",
+   "date": "2026-10-19"
+  },
+  {
+   "file": "tests/unit/sanitize-keeps-stored-files.spec.js",
+   "kind": "file",
+   "was": 19,
+   "now": 0,
+   "reason": "Milestone 76B (decision 76B-1): the retired text stripping's own assertions went -- form-contract.spec.js and form-fields.spec.js no longer check what the blur sanitizer removed, workbook-contract.spec.js no longer checks < > and backticks removed (each now asserts the text kept); sanitize-keeps-stored-files.spec.js is renamed text-kept-as-typed.spec.js",
    "date": "2026-10-19"
   }
  ]

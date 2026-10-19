@@ -422,6 +422,42 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
   // This asserts the ORDER rather than racing it, so it cannot go quiet again:
   // the persist must be recorded before the anchor click. Verified red on the
   // pre-fix handler, where the two arrive the other way round.
+  // Milestone 76B: saved annotations that can't be read back -- opening a
+  // case cut the stored text of about 1 in 50 before 76B -- made the whole
+  // Print Preview fail every time ("Preview failed to render"). They are
+  // discarded with a notice, and the preview draws without them. Red first:
+  // on the code before 76B the preview never drew.
+  test('saved annotations that cannot be read are discarded, and the preview still draws', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Damaged Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('[data-annotate-action="toggle"]').click();
+    await page.locator('[data-annotate-action="note"]').click();
+    await pdfPage.click({ position: { x: 60, y: 60 } });
+    await page.keyboard.type('A note to lose');
+    await pdfPage.click({ position: { x: 300, y: 300 } });
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+    await page.locator('[data-annotate-action="save"]').click();
+    await downloadPromise;
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).GuardianForms.testing.field('printAnnotations')?.pdfBytes))).toBe(true);
+
+    // The stored copy as an open before 76B could leave it: cut short.
+    await page.evaluate(() => {
+      const t = (window as any).GuardianForms.testing;
+      const filing = t.snapshot().filing;
+      filing.printAnnotations.pdfBytes = filing.printAnnotations.pdfBytes.slice(0, Math.floor(filing.printAnnotations.pdfBytes.length * 0.6));
+      t.replaceFiling(filing);
+    });
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
+    await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
+    await expect(page.locator('#print-preview-status')).toContainText('could not be read');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('printAnnotations') ?? null)).toBe(null);
+  });
+
   test('the filing records the annotations BEFORE the file is handed to the browser', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Order Ward', 'planSimplified');

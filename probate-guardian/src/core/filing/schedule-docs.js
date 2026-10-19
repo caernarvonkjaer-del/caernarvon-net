@@ -300,15 +300,15 @@ function scheduleDocsSectionInner(scheduleKey){
     return `
     <div class="sched-doc-row">
       <span class="sched-doc-name">${ic('file',14)} ${esc(f.name)}</span>
-      <span class="sched-doc-meta">${fmtFileSize(f.size)}${f.pageCount?` - ${f.pageCount} page${f.pageCount===1?'':'s'}`:''}</span>
+      <span class="sched-doc-meta">${esc(fmtFileSize(f.size))}${f.pageCount?` - ${esc(f.pageCount)} page${f.pageCount===1?'':'s'}`:''}</span>
       <span class="sched-doc-meta" style="color:${statusColor};">${esc(statusLabel)}</span>
       ${warnings.length?`<span class="sched-doc-meta" style="color:var(--warn-text);">${esc(warnings.join(' '))}</span>`:''}
-      <a href="${f.dataUrl}" download="${esc(f.name)}" class="btn btn-sm btn-outline-secondary">Download</a>
+      ${/^data:/i.test(String(f.dataUrl||''))?`<a href="${esc(f.dataUrl)}" download="${esc(f.name)}" class="btn btn-sm btn-outline-secondary">Download</a>`:''}
       <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove supporting document ${esc(f.name)}" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
     </div>`;}).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${getActiveInventoryType()==='guardian'?'':' for this period'}.</div>`;
   const inputId=`sched-doc-input-${scheduleKey}`;
   return `
-    <h2>Supporting Documents${periodNote}</h2>
+    <h2>Supporting Documents${esc(periodNote)}</h2>
     <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Guardian Forms does not certify or remediate uploaded documents for accessibility. ${getSecurityMode()==='encrypted'?'Stored on this device only, encrypted with the rest of this case.':'Stored on this device only, in this case file, which has no password.'}</p>
     <input type="file" id="${inputId}" multiple accept="application/pdf,.pdf" aria-label="Upload PDF supporting documents for this page" data-page-named="Upload PDF supporting documents for" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
     <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}" data-focus-path="scheduleDocs.${esc(scheduleKey)}">+ Upload PDF(s)</button>
