@@ -72,7 +72,7 @@ beforeAll(async () => {
   vi.stubGlobal('window', globalThis);
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-05T12:00:00'));
-  const [registry, guardianModel, fixtures, engines, preflight, supplemental, capacity, caps, b4Plan, b4Pages, issues] = await Promise.all([
+  const [registry, guardianModel, fixtures, engines, preflight, supplemental, capacity, caps, b4Plan, b4Pages, issues, workbookBlocks] = await Promise.all([
     import('../../src/core/filing/filing-registry.js'),
     import('../../src/core/filing/models/guardian.js'),
     import('../e2e/support/fixtures.ts'),
@@ -84,10 +84,11 @@ beforeAll(async () => {
     import('../../src/core/excel/b4-export-plan.js'),
     import('../../src/core/excel/b4-register-pages.js'),
     import('../../src/core/validation/issue-registry.js'),
+    import('../../src/core/excel/workbook-blocks.js'),
   ]);
   const features = {};
   for (const [engine, [dir]] of Object.entries(FEATURES)) features[engine] = await import(`../../src/features/${dir}/index.js`);
-  m = { registry, guardianModel, fixtures, features, engines, preflight, supplemental, capacity, caps, b4Plan, b4Pages, issues };
+  m = { registry, guardianModel, fixtures, features, engines, preflight, supplemental, capacity, caps, b4Plan, b4Pages, issues, workbookBlocks };
 }, 120_000);
 afterAll(() => {
   vi.useRealTimers();
@@ -162,9 +163,12 @@ function todaysGates(filing, type) {
     .map((p) => m.issues.createIssue(`excel.capacity.${type}.schB4-${p.code}`, {
       message: p.message, label: 'Schedule B-4 — All Other Disbursements', section: 'Schedule B-4 — All Other Disbursements', route: '/schb4',
     }));
-  const capacity = engine === 'guardian' ? m.capacity.getExcelCapacityIssues('guardian', d, m.caps.GUARDIAN_EXCEL_CAPS)
-    : engine === 'simplified' ? m.capacity.getExcelCapacityIssues('simplified', d, m.caps.SIMPLIFIED_EXCEL_CAPS)
-      : engine === 'annual' ? [...m.capacity.getExcelCapacityIssues(type, d, m.caps.ANNUAL_EXCEL_CAPS), ...b4()]
+  // Milestone 76I: each Save as Excel adds what the workbook can't file
+  // faithfully (workbook-blocks.js).
+  const blocks = () => m.workbookBlocks.workbookBlockIssues(d);
+  const capacity = engine === 'guardian' ? [...m.capacity.getExcelCapacityIssues('guardian', d, m.caps.GUARDIAN_EXCEL_CAPS), ...blocks()]
+    : engine === 'simplified' ? [...m.capacity.getExcelCapacityIssues('simplified', d, m.caps.SIMPLIFIED_EXCEL_CAPS), ...blocks()]
+      : engine === 'annual' ? [...m.capacity.getExcelCapacityIssues(type, d, m.caps.ANNUAL_EXCEL_CAPS), ...b4(), ...blocks()]
         : [];
   const only = (list, cap) => json(list.filter((i) => !i.capabilities || i.capabilities.includes(cap)));
   return {

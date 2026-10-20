@@ -22,6 +22,7 @@ import { createBankAccountId } from '../../accounting/bank-accounts.js';
 import { annualReconcileState } from '../../accounting/annual-totals.js';
 import { filedOffice } from '../../form/same-address.js';
 import { planSchB4Export } from '../b4-export-plan.js';
+import { canonicalB4Category } from '../../accounting/b4-categories.js';
 import { SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../b4-register-pages.js';
 import { RECIPIENT_FIELDS, emptyRecipient, recipientSlots } from '../../filing/recipient-shape.js';
 
@@ -425,6 +426,10 @@ export const ANNUAL_CONTRACT = Object.freeze({
   // writes); one that shows a different office address unticks it, so the
   // address the workbook carries is the one filed.
   reconcile(draft, filing) {
+    // Milestone 76I item 3: a category typed in another case or spacing is the
+    // workbook's own ("medical / pharmacy " is "Medical / Pharmacy"); Excel's
+    // totals ignore case but not a trailing space.
+    for (const row of draft.schB4 || []) if (row && typeof row.category === 'string') row.category = canonicalB4Category(row.category);
     // 2026-10-17, as the Simplified's and the Inventory's: "no recipients are
     // required" has no box, so the filing keeps its answer -- except a "Yes"
     // the workbook contradicts by listing recipients, which goes back to

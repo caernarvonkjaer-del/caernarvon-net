@@ -18,6 +18,7 @@ import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../..
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput, previewStatusHtml } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput, beginFreshPreview } from '../../core/filing/output-authorization.js';
+import { workbookBlockIssues } from '../../core/excel/workbook-blocks.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
@@ -57,7 +58,8 @@ export function pagePrintAnnual(capOver){
   // outstanding requirement is still visible. Milestone 74C / 73M: the buttons
   // stay clickable; the reason line beside them says what stops each one.
   const pdfAuthorization=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'});
-  const excelAuthorization=authorizeFilingOutput(getD(),baseIssues,{capability:'excel'});
+  // Milestone 76I: the reason line says when the workbook itself can't be saved.
+  const excelAuthorization=authorizeFilingOutput(getD(),baseIssues,{capability:'excel',additionalIssues:workbookBlockIssues(getD())});
   const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
   return `<div>

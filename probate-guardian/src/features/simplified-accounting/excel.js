@@ -14,6 +14,7 @@
 // cell addresses and the reasons behind them live with the contract now.
 import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
+import { workbookBlockIssues } from '../../core/excel/workbook-blocks.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { writeContract } from '../../core/excel/workbook-contract/engine.js';
@@ -37,7 +38,8 @@ import { SIMPLIFIED_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
 export { SIMPLIFIED_EXCEL_CAPS };
 
 export async function doSaveExcel(){
-  const capacityIssues = getExcelCapacityIssues('simplified', getD(), SIMPLIFIED_EXCEL_CAPS);
+  // Milestone 76I item 4: with what the workbook can't file faithfully.
+  const capacityIssues = [...getExcelCapacityIssues('simplified', getD(), SIMPLIFIED_EXCEL_CAPS), ...workbookBlockIssues(getD())];
   const authorization = authorizeFilingOutput(getD(), () => validateSimplified(), {
     capability: 'excel',
     additionalIssues: capacityIssues,

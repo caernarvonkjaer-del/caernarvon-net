@@ -18,6 +18,7 @@
 // the reasons behind each address live with the contract now.
 import { validateGuardian } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
+import { workbookBlockIssues } from '../../core/excel/workbook-blocks.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { bondStateFromWorkbook, normalizeBondDepositoryState } from '../../core/filing/bond-depository.js';
@@ -44,7 +45,8 @@ import { GUARDIAN_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
 export { GUARDIAN_EXCEL_CAPS };
 
 export async function doSaveExcel(){
-  const capacityIssues = getExcelCapacityIssues('guardian', getD(), GUARDIAN_EXCEL_CAPS);
+  // Milestone 76I item 4: with what the workbook can't file faithfully.
+  const capacityIssues = [...getExcelCapacityIssues('guardian', getD(), GUARDIAN_EXCEL_CAPS), ...workbookBlockIssues(getD())];
   const authorization = authorizeFilingOutput(getD(), () => validateGuardian(), {
     capability: 'excel',
     additionalIssues: capacityIssues,

@@ -1889,6 +1889,39 @@ Tests: `court-workbooks-76i.spec.js` (new; the templates through
 the B-4 plan, the office address and the C-3 row read from saved workbooks,
 the fee tier) -- all eight red first.
 
+**Part 2 (items 3, 4, 7) — BUILT 2026-10-20.** What a filer now sees:
+
+- **Item 3 (decision 76I-2):** a started Schedule B-4 row with no category,
+  or one outside the workbook's 18, stops Save as Excel -- naming the row and
+  the category -- and can't be overridden there; the PDF stays overridable.
+  The workbook totals B-4 by category, so such a row was left out of every
+  total. An import reads a category in another case or spacing ("rent ") as
+  the workbook's own ("Rent").
+- **Item 4 (decision 76I-3):** an amount the app can't read as a number
+  ("about 200", "1.234,56") stops Save as Excel, can't be overridden there,
+  and stays overridable for the PDF -- only for amounts the workbook writes
+  and that are in use (shown or printed): Part VIII's ward amount under No,
+  or any Plan's amount, does not.
+- **Item 7 (decision 76I-6):** a Part XI / Part VII line missing its
+  guardian or its type, or whose description looks like an amount, names
+  its parts ("Type: Fee  —  $250.00"; "$500.00" alone), so the court's form
+  never shows empty dashes, and it reads back as the entry it was. A
+  complete line keeps its wording, and lines filed before read as they did.
+
+Both blocks are `src/core/excel/workbook-blocks.js` (codes
+`excel.workbook.b4-category` and `excel.workbook.amount-unreadable`, Excel
+capability only, not bypassable), added by each workbook's export checks and
+Save as Excel; the 18 categories are `src/core/accounting/b4-categories.js`.
+AGENTS.md §4's list of what can't be overridden names them.
+
+Tests: `workbook-blocks-76i.spec.js` (new: both blocks on all three
+workbooks and through each one's export checks; Excel blocked, PDF allowed;
+a category normalised on import from a saved workbook; the line labels and
+their round trip) -- four of nine red first (the block was overridable and
+reached the PDF, the export checks never raised it, "rent " came back
+lowercase, the line began with an empty dash); the other five test the new
+module directly. `validator-engines.spec.js`'s oracle adds the blocks.
+
 ---
 
 ## 76J — The export checks

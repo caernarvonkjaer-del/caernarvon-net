@@ -26,6 +26,7 @@ import { commitStoredDateDrafts } from '../../form/commit-coordinator.js';
 import { setPath } from '../../form/paths.js';
 import { getSupplementalFilingIssues } from '../../pdf/supplemental-checks.js';
 import { getExcelCapacityIssues } from '../../excel/excel-capacity.js';
+import { workbookBlockIssues } from '../../excel/workbook-blocks.js';
 import { GUARDIAN_EXCEL_CAPS, ANNUAL_EXCEL_CAPS, SIMPLIFIED_EXCEL_CAPS } from '../../excel/excel-caps.js';
 import { planSchB4Export } from '../../excel/b4-export-plan.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../excel/b4-register-pages.js';
@@ -112,13 +113,14 @@ function inventoryNoItemsPrompts(d) {
 
 /** Each engine's checks, Save as Excel's capacity checks, and its own prompts. */
 const ENGINES = Object.freeze({
-  guardian: { collect: collectGuardianIssues, excel: (d) => getExcelCapacityIssues('guardian', d, GUARDIAN_EXCEL_CAPS), prompts: inventoryNoItemsPrompts },
+  // Milestone 76I: each workbook's Excel-only blocks too (workbook-blocks.js).
+  guardian: { collect: collectGuardianIssues, excel: (d) => [...getExcelCapacityIssues('guardian', d, GUARDIAN_EXCEL_CAPS), ...workbookBlockIssues(d)], prompts: inventoryNoItemsPrompts },
   annual: {
     collect: collectAnnualIssues,
-    excel: (d, type) => [...getExcelCapacityIssues(type, d, ANNUAL_EXCEL_CAPS), ...annualB4Issues(d, type)],
+    excel: (d, type) => [...getExcelCapacityIssues(type, d, ANNUAL_EXCEL_CAPS), ...annualB4Issues(d, type), ...workbookBlockIssues(d)],
     prompts: (d) => [...annualNoItemsPrompts(d, 'annual'), ...finalReportPrompts(d)],
   },
-  simplified: { collect: collectSimplifiedIssues, excel: (d) => getExcelCapacityIssues('simplified', d, SIMPLIFIED_EXCEL_CAPS), prompts: () => [] },
+  simplified: { collect: collectSimplifiedIssues, excel: (d) => [...getExcelCapacityIssues('simplified', d, SIMPLIFIED_EXCEL_CAPS), ...workbookBlockIssues(d)], prompts: () => [] },
   planInitial: { collect: collectPlanInitialIssues, excel: null, prompts: planInitialQ7Prompts },
   planAnnual: { collect: collectPlanAnnualIssues, excel: null, prompts: () => [] },
   planMinor: { collect: collectPlanMinorIssues, excel: null, prompts: () => [] },

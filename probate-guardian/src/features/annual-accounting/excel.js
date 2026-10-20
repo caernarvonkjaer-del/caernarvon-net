@@ -21,6 +21,7 @@
 // contract now.
 import { validateAnnual } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
+import { workbookBlockIssues } from '../../core/excel/workbook-blocks.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
@@ -108,6 +109,8 @@ export async function doSaveExcel(){
   const capacityIssues = [
     ...getExcelCapacityIssues(type, getD(), ANNUAL_EXCEL_CAPS),
     ...b4Issues,
+    // Milestone 76I items 3 and 4: what the workbook can't file faithfully.
+    ...workbookBlockIssues(getD()),
   ];
   const authorization = authorizeFilingOutput(getD(), () => validateAnnual(), {
     capability: 'excel',

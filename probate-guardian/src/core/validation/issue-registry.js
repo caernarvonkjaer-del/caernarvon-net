@@ -42,6 +42,11 @@ const definitions = Object.freeze({
   'output.generation.failed': { category: 'technical', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'output.capability.unsupported': { category: 'technical', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'output.security.denied': { category: 'security', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
+  // Milestone 76I items 3 and 4 (design 3; decisions 76I-2, 76I-3): what the
+  // court's workbook can't file faithfully blocks Save as Excel only, and
+  // can't be overridden there (src/core/excel/workbook-blocks.js).
+  'excel.workbook.b4-category': { category: 'workbook', bypassable: false, capabilities: EXCEL_CAPABILITIES, showInReadiness: false },
+  'excel.workbook.amount-unreadable': { category: 'workbook', bypassable: false, capabilities: EXCEL_CAPABILITIES, showInReadiness: false },
 });
 
 // The literal-key lookup below answers first, so a later branch is only
