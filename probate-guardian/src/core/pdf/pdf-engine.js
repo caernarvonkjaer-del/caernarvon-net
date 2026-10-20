@@ -497,6 +497,49 @@ export async function generateCourtFormPdf(model, options = {}) {
     return false;
   };
 
+  // Milestone 76H item 1: a row taller than a whole page continues onto the
+  // next. A row (a notice's box, a key-value row, a checklist row, a table
+  // row, a document comment) that didn't fit moved to a new page and was
+  // drawn whole there -- one taller than a page ran on past the footer and
+  // off the paper, its lost lines missing from the PDF's text too (about
+  // 300 words in a Plan for Minors Question 5 box, a 450-word Inventory A-1
+  // note, a 300-word B-4 payee). Now a row that fits a page moves to a new
+  // page as before, and only one taller than a page is split: as many lines
+  // as fit, then the rest on the next page, at least two lines a page, each
+  // page's part its own tagged element. `columns` are the row's cells as
+  // wrapped lines, all at `lineH`; a cell drawn whole (a table's mixed cell)
+  // sets `minFirstLines` so the first part holds it; `wholeHeight`, when
+  // given, is the row's height drawn whole. `draw` draws one part
+  // at curY in `height`; this advances curY.
+  const CONTINUATION_TOP = 140; // where startNewPage() puts the next line
+  const PAGE_ROOM = pageBottom - CONTINUATION_TOP;
+  const MIN_SPLIT_LINES = 2;
+  const drawRowAcrossPages = ({ columns, lineH, pad, minHeight = 0, after = 0, sectionTitle, minFirstLines = MIN_SPLIT_LINES, onNewPage = null, wholeHeight = null, draw }) => {
+    const total = Math.max(1, ...columns.map((c) => c.length));
+    const fullHeight = Math.max(minHeight, wholeHeight ?? (total * lineH + pad));
+    const newPage = () => { startNewPage(sectionTitle); if (onNewPage) onNewPage(); };
+    if (fullHeight + after <= PAGE_ROOM) {
+      if (curY + fullHeight + after > pageBottom) newPage();
+      draw({ slices: columns, height: fullHeight, first: true, last: true });
+      curY += fullHeight;
+      return;
+    }
+    let from = 0;
+    let fresh = false;
+    while (from < total) {
+      const fit = Math.floor((pageBottom - curY - after - pad) / lineH);
+      const need = Math.min(from === 0 ? Math.max(MIN_SPLIT_LINES, minFirstLines) : MIN_SPLIT_LINES, total - from);
+      if (fit < need && !fresh) { newPage(); fresh = true; continue; }
+      const n = Math.max(1, Math.min(Math.max(fit, need), total - from));
+      const height = Math.max(minHeight, n * lineH + pad);
+      draw({ slices: columns.map((c) => c.slice(from, from + n)), height, first: from === 0, last: from + n >= total });
+      curY += height;
+      from += n;
+      fresh = false;
+      if (from < total) { newPage(); fresh = true; }
+    }
+  };
+
   // Milestone 64 / D4: keep-with-next, for SECTION headings.
   //
   // A section heading used to reserve only its own 30pt before drawing, so it
@@ -809,17 +852,24 @@ export async function generateCourtFormPdf(model, options = {}) {
       doc.setFontSize(8.5);
       doc.setTextColor(55, 65, 81);
       const lines = doc.splitTextToSize(`Comment: ${comment}`, contentWidth);
-      checkPageSpace((lines.length * 11) + 8, sectionTitle);
-      const commentNode = structureTree.addStructureElement({
-        tag: 'P',
-        pageNumber: pageNum,
-        isLeaf: true,
-        parent: parentNode,
+      // Milestone 76H item 1: a comment taller than a page continues.
+      drawRowAcrossPages({
+        columns: [lines], lineH: 11, pad: 8, sectionTitle,
+        draw: ({ slices }) => {
+          const commentNode = structureTree.addStructureElement({
+            tag: 'P',
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: parentNode,
+          });
+          writeMarkedContentStart(doc, 'P', commentNode.mcid);
+          doc.setFont('PGSans', 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(55, 65, 81);
+          doc.text(slices[0], margin, curY + 9, { lineHeightFactor: 11 / 8.5 });
+          writeMarkedContentEnd(doc);
+        },
       });
-      writeMarkedContentStart(doc, 'P', commentNode.mcid);
-      doc.text(lines, margin, curY + 9);
-      writeMarkedContentEnd(doc);
-      curY += (lines.length * 11) + 8;
     }
 
     for (const file of files) {
@@ -946,7 +996,10 @@ export async function generateCourtFormPdf(model, options = {}) {
         const boxHeight = hasNoticeBody ? (lines.length * lineHeight) + 12 : 0;
         const noticeHeading = noticeTitle ? subHeading(noticeTitle) : null;
         const titleHeight = noticeHeading ? noticeHeading.height : 0;
-        checkPageSpace(titleHeight + boxHeight, sec.title);
+        // Milestone 76H item 1: a notice taller than a page keeps its heading
+        // with its first lines, and continues below.
+        const noticeFirstUnit = boxHeight <= PAGE_ROOM ? boxHeight : (MIN_SPLIT_LINES * lineHeight) + 12;
+        checkPageSpace(titleHeight + noticeFirstUnit, sec.title);
 
         if (noticeTitle) {
           const noticeHNode = structureTree.addStructureElement({
@@ -974,27 +1027,33 @@ export async function generateCourtFormPdf(model, options = {}) {
           continue;
         }
 
-        doc.setFont('PGSans', block.fontStyle || 'italic');
-        doc.setFontSize(fs);
-        doc.setTextColor(60, 70, 85);
+        drawRowAcrossPages({
+          columns: [lines], lineH: lineHeight, pad: 12, sectionTitle: sec.title,
+          draw: ({ slices, height }) => {
+            writeArtifactStart(doc, 'Layout');
+            doc.setFillColor(248, 249, 251);
+            doc.setDrawColor(208, 213, 221);
+            doc.setLineWidth(0.5);
+            doc.rect(margin, curY, contentWidth, height, 'FD');
+            writeArtifactEnd(doc);
 
-        writeArtifactStart(doc, 'Layout');
-        doc.setFillColor(248, 249, 251);
-        doc.setDrawColor(208, 213, 221);
-        doc.setLineWidth(0.5);
-        doc.rect(margin, curY, contentWidth, boxHeight, 'FD');
-        writeArtifactEnd(doc);
-
-        const pNode = structureTree.addStructureElement({
-          tag: 'P',
-          pageNumber: pageNum,
-          isLeaf: true,
-          parent: partNode,
+            const pNode = structureTree.addStructureElement({
+              tag: 'P',
+              pageNumber: pageNum,
+              isLeaf: true,
+              parent: partNode,
+            });
+            writeMarkedContentStart(doc, 'P', pNode.mcid);
+            doc.setFont('PGSans', block.fontStyle || 'italic');
+            doc.setFontSize(fs);
+            doc.setTextColor(60, 70, 85);
+            // Drawn at the line height the box was measured with (it drew
+            // closer, at the library's default, inside a taller box).
+            doc.text(slices[0], margin + 8, curY + 12, { lineHeightFactor: 1.35 });
+            writeMarkedContentEnd(doc);
+          },
         });
-        writeMarkedContentStart(doc, 'P', pNode.mcid);
-        doc.text(lines, margin + 8, curY + 12);
-        writeMarkedContentEnd(doc);
-        curY += boxHeight + 8;
+        curY += 8;
       }
 
       else if (block.type === 'key-value-grid') {
@@ -1003,9 +1062,51 @@ export async function generateCourtFormPdf(model, options = {}) {
         // accessibility structure below. (This used to note that the DOCX
         // writer did the same; Milestone 40A removed that format.)
         const shouldRenderKvTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
+        // (The grid's geometry and its row measure, below, are declared before
+        // the heading: Milestone 76H item 1 keeps the heading with its first row.)
+        const KV_LABEL_MAX_W = 98; // usable width inside the 110pt label column
+        const KV_COL_W = contentWidth / 2;
+        const KV_VALUE_X = 115; // value text starts here, inside its column
+        const KV_VALUE_PAD = 4;
+        const KV_VALUE_MAX_W = KV_COL_W - KV_VALUE_X - KV_VALUE_PAD; // 115 at the 468pt content width
+        const KV_FULL_VALUE_MAX_W = contentWidth - KV_VALUE_X - KV_VALUE_PAD; // 349: item1 spanning the row
+        const KV_LINE_H = 10;
+        const KV_MIN_ROW_H = 18;
+        const measureKvItem = (item, valueMaxW) => {
+          if (!item) return { labelLines: [], valueLines: [], lines: 1 };
+          doc.setFont('PGSans', 'bold');
+          doc.setFontSize(8);
+          const labelLines = doc.splitTextToSize(String(item.label || ''), KV_LABEL_MAX_W);
+          doc.setFont('PGSans', 'normal');
+          doc.setFontSize(8);
+          const val = sanitizeDisplayValue(item.label, item.value);
+          // No key-value item carries a pre-split value today, but the helper
+          // above can return one, and String(['a','b']) would quietly produce
+          // "a,b". Join deliberately rather than leave that to chance.
+          const valueLines = Array.isArray(val)
+            ? val.flatMap((line) => doc.splitTextToSize(line, valueMaxW))
+            : doc.splitTextToSize(String(val || ''), valueMaxW);
+          return { labelLines, valueLines, lines: Math.max(labelLines.length, valueLines.length, 1) };
+        };
+        const measureKvRow = (i) => {
+          const item2 = items[i + 1];
+          // When item2 is absent, item1's value cell gets ColSpan:3 and
+          // actually has the full remaining row width to work with, not
+          // just the paired-column width -- measuring it against the
+          // narrow width would force-wrap values that have plenty of
+          // room, splitting them across lines for no reason.
+          const m1 = measureKvItem(items[i], item2 ? KV_VALUE_MAX_W : KV_FULL_VALUE_MAX_W);
+          const m2 = measureKvItem(item2, KV_VALUE_MAX_W);
+          return { m1, m2, height: Math.max(KV_MIN_ROW_H, (Math.max(m1.lines, m2.lines) * KV_LINE_H) + 8) };
+        };
         if (shouldRenderKvTitle) {
           const kvHeading = subHeading(block.title);
-          checkPageSpace(20 + kvHeading.height - SUB_HEADING_PT, sec.title);
+          // Milestone 76H item 1: the heading keeps its first row with it (or,
+          // for a row taller than a page, the row's first lines); it reserved
+          // only itself, and was left alone at the foot of a page.
+          const firstRow = items.length ? measureKvRow(0).height : 0;
+          const kvFirstUnit = !items.length ? 4 : (firstRow + 4 <= PAGE_ROOM ? firstRow + 4 : (MIN_SPLIT_LINES * KV_LINE_H) + 12);
+          checkPageSpace(Math.max(20 - SUB_HEADING_PT, kvFirstUnit) + kvHeading.height, sec.title);
           const subHNode = structureTree.addStructureElement({
             tag: subHTag,
             title: block.title,
@@ -1048,47 +1149,17 @@ export async function generateCourtFormPdf(model, options = {}) {
         // last digit of its period's end year, and long ward and attorney
         // names lost their tails. A value that spans the row (no item2) has
         // the same right edge as column 2 does: the border.
-        const KV_LABEL_MAX_W = 98; // usable width inside the 110pt label column
-        const KV_COL_W = contentWidth / 2;
-        const KV_VALUE_X = 115; // value text starts here, inside its column
-        const KV_VALUE_PAD = 4;
-        const KV_VALUE_MAX_W = KV_COL_W - KV_VALUE_X - KV_VALUE_PAD; // 115 at the 468pt content width
-        const KV_FULL_VALUE_MAX_W = contentWidth - KV_VALUE_X - KV_VALUE_PAD; // 349: item1 spanning the row
-        const KV_LINE_H = 10;
-        const KV_MIN_ROW_H = 18;
-
-        const measureKvItem = (item, valueMaxW) => {
-          if (!item) return { labelLines: [], valueLines: [], lines: 1 };
-          doc.setFont('PGSans', 'bold');
-          doc.setFontSize(8);
-          const labelLines = doc.splitTextToSize(String(item.label || ''), KV_LABEL_MAX_W);
-          doc.setFont('PGSans', 'normal');
-          doc.setFontSize(8);
-          const val = sanitizeDisplayValue(item.label, item.value);
-          // No key-value item carries a pre-split value today, but the helper
-          // above can return one, and String(['a','b']) would quietly produce
-          // "a,b". Join deliberately rather than leave that to chance.
-          const valueLines = Array.isArray(val)
-            ? val.flatMap((line) => doc.splitTextToSize(line, valueMaxW))
-            : doc.splitTextToSize(String(val || ''), valueMaxW);
-          return { labelLines, valueLines, lines: Math.max(labelLines.length, valueLines.length, 1) };
-        };
+        const KV_LINE_FACTOR = KV_LINE_H / 8; // drawn at the height measured (8pt text)
 
         for (let i = 0; i < items.length; i += 2) {
-          const item1 = items[i];
           const item2 = items[i + 1];
-          // When item2 is absent, item1's value cell gets ColSpan:3 and
-          // actually has the full remaining row width to work with, not
-          // just the paired-column width -- measuring it against the
-          // narrow width would force-wrap values that have plenty of
-          // room, splitting them across lines for no reason.
-          const item1ValueMaxW = item2 ? KV_VALUE_MAX_W : KV_FULL_VALUE_MAX_W;
-          const m1 = measureKvItem(item1, item1ValueMaxW);
-          const m2 = measureKvItem(item2, KV_VALUE_MAX_W);
-          const rowHeight = Math.max(KV_MIN_ROW_H, (Math.max(m1.lines, m2.lines) * KV_LINE_H) + 8);
-
-          checkPageSpace(rowHeight + 4, sec.title);
-
+          const { m1, m2 } = measureKvRow(i);
+          // Milestone 76H item 1: a row taller than a page continues onto the
+          // next, each page's part its own table row.
+          drawRowAcrossPages({
+            columns: [m1.labelLines, m1.valueLines, m2.labelLines, m2.valueLines],
+            lineH: KV_LINE_H, pad: 8, minHeight: KV_MIN_ROW_H, after: 4, sectionTitle: sec.title,
+            draw: ({ slices: [label1, value1, label2, value2], height: rowHeight }) => {
           const trNode = structureTree.addStructureElement({
             tag: 'TR',
             parent: tableNode,
@@ -1115,7 +1186,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(55, 65, 81);
-          doc.text(m1.labelLines, margin + 4, curY + 12);
+          doc.text(label1, margin + 4, curY + 12, { lineHeightFactor: KV_LINE_FACTOR });
           writeMarkedContentEnd(doc);
 
           // Column 1 Value (TD) - Spans 3 columns if item2 is absent to maintain 4-column regularity
@@ -1130,7 +1201,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           doc.setTextColor(17, 24, 39);
-          doc.text(m1.valueLines, margin + KV_VALUE_X, curY + 12);
+          doc.text(value1, margin + KV_VALUE_X, curY + 12, { lineHeightFactor: KV_LINE_FACTOR });
           writeMarkedContentEnd(doc);
 
           // Column 2 if present
@@ -1155,7 +1226,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             doc.setFont('PGSans', 'bold');
             doc.setFontSize(8);
             doc.setTextColor(55, 65, 81);
-            doc.text(m2.labelLines, col2X + 4, curY + 12);
+            doc.text(label2, col2X + 4, curY + 12, { lineHeightFactor: KV_LINE_FACTOR });
             writeMarkedContentEnd(doc);
 
             const td2Node = structureTree.addStructureElement({
@@ -1168,7 +1239,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             doc.setFont('PGSans', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(17, 24, 39);
-            doc.text(m2.valueLines, col2X + KV_VALUE_X, curY + 12);
+            doc.text(value2, col2X + KV_VALUE_X, curY + 12, { lineHeightFactor: KV_LINE_FACTOR });
             writeMarkedContentEnd(doc);
           } else {
             // Fill remainder of row with empty layout border for visual symmetry
@@ -1179,8 +1250,8 @@ export async function generateCourtFormPdf(model, options = {}) {
             doc.rect(col2X, curY, contentWidth / 2, rowHeight, 'S');
             writeArtifactEnd(doc);
           }
-
-          curY += rowHeight;
+            },
+          });
         }
         curY += 8;
       }
@@ -1264,9 +1335,22 @@ export async function generateCourtFormPdf(model, options = {}) {
         // actual checked-state information for screen readers.
         const items = block.items || [];
         const shouldRenderChecklistTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
+        const CHECK_LINE_H = 11;
+        const CHECK_BOX_SIZE = 7;
+        const CHECK_LABEL_MAX_W = contentWidth - 20;
+        const checklistLines = (item) => {
+          const label = String((item && item.label) || '');
+          const prefix = (item && item.checked) ? 'Yes — ' : 'No — ';
+          doc.setFont('PGSans', 'normal');
+          doc.setFontSize(9);
+          return doc.splitTextToSize(prefix + label, CHECK_LABEL_MAX_W);
+        };
         if (shouldRenderChecklistTitle) {
           const checklistHeading = subHeading(block.title);
-          checkPageSpace(20 + checklistHeading.height - SUB_HEADING_PT, sec.title);
+          // Milestone 76H item 1: the heading keeps its first row with it.
+          const firstRow = items.length ? Math.max(CHECK_LINE_H, checklistLines(items[0]).length * CHECK_LINE_H) : 0;
+          const checkFirstUnit = firstRow <= PAGE_ROOM ? firstRow : MIN_SPLIT_LINES * CHECK_LINE_H;
+          checkPageSpace(Math.max(20 - SUB_HEADING_PT, checkFirstUnit) + checklistHeading.height, sec.title);
           const chHNode = structureTree.addStructureElement({
             tag: subHTag,
             title: block.title,
@@ -1283,45 +1367,42 @@ export async function generateCourtFormPdf(model, options = {}) {
           curY += checklistHeading.height;
         }
 
-        const CHECK_LINE_H = 11;
-        const CHECK_BOX_SIZE = 7;
-        const CHECK_LABEL_MAX_W = contentWidth - 20;
-
         for (const item of items) {
-          const label = String((item && item.label) || '');
           const checked = !!(item && item.checked);
-          const prefix = checked ? 'Yes — ' : 'No — ';
-          doc.setFont('PGSans', 'normal');
-          doc.setFontSize(9);
-          const lines = doc.splitTextToSize(prefix + label, CHECK_LABEL_MAX_W);
-          const rowHeight = Math.max(CHECK_LINE_H, lines.length * CHECK_LINE_H);
+          const lines = checklistLines(item);
+          // Milestone 76H item 1: a row taller than a page continues; its box
+          // is drawn once, beside its first line.
+          drawRowAcrossPages({
+            columns: [lines], lineH: CHECK_LINE_H, pad: 0, minHeight: CHECK_LINE_H, sectionTitle: sec.title,
+            draw: ({ slices, first }) => {
+              if (first) {
+                writeArtifactStart(doc, 'Layout');
+                doc.setDrawColor(70, 80, 95);
+                doc.setLineWidth(0.6);
+                doc.rect(margin + 2, curY + 1, CHECK_BOX_SIZE, CHECK_BOX_SIZE, 'S');
+                if (checked) {
+                  doc.line(margin + 2, curY + 1, margin + 2 + CHECK_BOX_SIZE, curY + 1 + CHECK_BOX_SIZE);
+                  doc.line(margin + 2, curY + 1 + CHECK_BOX_SIZE, margin + 2 + CHECK_BOX_SIZE, curY + 1);
+                }
+                writeArtifactEnd(doc);
+              }
 
-          checkPageSpace(rowHeight, sec.title);
-
-          writeArtifactStart(doc, 'Layout');
-          doc.setDrawColor(70, 80, 95);
-          doc.setLineWidth(0.6);
-          doc.rect(margin + 2, curY + 1, CHECK_BOX_SIZE, CHECK_BOX_SIZE, 'S');
-          if (checked) {
-            doc.line(margin + 2, curY + 1, margin + 2 + CHECK_BOX_SIZE, curY + 1 + CHECK_BOX_SIZE);
-            doc.line(margin + 2, curY + 1 + CHECK_BOX_SIZE, margin + 2 + CHECK_BOX_SIZE, curY + 1);
-          }
-          writeArtifactEnd(doc);
-
-          const rowNode = structureTree.addStructureElement({
-            tag: 'P',
-            pageNumber: pageNum,
-            isLeaf: true,
-            parent: partNode,
+              const rowNode = structureTree.addStructureElement({
+                tag: 'P',
+                pageNumber: pageNum,
+                isLeaf: true,
+                parent: partNode,
+              });
+              writeMarkedContentStart(doc, 'P', rowNode.mcid);
+              doc.setFont('PGSans', 'normal');
+              doc.setFontSize(9);
+              doc.setTextColor(30, 35, 45);
+              doc.text(slices[0], margin + 16, curY + 8, { lineHeightFactor: CHECK_LINE_H / 9 });
+              writeMarkedContentEnd(doc);
+            },
           });
-          writeMarkedContentStart(doc, 'P', rowNode.mcid);
-          doc.setFont('PGSans', 'normal');
-          doc.setFontSize(9);
-          doc.setTextColor(30, 35, 45);
-          doc.text(lines, margin + 16, curY + 8);
-          writeMarkedContentEnd(doc);
 
-          curY += rowHeight + 3;
+          curY += 3;
         }
         curY += 6;
       }
@@ -1540,14 +1621,16 @@ export async function generateCourtFormPdf(model, options = {}) {
             doc.setFont('PGSans', 'normal');
             doc.setFontSize(measured.fontSize || 8);
             doc.setTextColor(17, 24, 39);
-            doc.text(measured.lines, textX, yTop + 11, { align });
+            // Milestone 76H item 1: at the 10pt a line is measured at (it drew
+            // closer, at the library's default, inside a taller row).
+            doc.text(measured.lines, textX, yTop + 11, { align, lineHeightFactor: 10 / 8 });
             doc.setFontSize(8);
             return;
           }
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           doc.setTextColor(17, 24, 39);
-          doc.text(measured.mainLines, textX, yTop + 11, { align });
+          doc.text(measured.mainLines, textX, yTop + 11, { align, lineHeightFactor: 10 / 8 });
           let y = yTop + 11 + (measured.mainLines.length * 10) - 4;
           for (const group of measured.subGroups) {
             doc.setFont('PGSans', group.italic ? 'italic' : 'normal');
@@ -1559,16 +1642,10 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setTextColor(17, 24, 39);
         };
 
-        checkPageSpace(TABLE_FIRST_UNIT_PT, sec.title); // headerHeight (18) + 25
-        drawTableHeader(false);
-
-        // Draw Table Rows
-        for (let rIdx = 0; rIdx < rows.length; rIdx++) {
-          const rowData = rows[rIdx];
-
-          // Calculate max cell height in row (mixed-style cells may need
-          // more vertical space than a plain wrapped string of the same
-          // line count).
+        // Calculate max cell height in a row (mixed-style cells may need
+        // more vertical space than a plain wrapped string of the same
+        // line count).
+        const measureRow = (rowData) => {
           let maxCellHeightPt = 10;
           const cellMeasures = [];
           for (let cIdx = 0; cIdx < rowData.length; cIdx++) {
@@ -1576,13 +1653,34 @@ export async function generateCourtFormPdf(model, options = {}) {
             cellMeasures.push(measured);
             if (measured.heightPt > maxCellHeightPt) maxCellHeightPt = measured.heightPt;
           }
+          return { cellMeasures, cellHeight: Math.max(16, maxCellHeightPt + 6) };
+        };
 
-          const cellHeight = Math.max(16, maxCellHeightPt + 6);
+        // Milestone 76H item 1: the header keeps its first row with it (or,
+        // for a row taller than a page, the row's first lines). It reserved
+        // the header and 25pt, and a taller first row left it alone at the
+        // foot of a page.
+        const firstRowHeight = rows.length ? measureRow(rows[0]).cellHeight : 25;
+        const tableFirstUnit = firstRowHeight + headerHeight <= PAGE_ROOM ? firstRowHeight : (MIN_SPLIT_LINES * 10) + 6;
+        checkPageSpace(Math.max(TABLE_FIRST_UNIT_PT, headerHeight + tableFirstUnit), sec.title);
+        drawTableHeader(false);
 
-          if (checkPageSpace(cellHeight, sec.title)) {
-            drawTableHeader(true);
-          }
+        // Draw Table Rows
+        for (let rIdx = 0; rIdx < rows.length; rIdx++) {
+          const rowData = rows[rIdx];
+          const { cellMeasures, cellHeight: wholeHeight } = measureRow(rowData);
+          // Each cell as lines at 10pt; a mixed cell (a description over its
+          // small address lines) is drawn whole in the row's first part.
+          const columns = cellMeasures.map((m) => (m.isMixed ? Array.from({ length: Math.ceil(m.heightPt / 10) }, () => '') : m.lines));
+          const minFirstLines = Math.max(MIN_SPLIT_LINES, ...cellMeasures.map((m) => (m.isMixed ? Math.ceil(m.heightPt / 10) : 0)));
 
+          // Milestone 76H item 1: a row taller than a page continues onto the
+          // next page, under the repeated header, each page's part its own
+          // table row.
+          drawRowAcrossPages({
+            columns, lineH: 10, pad: 6, minHeight: 16, sectionTitle: sec.title, minFirstLines, wholeHeight,
+            onNewPage: () => drawTableHeader(true),
+            draw: ({ slices, height: cellHeight, first }) => {
           // Alternating row background
           if (rIdx % 2 === 1) {
             writeArtifactStart(doc, 'Layout');
@@ -1616,7 +1714,11 @@ export async function generateCourtFormPdf(model, options = {}) {
               parent: dataTr,
             });
             writeMarkedContentStart(doc, 'TD', tdNode.mcid);
-            drawCell(measured, textX, curY, align);
+            if (measured.isMixed) {
+              if (first) drawCell(measured, textX, curY, align);
+            } else if (slices[cIdx].length) {
+              drawCell({ ...measured, lines: slices[cIdx] }, textX, curY, align);
+            }
             writeMarkedContentEnd(doc);
 
             if (cIdx > 0) {
@@ -1628,8 +1730,8 @@ export async function generateCourtFormPdf(model, options = {}) {
             }
             cellX += colW;
           }
-
-          curY += cellHeight;
+            },
+          });
         }
 
         // Totals Row if present

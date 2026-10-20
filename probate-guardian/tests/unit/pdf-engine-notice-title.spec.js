@@ -65,7 +65,11 @@ describe('Milestone 61G: a notice block\'s title reaches the page', () => {
     // Inventory PDF, heading on page 3 and body on page 4. One check covering
     // both is what keeps them together.
     const branch = noticeBranch();
-    expect(branch).toMatch(/checkPageSpace\(\s*\w*[Tt]itleHeight\s*\+\s*boxHeight/);
+    // Milestone 76H item 1: the check covers the heading and the whole box
+    // whenever the box fits a page; a box taller than a page keeps its
+    // heading with its first lines and continues below.
+    expect(branch).toMatch(/checkPageSpace\(\s*\w*[Tt]itleHeight\s*\+\s*noticeFirstUnit/);
+    expect(branch).toMatch(/noticeFirstUnit\s*=\s*boxHeight\s*<=\s*PAGE_ROOM\s*\?\s*boxHeight\s*:/);
   });
 
   test('it tags the title as a heading, like key-value-grid and table do', () => {

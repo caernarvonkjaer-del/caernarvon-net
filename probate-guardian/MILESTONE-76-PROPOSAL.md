@@ -6,7 +6,7 @@
 (the requester, 2026-10-19, on Revision 2: "76A–76D, data loss"), in that
 order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
 approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
-76E, 76G item 1 and 76H items 2, 4 and 5 built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
+76E, 76G item 1 and 76H items 1, 2, 4 and 5 built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
@@ -1580,6 +1580,38 @@ Tests: `printable-chars.spec.js` (new; red first against the old font: the
 list and Latin Extended missing) and `pdf-letters-and-tabs.spec.ts` (new;
 reads the generated PDF; red first: "Dvoák", "ukasz ó", "tefan", "Reads
 well." and "Line one" cut short, no note).
+
+**Item 1 — BUILT 2026-10-20.** What a filer now sees: a Plan for Minors
+Question 5 answer of 300 words or more, a long Schedule B-4 payee, a long
+explanation or comment prints in full -- the part that doesn't fit continues
+on the next page (under the table's repeated header for a table row) instead
+of running past the footer and off the paper, where its lines were lost from
+the PDF's text too.
+
+- One rule for notices, key-value rows, checklist rows, table rows and
+  document comments (`drawRowAcrossPages()`, `pdf-engine.js`): a row that
+  fits a page moves to a new page as before; only one taller than a page is
+  split, as many lines as fit and at least two a page, each page's part its
+  own tagged element (a `P`, or a table row).
+- Each of those blocks now draws its lines at the height it measures them at
+  (they drew at the PDF library's default, closer than measured), so every
+  row keeps its height and every page break stays where it was: multi-line
+  text inside a row is spaced to fill the row it always reserved.
+- A heading stays with its first row: a key-value grid's or a checklist's
+  heading, and a table's header, reserve the whole first row (or, for a row
+  taller than a page, its first lines); they reserved only themselves, or the
+  header and 25pt, and were left alone at the foot of a page.
+- Not split: a table's totals row and a signature block. Their text is a
+  total's label and a signer's details, never a page tall; they still move
+  to a new page whole.
+
+Tests: `pdf-long-text.spec.ts` (new; reads the generated PDFs: every word of a
+430-word Question 5 answer, a 300-word B-4 payee and an 800-word explanation
+on the paper and above the footer, on more than one page) -- red first on the
+old engine (81 of the answer's words never reached the paper; 11 of the
+payee's at or below the footer). `pdf-engine-notice-title.spec.js` reads the
+notice's new keep-together rule. The PDF browser specs (geometry, margins,
+tags, tables, fonts, notices) pass unchanged.
 
 ---
 
