@@ -16,6 +16,7 @@ import {
   PG_SANS_BOLD_B64,
   PG_SANS_ITALIC_B64,
 } from '../../assets/embedded-fonts.js';
+import { pdfText } from './pdf-text.js';
 import {
   getFloridaCircuitCourtCaption,
   getCaseCaptionTitle,
@@ -175,6 +176,15 @@ export async function generateCourtFormPdf(model, options = {}) {
   const doc = await createJsPdfInstance();
   if (!doc) {
     throw new Error('jsPDF library not available in environment.');
+  }
+  // Milestone 76H item 5: every line drawn, wrapped or measured goes through
+  // pdfText() -- a tab or a lone carriage return stopped the PDF library
+  // drawing the rest of its line, and a letter typed with a separate accent
+  // mark lost the accent. One place, so no drawing site can miss it.
+  for (const method of ['text', 'splitTextToSize', 'getTextWidth']) {
+    if (typeof doc[method] !== 'function') continue;
+    const original = doc[method].bind(doc);
+    doc[method] = (value, ...rest) => original(pdfText(value), ...rest);
   }
 
   // Set PDF version to 1.7 (required for PDF/UA-1 / ISO 14289-1 conformance)

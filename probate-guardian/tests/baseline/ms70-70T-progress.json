@@ -107,6 +107,7 @@
   "tests/e2e/pdf-evidence-lab.spec.ts",
   "tests/e2e/pdf-fonts-and-xmp.spec.ts",
   "tests/e2e/pdf-form-specific.spec.ts",
+  "tests/e2e/pdf-letters-and-tabs.spec.ts",
   "tests/e2e/pdf-notice-title.spec.ts",
   "tests/e2e/pdf-preview-viewer.spec.ts",
   "tests/e2e/pdf-right-margin.spec.ts",

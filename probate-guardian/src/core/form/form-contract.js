@@ -24,6 +24,7 @@ import { getCurrentPage } from '../navigation/route-state.js';
 import { announceModelChange, commitModelChange } from '../model-change.js';
 import { amountSignNote } from '../filing/sign-advisories.js';
 import { smallShareNote } from '../filing/ward-share-advisories.js';
+import { unprintableNote } from '../pdf/pdf-text.js';
 
 // The filing each field is being edited in: bound when the field takes focus
 // (form-events.js) or on its first write. Switching the open filing while a
@@ -833,6 +834,24 @@ export function syncPercentFeedback(container) {
     setPercentFeedback(el, percentProblem(value));
     setFieldNote(el, smallShareNote(filingType(), path, value));
   });
+}
+
+// Milestone 76H item 4 (decision 76H-1): a text box holding a letter the PDF
+// can't print says so beside it -- as the filer leaves it, and on every page
+// drawn, so a reopened or imported filing says it too. The letter used to be
+// left out of the PDF without a word ("Dvořák" printed "Dvoák"). Amount,
+// share and date boxes hold no letters to print and keep their own notes.
+const NO_LETTERS = new Set(['money', 'signed-money', 'percent', 'date', 'boolean']);
+export function syncPrintableNote(control) {
+  if (!control || (control.tagName !== 'TEXTAREA' && control.tagName !== 'INPUT')) return;
+  if (control.tagName === 'INPUT' && !['text', 'email', 'tel', 'search', ''].includes(control.type)) return;
+  if (!getControlPath(control) && !control.dataset?.bind) return;
+  if (control.dataset?.bind ? ['decimal', 'percent'].includes(control.dataset.inputType) : NO_LETTERS.has(getControlKind(control))) return;
+  setFieldNote(control, unprintableNote(control.value));
+}
+export function syncPrintableNotes(container) {
+  if (!container || typeof container.querySelectorAll !== 'function') return;
+  container.querySelectorAll('input, textarea').forEach((el) => syncPrintableNote(el));
 }
 
 // Milestone 74G: on render, every e-mail box shows whether what it holds is

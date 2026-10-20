@@ -1,4 +1,4 @@
-import { bindFieldToFiling, finalizeFieldValue, writeDraftValue } from './core/form/form-contract.js';
+import { bindFieldToFiling, finalizeFieldValue, syncPrintableNote, writeDraftValue } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
 import { claimPreparer, PREPARER_FLAG_CHANGE } from './core/form/preparer-flag.js';
 import { claimServiceCertifier, SERVICE_CERTIFIER_CHANGE } from './core/filing/unrepresented-filing.js';
@@ -189,6 +189,9 @@ on('focusout', (event) => {
   if (boundPath(control)) {
     finalizeFieldValue(control, { event });
   }
+  // Milestone 76H item 4: a letter the PDF can't print is named as the filer
+  // leaves the box (the Inventory's data-bind boxes too).
+  if (boundPath(control) || control.dataset.bind) syncPrintableNote(control);
 });
 
 // Milestone 50H: keyboard route to the county dropdown -- previously only

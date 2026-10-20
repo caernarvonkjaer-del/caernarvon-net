@@ -4,7 +4,7 @@
 // linked to their inputs, accordions, unreadable amounts marked, the SSN
 // reveal and the browser notice. Moved from legacy-app.js's FORM BINDING
 // ENGINE and neighbours.
-import { syncAmountFeedback, syncDateFeedback, syncEmailMessages } from './form-contract.js';
+import { syncAmountFeedback, syncDateFeedback, syncEmailMessages, syncPrintableNotes } from './form-contract.js';
 import { ic } from '../ui/icons.js';
 
 // Milestone 73G part 1: every amount box accepts a minus (decision 73G-N1,
@@ -16,11 +16,14 @@ import { ic } from '../ui/icons.js';
 // (src/core/filing/amount-fields.js). What runs after a page is drawn is the
 // marking of any amount box whose stored amount can't be read -- and, since
 // Milestone 74L, of any date box still holding an impossible date -- and,
-// since Milestone 74G, of any e-mail box holding text that isn't an address.
+// since Milestone 74G, of any e-mail box holding text that isn't an address --
+// and, since Milestone 76H item 4, of any box holding a letter the PDF can't
+// print.
 export function setupAmountFieldValidation(container = document) {
   syncAmountFeedback(container);
   syncDateFeedback(container);
   syncEmailMessages(container);
+  syncPrintableNotes(container);
 }
 
 export function toggleSsnReveal(btn){
