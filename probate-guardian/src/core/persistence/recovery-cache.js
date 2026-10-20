@@ -1,7 +1,9 @@
 // Two unrelated "where was I" mechanisms live in this file:
 //
-// 1. The IndexedDB snapshot (pg-session-cache), written on every dirty
-//    autosave. Its only remaining job is same-tab auto-lock recovery: when
+// 1. The IndexedDB snapshot (pg-session-cache) -- retired by Milestone 76K
+//    (decision 76K-2): no longer written; a save deletes one an earlier
+//    version left. What follows is its history. It was written on every dirty
+//    autosave. Its only remaining job was same-tab auto-lock recovery: when
 //    lockApp() wipes decrypted state from memory and the case has never
 //    been saved to a .sav file yet (so there is no file to reload from),
 //    lockApp() (src/core/security/app-lock.js) reads this cache back after
@@ -21,9 +23,7 @@
 //    "Open Case File") already reloads real data from the actual .sav file;
 //    this marker only decides where startup lands the filer afterward,
 //    instead of always dropping them on the dashboard.
-import { encryptJSON, getSecurityMode, getCryptoKey } from './crypto.js';
 import { openIndexedDbStore } from './launch-preferences.js';
-import { getCaseFile } from '../state.js';
 
 export const SESSION_CACHE_DB = 'pg-session-cache';
 export const SESSION_CACHE_STORE = 'snapshot';
@@ -70,61 +70,12 @@ export async function _sessionCacheClear() {
   }
 }
 
-// Stores what lockApp() reads back (see the file header): each filing; the
-// guardian's name and email, with the circuit chosen for the case; and the
-// shared records -- people, cases and "not the same person" decisions. Until
-// Milestone 70's 70I the snapshot held only the filings and the guardian, so
-// locking a case never saved to a file lost its shared records and circuit
-// (the filings came back; the People page came back empty). A snapshot
-// written before then restores as it always did. Salt and verifier are not
-// stored: the same password derives the same key.
-// When this page last wrote the snapshot (its savedAt), or null. The store has
-// one slot, shared by every tab of this origin and left behind by a session
-// that closed unsaved; a lock restores only the snapshot this page wrote
-// (Milestone 70, 70I). Before, a lock could restore a snapshot another tab,
-// or an earlier session, had written -- another case's filings.
-let ownSnapshotSavedAt = null;
-
-export async function saveSessionRestoreCache() {
-  const securityMode = getSecurityMode();
-  const cryptoKey = getCryptoKey();
-  if (securityMode === 'encrypted' && !cryptoKey) return false;
-  const caseFile = getCaseFile();
-  if (!caseFile.wards || !caseFile.wards.length) return false; // nothing worth recovering yet
-
-  try {
-    const wards = [];
-    for (const ward of caseFile.wards) {
-      wards.push({ wardId: ward.wardId, enc: await encryptJSON(ward) });
-    }
-    const guardian = await encryptJSON({
-      guardianName: caseFile.guardianName,
-      guardianEmail: caseFile.guardianEmail,
-      selectedCircuit: caseFile.selectedCircuit ?? null,
-    });
-    const parties = await encryptJSON(caseFile.parties || []);
-    const cases = await encryptJSON(caseFile.cases || []);
-    const partyDismissals = await encryptJSON(caseFile.dismissedPartyPairs || []);
-    const savedAt = Date.now();
-    await _sessionCachePut({ savedAt, securityMode, guardian, wards, parties, cases, partyDismissals });
-    ownSnapshotSavedAt = savedAt;
-    return true;
-  } catch (e) {
-    console.warn('session-restore cache write failed', e);
-    return false;
-  }
-}
-
+// Milestone 76K item 4 (decision 76K-2, the requester's): the snapshot is no
+// longer written -- the lock keeps unsaved work sealed in the tab (Milestone
+// 76A) -- so no case data goes to browser storage. What remains deletes a
+// snapshot an earlier version left in the shared slot; a save calls it.
 export async function clearSessionRestoreCache() {
-  ownSnapshotSavedAt = null;
   await _sessionCacheClear();
-}
-
-/** The snapshot this page wrote last, or null: what a lock restores (app-lock.js). */
-export async function readOwnSessionRestoreCache() {
-  if (ownSnapshotSavedAt === null) return null;
-  const cache = await _sessionCacheGet();
-  return cache && cache.savedAt === ownSnapshotSavedAt ? cache : null;
 }
 
 export const LAST_POSITION_KEY = 'pg-last-position';

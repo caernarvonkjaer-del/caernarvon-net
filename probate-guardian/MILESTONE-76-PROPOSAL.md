@@ -2353,6 +2353,68 @@ doubling with each further one, up to 5 minutes; `app-lock.js:201-203`).
 | 8 Legal | None. |
 | 9 Cross-form | Not form-specific. |
 
+### Build record — BUILT 2026-10-20
+
+Approved by name (the requester, 2026-10-20: "Both, 76K then 76L"). What a
+filer now sees:
+
+- **Item 1:** a case file marked password-protected refuses any part saved
+  without a password: a planted filing is named among the parts that could
+  not be read (and the file is protected from being saved over, as any
+  damaged file is), and a plain password check lets no password through. A
+  file saved with no password, and a no-password backup restored into a
+  protected case, read as before. Residual (not addressed): a part moved
+  between places, an older part put back, or the "protected" mark itself
+  flipped -- the mark is not authenticated.
+- **Item 2 (decisions 76K-1, 76K-4):** new keys are made at 600,000 rounds
+  and each file records its count (`kdfIterations`); a file recording none
+  opens at 210,000, and is re-keyed at its next unlock -- the new key (with a
+  new salt) is made while the password is in hand and takes over only once
+  the case is back, read with the old one; the whole file is then written
+  again and the Activity Log records "Password protection strengthened".
+  Every key path carries the count: the unlock, app state, the single-filing
+  export, the backup import's same-salt shortcut. Only 210,000 and 600,000
+  are accepted. A file keyed at 600,000 is format 2, so an older version says
+  "saved by a newer version" rather than "Incorrect password"; a file with no
+  password, or not yet re-keyed, stays format 1, which every version reads
+  (design detail: the rollback contract keeps holding for those). Opening a
+  file: five wrong passwords lock the prompt for one minute (kept in this
+  browser, naming nothing; removed after a right password).
+- **Item 3 (decision 76K-3):** the tab record in browser storage holds the
+  open filing's internal id and type only -- no ward name, no case number;
+  the names travel only on the tabs' message channel, so "Other tab: <ward
+  name>" still names the ward.
+- **Item 4 (decision 76K-2):** no copy of the case goes to browser storage:
+  the recovery snapshot is no longer written (the lock seals unsaved work in
+  the tab, Milestone 76A); a save deletes a copy an earlier version left. The
+  lock closes every dialog built into the page and empties the ward picker
+  and the ward's card.
+- **Item 5:** Escape no longer closes the lock, start, password-choice or
+  terms screens (48E's guard).
+- **Item 6:** every open converts an older Plan's Yes/No answers stored as
+  true/false (it ran only on Open Backup and a dropped file).
+
+Tests: `protected-parts-76k.spec.js` (new; items 1 and 6 -- all four red
+first); `save-safety.spec.js` (new: the re-key at an unlock, a case already
+at 600,000 kept, the open-file lockout -- all three red first; its helpers
+record the count, as creating a password does); `crypto-contract.spec.js`
+and `case-file.spec.js` (600,000; the recorded count; format 2; unknown
+counts refused; no copy in browser storage); `lock-screen-76k.spec.ts` (new,
+browser: Escape with real key presses on the lock, start and choice screens;
+no ward name on the page while locked); `security-contract.spec.ts` (new:
+no ward name or case number anywhere in browser storage, with and without a
+password); `recovery-cache.spec.ts`, `dashboard-backup.spec.ts`,
+`mixed-version.characterization.spec.ts` and `app-driver.ts` (the snapshot
+retired, the heartbeats' names removed -- recorded changes against the old
+version); `startup-flow.spec.js`, `model-change-event.spec.js` (the new
+calls); `rollback.contract.spec.ts` (a password-protected file is refused by
+the pre-merge version as "saved by a newer version" and left as it was --
+the consequence 76K-1 accepted; a file with no password still opens there in
+full); `case-file-newer-format.spec.ts` and the corpus's damaged-file case
+(a newer file is now format 3); the saved-file corpus golden (plain
+fixtures 01-03 read their Plans at schema version 2, item 6). Not yet: a saved-file fixture keyed at 600,000 (written by
+`scripts/ms70-sav-corpus.mjs` from a commit that has 76K -- a follow-up).
+
 ---
 
 ## 76L — Pages and smaller fixes

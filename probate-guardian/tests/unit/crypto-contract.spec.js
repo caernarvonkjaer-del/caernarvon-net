@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
-  PBKDF2_ITERATIONS, CRYPTO_VERIFIER_PLAINTEXT, PLAIN_MODE_PREFIX, _bytesFromB64,
+  PBKDF2_ITERATIONS, LEGACY_PBKDF2_ITERATIONS, CRYPTO_VERIFIER_PLAINTEXT, PLAIN_MODE_PREFIX, _bytesFromB64,
   generateSaltB64, deriveKeyFromPassword, encryptJSON, decryptJSONWithKey, deriveAndVerifyKey,
 } from '../../src/core/persistence/crypto.js';
 
@@ -15,7 +15,8 @@ import {
 afterEach(() => vi.restoreAllMocks());
 
 describe('key derivation', () => {
-  test('PBKDF2 with SHA-256 at 210,000 iterations, deriving a non-extractable AES-GCM-256 key for encrypt/decrypt only', async () => {
+  // Milestone 76K item 2 (decision 76K-1): new keys at 600,000 rounds (it was 210,000).
+  test('PBKDF2 with SHA-256 at 600,000 iterations, deriving a non-extractable AES-GCM-256 key for encrypt/decrypt only', async () => {
     const importKey = vi.spyOn(crypto.subtle, 'importKey');
     const deriveKey = vi.spyOn(crypto.subtle, 'deriveKey');
     const salt = generateSaltB64();
@@ -23,8 +24,9 @@ describe('key derivation', () => {
 
     expect(importKey).toHaveBeenCalledWith('raw', expect.anything(), 'PBKDF2', false, ['deriveKey']);
     const [params, , derived, extractable, usages] = deriveKey.mock.calls[0];
-    expect(params).toMatchObject({ name: 'PBKDF2', iterations: 210000, hash: 'SHA-256' });
-    expect(PBKDF2_ITERATIONS).toBe(210000);
+    expect(params).toMatchObject({ name: 'PBKDF2', iterations: 600000, hash: 'SHA-256' });
+    expect(PBKDF2_ITERATIONS).toBe(600000);
+    expect(LEGACY_PBKDF2_ITERATIONS).toBe(210000);
     expect([...params.salt]).toEqual([..._bytesFromB64(salt)]);
     expect(derived).toEqual({ name: 'AES-GCM', length: 256 });
     expect(extractable).toBe(false);
@@ -83,17 +85,29 @@ describe('encryption', () => {
 });
 
 describe('verifying a password against an archive', () => {
+  // An archive that records no count was keyed at 210,000 (every file before
+  // Milestone 76K); one that records 600,000 opens with it; any other count is refused.
   test('the verifier opens with the right password and refuses a wrong one', async () => {
     const salt = generateSaltB64();
-    const key = await deriveKeyFromPassword('correct horse battery', salt);
+    const key = await deriveKeyFromPassword('correct horse battery', salt, LEGACY_PBKDF2_ITERATIONS);
     const manifest = { salt, verifier: await encryptJSON(CRYPTO_VERIFIER_PLAINTEXT, key, 'encrypted') };
     await expect(deriveAndVerifyKey('correct horse battery', manifest)).resolves.toBeTruthy();
     await expect(deriveAndVerifyKey('wrong horse battery', manifest)).rejects.toThrow();
   });
 
-  test('a version-1 archive with no verifier is verified against its encrypted guardian block', async () => {
+  test('an archive recording 600,000 rounds opens with them; an unknown count is refused', async () => {
     const salt = generateSaltB64();
     const key = await deriveKeyFromPassword('correct horse battery', salt);
+    const manifest = { salt, kdfIterations: 600000, verifier: await encryptJSON(CRYPTO_VERIFIER_PLAINTEXT, key, 'encrypted') };
+    await expect(deriveAndVerifyKey('correct horse battery', manifest)).resolves.toBeTruthy();
+    await expect(deriveAndVerifyKey('correct horse battery', { ...manifest, kdfIterations: undefined })).rejects.toThrow();
+    await expect(deriveAndVerifyKey('correct horse battery', { ...manifest, kdfIterations: 1000 })).rejects.toThrow(/Unknown key-strengthening/);
+    await expect(deriveKeyFromPassword('correct horse battery', salt, 1000)).rejects.toThrow(/Unknown key-strengthening/);
+  });
+
+  test('a version-1 archive with no verifier is verified against its encrypted guardian block', async () => {
+    const salt = generateSaltB64();
+    const key = await deriveKeyFromPassword('correct horse battery', salt, LEGACY_PBKDF2_ITERATIONS);
     const manifest = { salt, guardian: await encryptJSON({ guardianName: 'G' }, key, 'encrypted') };
     await expect(deriveAndVerifyKey('correct horse battery', manifest)).resolves.toBeTruthy();
     await expect(deriveAndVerifyKey('wrong horse battery', manifest)).rejects.toThrow();

@@ -16,7 +16,11 @@ import { gotoApp, startNewCase, chooseNoPassword, createWard, exportAndCapture, 
 //    of always on the dashboard.
 
 test.describe('recovery-cache (position memory + save clears the lock-recovery cache)', () => {
-  test('a successful .sav save clears the same-tab lock-recovery cache', async ({ page }) => {
+  // Milestone 76K item 4 (decision 76K-2, the requester's): the lock-recovery
+  // snapshot is retired -- the lock keeps unsaved work sealed in the tab
+  // (Milestone 76A) -- so an unsaved case writes no copy of itself here, and
+  // a save deletes one an earlier version left behind.
+  test('an unsaved case writes no copy to browser storage; a .sav save deletes one an earlier version left', async ({ page }) => {
     await gotoApp(page);
     await startNewCase(page);
     await chooseNoPassword(page);
@@ -24,7 +28,21 @@ test.describe('recovery-cache (position memory + save clears the lock-recovery c
     await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 
     const cacheBefore = await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.sessionCache());
-    expect(cacheBefore?.wards?.length).toBeGreaterThan(0);
+    expect(cacheBefore, 'no copy of the unsaved case').toBeNull();
+
+    // Setup (D9): the copy an earlier version wrote, in its slot.
+    await page.evaluate(() => new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open('pg-session-cache');
+      open.onupgradeneeded = () => { if (!open.result.objectStoreNames.contains('snapshot')) open.result.createObjectStore('snapshot'); };
+      open.onsuccess = () => {
+        const tx = open.result.transaction('snapshot', 'readwrite');
+        tx.objectStore('snapshot').put({ savedAt: 1, securityMode: 'none', wards: [{ wardId: 'old', enc: 'PLAIN:{}' }] }, 'current');
+        tx.oncomplete = () => { open.result.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      open.onerror = () => reject(open.error);
+    }));
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.sessionCache())).not.toBeNull();
 
     const downloadPromise = page.waitForEvent('download');
     await page.evaluate(() => { void (window as any).GuardianForms.testing.saveArchive.all(); });

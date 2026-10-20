@@ -67,7 +67,7 @@ import {
   buildCaseFileBlob, buildSingleWardExportBlob, exportCaseFileZip, finishSingleWardExport, loadCaseFileHandle,
   markDirtySinceExport, rememberCaseFileHandle, saveBackupNow, saveBlobAs,
 } from '../persistence/case-file.js';
-import { clearSessionRestoreCache, saveSessionRestoreCache } from '../persistence/recovery-cache.js';
+import { clearSessionRestoreCache } from '../persistence/recovery-cache.js';
 import { hasOpenedCaseBefore, loadAppState, readRememberedFile } from '../persistence/launch-preferences.js';
 import { decryptJSONWithKey } from '../persistence/crypto.js';
 import { acquireWardLock, getCurrentLockedWardId, releaseWardLock } from '../ward-lock.js';
@@ -121,7 +121,7 @@ export function applicationImplementations() {
     doSavePdfPlanAnnual: () => features().run('planAnnual', 'doSavePdfPlanAnnual'),
     doSavePdfPlanInitial: () => features().run('planInitial', 'doSavePdfPlanInitial'),
     doSavePdfPlanMinor: () => features().run('planMinor', 'doSavePdfPlanMinor'),
-    saveSessionRestoreCache, clearSessionRestoreCache, rememberCaseFileHandle,
+    clearSessionRestoreCache, rememberCaseFileHandle,
     acquireWardLock, releaseWardLock, getCurrentLockedWardId,
     setTestSystemTitleWarningEnabledForTest,
     loadGuardianPdf: () => features().pdf.guardian(),
@@ -339,8 +339,8 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
       pdfPlanInitial: () => call('doSavePdfPlanInitial'),
       pdfPlanMinor: () => call('doSavePdfPlanMinor'),
     }),
+    // Milestone 76K item 4: the snapshot is no longer written; clearing remains.
     recoveryCache: Object.freeze({
-      save: () => call('saveSessionRestoreCache'),
       clear: () => call('clearSessionRestoreCache'),
     }),
     launchState: Object.freeze({ rememberHandle: (handle) => call('rememberCaseFileHandle', handle) }),

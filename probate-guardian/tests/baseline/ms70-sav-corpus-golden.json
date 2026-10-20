@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characterization.spec.ts. Regenerate only for a deliberate, recorded change.",
+ "note": "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characterization.spec.ts. Regenerate only for a deliberate, recorded change. Regenerated 2026-10-20 for Milestone 76K item 6: every open now converts an older Plan's Yes/No answers, so the three plain fixtures holding Plans at schema version 1 (01, 02, 03) read with planTriStateSchemaVersion 2 -- only their digests changed (no true/false answer to convert); the password fixtures hold no Plans.",
  "fixtures": {
   "01-ms34-2-encrypted.sav": {
    "parties": 3,
@@ -26,7 +26,7 @@
     57,
     72
    ],
-   "digest": "88f1d61a095b74be7ce5641e0dacdc402ca89e052539e7629fecddbc73b3993e"
+   "digest": "6942309f021621c0ea4b1ffc92c5273b26d62e95383dbd751f44ea5cf6736591"
   },
   "02-guardianship-type-encrypted.sav": {
    "parties": 3,
@@ -53,7 +53,7 @@
     57,
     72
    ],
-   "digest": "88f1d61a095b74be7ce5641e0dacdc402ca89e052539e7629fecddbc73b3993e"
+   "digest": "6942309f021621c0ea4b1ffc92c5273b26d62e95383dbd751f44ea5cf6736591"
   },
   "03-ms36-encrypted.sav": {
    "parties": 3,
@@ -80,7 +80,7 @@
     57,
     72
    ],
-   "digest": "b64e2b0c91ca9b2fb39820f6e0a7ed85cca3538e1659fa73aa6d435abcf4ced9"
+   "digest": "755539e6353f34d7ece2f080bfb0feb7c337491c2da3b8a62674bf13b00c550e"
   },
   "04-ms37-encrypted.sav": {
    "parties": 3,

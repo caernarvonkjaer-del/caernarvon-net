@@ -14,6 +14,8 @@ export const ACTIVITY_EVENT_META={
   UNLOCK_SUCCESS:   {label:'Unlocked',                 iconName:'unlock'},
   UNLOCK_FAILED:    {label:'Failed unlock attempt',    iconName:'lock'},
   UNLOCK_LOCKOUT:   {label:'Locked out after repeated failures', iconName:'lock'},
+  // Milestone 76K item 2: a case re-keyed at 600,000 rounds at its unlock.
+  KEY_STRENGTHENED: {label:'Password protection strengthened', iconName:'shield'},
   DATA_EXPORT:      {label:'Backup saved',             iconName:'download'},
   DATA_IMPORT:      {label:'Backup restored',          iconName:'upload'},
   PARTY_MERGE:      {label:'Shared record merged',     iconName:'swap'},

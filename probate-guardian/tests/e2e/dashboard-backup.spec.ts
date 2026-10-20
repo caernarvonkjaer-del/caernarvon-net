@@ -388,10 +388,10 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await chooseNoPassword(page);
       await createWard(page, 'Cache Guard Ward');
 
-      // Setup (D9): a recovery snapshot and unsaved changes, as mid-session.
+      // Setup (D9): unsaved changes, as mid-session. (Milestone 76K retired
+      // the recovery snapshot this also wrote: no copy goes to browser storage.)
       const before = await page.evaluate(async () => {
         const t = (window as any).GuardianForms.testing;
-        await t.recoveryCache.save();
         t.save.markDirty();
         const wardId = t.snapshot().caseFile.activeWardId;
         const blob = await t.exportArchive.singleFiling(wardId);
@@ -426,9 +426,9 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
 
       expect(before.dirtyBefore).toBe(true);
       expect(before.containsThisWardsEntries).toBe(true);
-      // Still dirty and the recovery cache is still there -- a shared copy
-      // of one ward says nothing about whether the real case file was saved.
-      expect(testResult.cacheAfter).toBe(true);
+      // Still dirty -- a shared copy of one ward says nothing about whether
+      // the real case file was saved -- and still no copy in browser storage.
+      expect(testResult.cacheAfter).toBe(false);
       expect(testResult.dirtyAfter).toBe(true);
       expect(testResult.caseHandleUnaffected).toBe(true);
     } finally {

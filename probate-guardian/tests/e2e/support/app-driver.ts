@@ -44,7 +44,8 @@ export const currentBuild: AppDriver = {
   activeFilingId: (page) => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile?.activeWardId ?? null),
   openFiling: (page, filingId) => page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), filingId),
   hasOpenedCaseBefore: (page) => page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.hasOpenedBefore()),
-  saveRecoverySnapshot: (page) => page.evaluate(() => (window as any).GuardianForms.testing.recoveryCache.save()),
+  // Milestone 76K item 4 (decision 76K-2): this version writes no recovery snapshot.
+  saveRecoverySnapshot: async () => false,
   readRecoverySnapshot: (page) => page.evaluate(async () => {
     const state = (window as any).GuardianForms.testing.persistenceState;
     const cache = await state.sessionCache();

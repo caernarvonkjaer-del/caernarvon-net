@@ -47,12 +47,27 @@ function readStoredStates() {
   }
 }
 
+// Milestone 76K item 3 (decision 76K-3, the requester's): what this tab
+// stores for the others to find holds no ward name or case number -- only the
+// filing's internal id and type, and whether it has unsaved changes. The
+// names travel only on the tabs' message channel, which stores nothing, so
+// the "Other tab: <ward name>" warning still names the other tab's ward. The
+// stored record kept them as readable text, refreshed every four seconds,
+// whether or not the case had a password (Milestone 56B disclosed it; the
+// requester's Milestone 57 instruction was no case data in browser storage).
+function storedCopy(state) {
+  const activeCase = state.activeCase
+    ? { wardId: state.activeCase.wardId || '', inventoryType: state.activeCase.inventoryType || '' }
+    : null;
+  return { ...state, activeCase };
+}
+
 function writeStoredState(state) {
   try {
     const now = Date.now();
     const states = readStoredStates()
       .filter(item => item && item.tabId !== selfTabId && now - Number(item.updatedAt || 0) <= TAB_HEARTBEAT_TTL_MS);
-    states.push(state);
+    states.push(storedCopy(state));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(states));
   } catch {}
 }

@@ -130,14 +130,17 @@ function diskHandle({ readDelay = 0 } = {}) {
   return { handle, disk, read, saveElsewhere };
 }
 
-async function encryptedCase() {
+async function encryptedCase({ legacy = false } = {}) {
   const salt = M.crypto.generateSaltB64();
-  const key = await M.crypto.deriveKeyFromPassword(PW, salt);
+  // `legacy`: a case made before Milestone 76K, keyed at 210,000 rounds and recording no count.
+  const key = await M.crypto.deriveKeyFromPassword(PW, salt, legacy ? M.crypto.LEGACY_PBKDF2_ITERATIONS : M.crypto.PBKDF2_ITERATIONS);
   M.crypto.setSecurityMode('encrypted');
   M.crypto.setCryptoKey(key);
   M.state.setAppState('securityMode', 'encrypted');
   M.state.setAppState('cryptoSalt', salt);
   M.state.setAppState('cryptoVerifier', await M.crypto.encryptJSON(M.crypto.CRYPTO_VERIFIER_PLAINTEXT, key, 'encrypted'));
+  // Milestone 76K item 2: the count the key was made with, as creating a password records it.
+  M.state.setAppState('cryptoIterations', legacy ? null : M.crypto.PBKDF2_ITERATIONS);
   M.state.replaceCaseFile({ ...M.state.blankCaseFile(), guardianName: 'G. Guardian', wards: WARDS() });
 }
 
@@ -193,6 +196,67 @@ describe('76A-1: an unlock never writes an empty case over the file', () => {
     M.state.getCaseFile().activeWardId = 'w_2';
     await lockAndUnlock();
     expect(opened).toEqual(['w_2']);
+  }, 60000);
+});
+
+// Milestone 76K item 2 (decision 76K-1): a case keyed at 210,000 rounds is
+// re-keyed at 600,000 at its unlock -- only once the case is back, read with
+// the key it was saved with -- and the whole file is written again.
+describe('76K-1: stronger keys, taken up at an unlock', () => {
+  const manifestOf = async (disk) => JSON.parse(await (await JSZip.loadAsync(await disk.blob.arrayBuffer())).file('manifest.json').async('string'));
+
+  test('an older case comes back whole, then its file is written again at 600,000 rounds under a new salt', async () => {
+    await encryptedCase({ legacy: true });
+    const { handle, disk, read } = diskHandle();
+    await opensWith(handle);
+    const before = await manifestOf(disk);
+    expect(before.version).toBe(1);
+    expect(before.kdfIterations).toBeUndefined();
+    await lockAndUnlock();
+    await sleep(2500); // the rewrite the new key queues
+    const after = await manifestOf(disk);
+    expect(M.state.getAppState('cryptoIterations')).toBe(600000);
+    expect(after).toMatchObject({ version: 2, kdfIterations: 600000, salt: M.state.getAppState('cryptoSalt') });
+    expect(after.salt).not.toBe(before.salt);
+    await expect(M.crypto.deriveAndVerifyKey(PW, after)).resolves.toBeTruthy();
+    expect(names(await read())).toEqual({ w_1: 'Jane Roe', w_2: 'John Doe' });
+    expect(M.state.getCaseFile().wards).toHaveLength(2);
+  }, 60000);
+
+  test('a case already at 600,000 keeps its key', async () => {
+    await encryptedCase();
+    const { handle, disk } = diskHandle();
+    await opensWith(handle);
+    const before = await manifestOf(disk);
+    await lockAndUnlock();
+    await sleep(1500);
+    expect(await manifestOf(disk)).toMatchObject({ version: 2, kdfIterations: 600000, salt: before.salt });
+  }, 60000);
+});
+
+// Milestone 76K item 2 (decision 76K-4, the requester's: "5 wrong triggers a
+// 1 minute lockout"): the password asked when opening a file.
+describe('76K-4: the open-file password prompt locks after five wrong passwords', () => {
+  test('five wrong passwords lock it for a minute, even the right one; then it opens', async () => {
+    const salt = M.crypto.generateSaltB64();
+    const key = await M.crypto.deriveKeyFromPassword(PW, salt);
+    const manifest = { securityMode: 'encrypted', salt, kdfIterations: 600000, verifier: await M.crypto.encryptJSON(M.crypto.CRYPTO_VERIFIER_PLAINTEXT, key, 'encrypted') };
+    localStorage.removeItem('pg-open-file-lockout-v1');
+    const opening = M.lock.promptPasswordForFile(manifest, null);
+    const attempt = async (pw) => { el('unlock-password').value = pw; await M.lock.submitUnlockForm(); return el('unlock-error').textContent; };
+    for (let i = 1; i <= 4; i++) expect(await attempt('wrong')).toBe('Incorrect password for this file.');
+    expect(await attempt('wrong')).toMatch(/Too many attempts — try again in 1 minute/);
+    expect(await attempt(PW)).toMatch(/Too many incorrect passwords\. Try again in 1 minute/);
+    expect(M.crypto.getCryptoKey()).toBe(null);
+    const now = Date.now();
+    const spy = vi.spyOn(Date, 'now').mockReturnValue(now + 61_000);
+    try {
+      await attempt(PW);
+      await opening;
+      expect(M.crypto.getCryptoKey()).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
   }, 60000);
 });
 
@@ -443,6 +507,7 @@ describe('76D: Restore from Backup and Open Case File', () => {
       M.crypto.setSecurityMode('encrypted');
       M.crypto.setCryptoKey(await M.crypto.deriveKeyFromPassword(password, backupSalt));
       M.state.setAppState('cryptoSalt', backupSalt);
+      M.state.setAppState('cryptoIterations', M.crypto.PBKDF2_ITERATIONS);
     }
     const { blob } = await M.cf.buildCaseFileBlob();
     if (password) {

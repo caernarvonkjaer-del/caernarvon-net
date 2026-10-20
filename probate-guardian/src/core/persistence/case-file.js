@@ -4,6 +4,9 @@ import {
   decryptJSONWithKey,
   getSecurityMode,
   getCryptoKey,
+  kdfIterationsOf,
+  knownKdfIterations,
+  LEGACY_PBKDF2_ITERATIONS,
 } from './crypto.js';
 import {
   loadAppState,
@@ -12,7 +15,7 @@ import {
   forgetPersistedCaseFileHandle,
   markCaseOpenedBefore,
 } from './launch-preferences.js';
-import { clearSessionRestoreCache, saveSessionRestoreCache } from './recovery-cache.js';
+import { clearSessionRestoreCache } from './recovery-cache.js';
 import { MERGED_LISTS, caseRecords, fingerprintCase, getDiskBase, mergeCase, setDiskBase } from './case-merge.js';
 import { readCaseFileZip } from './case-zip-read.js';
 import { commitPendingEdits, getActiveWard, getAppState, getCaseFile, getTemplateCache, requestSave } from '../state.js';
@@ -29,7 +32,19 @@ import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js
 import { commitStoredDateDrafts } from '../form/commit-coordinator.js';
 import { setPath } from '../form/paths.js';
 
-export const CASE_FILE_FORMAT_VERSION = 1;
+// Milestone 76K item 2 (decision 76K-1): format 2 is a file keyed at 600,000
+// rounds, which it records (`kdfIterations`); an older version would ask for
+// its password and call the right one incorrect, so it says "saved by a newer
+// version" instead. A file with no password, or one keyed at 210,000, is still
+// written as format 1, which every version reads.
+export const CASE_FILE_FORMAT_VERSION = 2;
+
+/** The version and key-strengthening entries a manifest written now carries. */
+export async function manifestKeyFields(salt) {
+  if (getSecurityMode() === 'none' || !salt) return { version: 1 };
+  const kdfIterations = kdfIterationsOf(await loadAppState('cryptoIterations'));
+  return kdfIterations === LEGACY_PBKDF2_ITERATIONS ? { version: 1 } : { version: 2, kdfIterations };
+}
 
 let _autoSaveArmed = false;
 let _saveTimer = null; // the pending debounced save (autoSave()), if any
@@ -245,7 +260,8 @@ function manifestWardEntry(ward, file) {
  */
 export function newerCaseFileFormatMessage(manifest) {
   const version = Number(manifest && manifest.version);
-  if (!(version > CASE_FILE_FORMAT_VERSION)) return null;
+  // Milestone 76K item 2: a key-strengthening setting this version doesn't know.
+  if (!(version > CASE_FILE_FORMAT_VERSION) && knownKdfIterations(manifest && manifest.kdfIterations)) return null;
   return 'This file was saved by a newer version of Guardian Forms than the one open in this tab, so it was not opened here: '
     + 'this version could lose what the newer one saved. Refresh the page (Ctrl+F5) to load the current version, then open the file again.';
 }
@@ -326,7 +342,7 @@ export async function buildCaseFileBlob({ state = null } = {}) {
     JSON.stringify(
       {
         format: 'probate-guardian-case',
-        version: CASE_FILE_FORMAT_VERSION,
+        ...(await manifestKeyFields(salt)),
         exportedAt: new Date().toISOString(),
         securityMode: getSecurityMode(),
         salt,
@@ -364,7 +380,7 @@ export async function buildSingleWardExportBlob(wardId) {
     JSON.stringify(
       {
         format: 'probate-guardian-case',
-        version: CASE_FILE_FORMAT_VERSION,
+        ...(await manifestKeyFields(salt)),
         exportedAt: new Date().toISOString(),
         securityMode: getSecurityMode(),
         salt,
@@ -1082,18 +1098,15 @@ export function setupFallbackSaveReminder() {
 // Milestone 52B: the decode pipeline for one encrypted ward record, used by
 // importSavArchiveOrWard() below. Deliberately has no try/catch of its own
 // -- the caller wraps it to re-throw a specific per-ward message.
-export async function decodeWardRecord(encoded, key) {
+export async function decodeWardRecord(encoded, key, { refusePlain = false } = {}) {
   // Kept as saved (Milestone 76B): text is escaped where it is shown.
-  return migrateFilingYears(migratePlanTriState(await decryptJSONWithKey(encoded, key)));
+  return migrateFilingYears(migratePlanTriState(await decryptJSONWithKey(encoded, key, { refusePlain })));
 }
 
-// Milestone 52B: the four-field encrypt fan-out shared by
-// buildCaseFileBlob() below and recovery-cache.js's
-// saveSessionRestoreCache(). Returns ciphertext strings only -- each caller
-// keeps deciding where its own ciphertext lands (buildCaseFileBlob() scatters
-// three of them across separate zip entries and the fourth into the
-// manifest; saveSessionRestoreCache() puts all four as sibling fields on one
-// IndexedDB record), so this does not touch either caller's output shape.
+// Milestone 52B: the four-field encrypt fan-out of buildCaseFileBlob() below
+// (it also served recovery-cache.js's snapshot, retired by Milestone 76K).
+// Returns ciphertext strings only: buildCaseFileBlob() scatters three of them
+// across separate zip entries and the fourth into the manifest.
 export async function encryptCaseFileCore({ guardianInfo, parties, cases, dismissedPartyPairs }) {
   return {
     guardian: await encryptJSON(guardianInfo),
@@ -1116,14 +1129,14 @@ export async function encryptCaseFileCore({ guardianInfo, parties, cases, dismis
 // standard -- see MILESTONE-52-PROPOSAL.md's 52B section for why that
 // direction, not the reverse. `source` only shades the console.warn text
 // (e.g. "from imported file" vs "from session-restore cache").
-export async function decryptCaseFileCore({ parties, cases, partyDismissals }, key, { source = '' } = {}) {
+export async function decryptCaseFileCore({ parties, cases, partyDismissals }, key, { source = '', refusePlain = false } = {}) {
   const suffix = source ? ` ${source}` : '';
   // Present but unreadable, for protectPartiallyReadCaseFile()'s wording.
   const unreadable = [];
   let importedParties = [];
   if (parties) {
     try {
-      const p = await decryptJSONWithKey(parties, key);
+      const p = await decryptJSONWithKey(parties, key, { refusePlain });
       if (Array.isArray(p)) importedParties = p;
     } catch (e) {
       console.warn(`Could not read parties${suffix}`, e);
@@ -1133,7 +1146,7 @@ export async function decryptCaseFileCore({ parties, cases, partyDismissals }, k
   let importedCases = [];
   if (cases) {
     try {
-      const c = await decryptJSONWithKey(cases, key);
+      const c = await decryptJSONWithKey(cases, key, { refusePlain });
       if (Array.isArray(c)) importedCases = c;
     } catch (e) {
       console.warn(`Could not read cases${suffix}`, e);
@@ -1143,7 +1156,7 @@ export async function decryptCaseFileCore({ parties, cases, partyDismissals }, k
   let importedPartyDismissals = [];
   if (partyDismissals) {
     try {
-      const d = await decryptJSONWithKey(partyDismissals, key);
+      const d = await decryptJSONWithKey(partyDismissals, key, { refusePlain });
       if (Array.isArray(d)) importedPartyDismissals = d;
     } catch (e) {
       console.warn(`Could not read party dismissals${suffix}`, e);
@@ -1251,17 +1264,12 @@ export async function saveData(){
     commitStoredDateDrafts(activeWard,setPath);
     activeWard.lastModified=new Date().toISOString();
   }
-  // Best-effort local resume snapshot, used only by lockApp() when the app
-  // auto-locks before any .sav has ever been saved (see recovery-cache.js's
-  // file header); a successful .sav write clears it. Awaited so callers
-  // that depend on it having landed before acting further (lockApp() wiping
-  // memory, beforeunload) aren't racing an in-flight IndexedDB write.
-  if(isDirtySinceExport()){
-    // This is only a best-effort crash-recovery snapshot. It is not the
-    // durable .sav case file, so an IndexedDB/cache failure must not look
-    // like a failed case-file save (and must not clear a real write error).
-    await saveSessionRestoreCache();
-  }
+  // Milestone 76K item 4 (decision 76K-2, the requester's): no copy of the
+  // case goes to browser storage. A copy was written here on every unsaved
+  // change -- in plain text for a case with no password -- for a lock to
+  // restore; since Milestone 76A the lock seals unsaved work in the tab's own
+  // memory, and nothing read the copy. A copy left by an earlier version is
+  // deleted at the next save (clearSessionRestoreCache()).
   // No "last saved" stamp here: at this point no handle has been checked,
   // no permission verified, and no write attempted. writeCaseToHandle()
   // records the save once it has actually written one.

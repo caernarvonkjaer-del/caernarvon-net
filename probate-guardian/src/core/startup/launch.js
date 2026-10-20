@@ -4,11 +4,11 @@
 // OPEN / START AT LAUNCH.
 import { newerCaseFileFormatMessage, protectPartiallyReadCaseFile, refreshAutoSaveArmedStatus, rememberCaseFileHandle } from '../persistence/case-file.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
-import { clearCryptoKey, getCryptoKey, getSecurityMode, setSecurityMode } from '../persistence/crypto.js';
+import { clearCryptoKey, getCryptoKey, getSecurityMode, kdfIterationsOf, setSecurityMode } from '../persistence/crypto.js';
 import { isDirtySinceExport } from '../persistence/export-state.js';
 import { forgetPersistedCaseFileHandle, handleRememberedFileFailure, isRememberedFileUnavailable, loadPersistedCaseFileHandle, markCaseOpenedBefore, readRememberedFile, runRememberedHandleOperation } from '../persistence/launch-preferences.js';
 import { clearLastPosition } from '../persistence/recovery-cache.js';
-import { promptPasswordForFile } from '../security/app-lock.js';
+import { finishKeyUpgrade, promptPasswordForFile } from '../security/app-lock.js';
 import { validateImportFile } from '../security/input-hardening.js';
 import { appStateObject, getCaseFile } from '../state.js';
 import { applyTheme, currentTheme } from '../theme-preference.js';
@@ -185,7 +185,11 @@ export async function loadCaseFileAtLaunch(file){
     appStateObject().securityMode=getSecurityMode();
     appStateObject().cryptoSalt=manifest.salt||null;
     appStateObject().cryptoVerifier=manifest.verifier||null;
+    // Milestone 76K item 2: the count the file's key was made with (none: 210,000).
+    appStateObject().cryptoIterations=manifest.salt?kdfIterationsOf(manifest.kdfIterations):null;
     const loaded=await loadCaseFileFromZip(zip,manifest,getCryptoKey());
+    // Read with the file's own key; a stronger one made at its password takes over now.
+    await finishKeyUpgrade();
     // Milestone 40D: this line used to be `if(_appState.theme)applyTheme(...)`,
     // re-applying the FILE's theme once the .sav finished loading. That was the
     // flash this delivery removes, and it also meant opening someone else's file

@@ -36,7 +36,7 @@ import { loadAutoExportPrefs, setupAutoExportTimer, setupFallbackSaveReminder, s
 import { loadLastPosition } from '../persistence/recovery-cache.js';
 import { autoLoadTemplates } from '../persistence/templates.js';
 import { handleHash, setRouteHash } from '../navigation/router.js';
-import { ensureUnlocked, resumeUnlockedSession } from '../security/app-lock.js';
+import { ensureUnlocked, finishKeyUpgrade, resumeUnlockedSession } from '../security/app-lock.js';
 import { renderCopyrightNotice, updateSidebar } from '../shell/sidebar.js';
 import { openedFileAtLaunch, setupDragAndDropImport, showStartChoice, trySilentReopen, warnBeforeUnloadIfDirty } from './launch.js';
 import { getActiveWard, getCaseFile } from '../state.js';
@@ -64,7 +64,10 @@ const STATES = {
   async unlock(ctx) {
     ctx.opened = openedFileAtLaunch();
     if (ctx.opened) resumeUnlockedSession();
-    else await ensureUnlocked(); // blocks until a valid key is in memory (or the case is plain)
+    else {
+      await ensureUnlocked(); // blocks until a valid key is in memory (or the case is plain)
+      await finishKeyUpgrade(); // Milestone 76K item 2: a stronger key, if the unlock made one
+    }
     return 'templates';
   },
   async templates() {

@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { gotoApp, startNewCase, chooseNoPassword, createWard } from './support/target';
 
-// Every case file carries its format version in its manifest (1, for every
-// version so far). A file marked with a newer version used to open as if it
+// Every case file carries its format version in its manifest (1, or since
+// Milestone 76K 2 for a file keyed at 600,000 rounds). A file marked with a newer version used to open as if it
 // were version 1: an older tab -- production caches the page for a year, so
 // old tabs linger -- would drop whatever the newer format added and, in
 // Chrome/Edge, auto-save over the file. Found by Milestone 70's .sav corpus;
@@ -24,7 +24,8 @@ async function newerFormatFile(page: Page): Promise<string> {
     const blob = await w.GuardianForms.testing.exportArchive.caseFile();
     const zip = await w.JSZip.loadAsync(blob);
     const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
-    zip.file('manifest.json', JSON.stringify({ ...manifest, version: 2 }));
+    // Milestone 76K item 2: format 2 is current (a file keyed at 600,000 rounds); 3 is newer.
+    zip.file('manifest.json', JSON.stringify({ ...manifest, version: 3 }));
     return zip.generateAsync({ type: 'base64' });
   });
 }

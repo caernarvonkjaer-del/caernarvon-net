@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoApp, startNewCase, chooseEncrypted, createWard } from './support/target';
+import { gotoApp, startNewCase, chooseEncrypted, chooseNoPassword, createWard } from './support/target';
 
 // Milestone 70, 70A: "Fill the security contract gaps before ownership
 // moves" -- the inactivity lock, the unlock lockout and its backoff, key
@@ -144,4 +144,48 @@ test.describe('security contract (Milestone 70, 70A)', () => {
     expect(found.hits, 'the password appears nowhere').toEqual([]);
     expect(found.manifestKeys.filter((k: string) => /pass(word)?|secret|rawkey/i.test(k)), 'no manifest field holds a password or raw key').toEqual([]);
   });
+
+  // Milestone 76K items 3 and 4 (decisions 76K-2, 76K-3, the requester's): no
+  // case data in browser storage. Each tab stored the open ward's name and
+  // case number as readable text every four seconds, and every unsaved change
+  // wrote a copy of the case -- in plain text without a password.
+  for (const protectedCase of [false, true]) {
+    test(`no ward name or case number reaches localStorage, sessionStorage or IndexedDB (${protectedCase ? 'with' : 'without'} a password)`, async ({ page }) => {
+      test.setTimeout(120_000);
+      await gotoApp(page);
+      await startNewCase(page);
+      if (protectedCase) await chooseEncrypted(page, PASSWORD);
+      else await chooseNoPassword(page);
+      await createWard(page, 'Eleanor Whitfield');
+      await page.evaluate(async () => {
+        const t = (window as any).GuardianForms.testing;
+        t.patchFiling({ caseNumber: '26-004512-GD' }); // an unsaved change
+        t.save.markDirty();
+        await t.save.auto();
+        await t.save.flush();
+      });
+      await page.waitForTimeout(4500); // past a tab heartbeat
+      const hits = await page.evaluate(async () => {
+        const needles = ['Eleanor Whitfield', 'Whitfield', '26-004512-GD'];
+        const found: string[] = [];
+        const check = (where: string, text: string) => { for (const n of needles) if (text.includes(n)) found.push(`${where} (${n})`); };
+        for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i)!; check(`localStorage:${k}`, `${k}=${localStorage.getItem(k)}`); }
+        for (let i = 0; i < sessionStorage.length; i++) { const k = sessionStorage.key(i)!; check(`sessionStorage:${k}`, `${k}=${sessionStorage.getItem(k)}`); }
+        const dbs = (await (indexedDB as any).databases?.()) || [];
+        for (const { name } of dbs) {
+          const db: IDBDatabase = await new Promise((res, rej) => { const r = indexedDB.open(name); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+          for (const store of Array.from(db.objectStoreNames)) {
+            const values: unknown[] = await new Promise((res, rej) => {
+              const req = db.transaction(store, 'readonly').objectStore(store).getAll();
+              req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error);
+            });
+            check(`indexedDB:${name}/${store}`, JSON.stringify(values, (_k, v) => (v instanceof CryptoKey ? '[CryptoKey]' : v)));
+          }
+          db.close();
+        }
+        return found;
+      });
+      expect(hits).toEqual([]);
+    });
+  }
 });

@@ -226,7 +226,8 @@ for (const [kind, source, needsPassword] of DAMAGE) {
         const firstFiling = manifest.wards[0].file;
         if (kind === 'no-manifest') zip.remove('manifest.json');
         if (kind === 'a-listed-filing-missing') zip.remove(firstFiling);
-        if (kind === 'unsupported-version') zip.file('manifest.json', JSON.stringify({ ...manifest, version: 2 }));
+        // Milestone 76K item 2: format 2 is current; 3 is one this version doesn't read.
+        if (kind === 'unsupported-version') zip.file('manifest.json', JSON.stringify({ ...manifest, version: 3 }));
         if (kind === 'not-a-case-file') zip.file('manifest.json', JSON.stringify({ ...manifest, format: 'something-else' }));
         if (kind === 'unreadable-filing') zip.file(firstFiling, 'PLAIN:{"wardId": not json');
         if (kind === 'tampered-encrypted-filing') {

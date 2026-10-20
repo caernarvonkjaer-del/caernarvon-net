@@ -45,7 +45,7 @@ import {
   updateLastSavedIndicator,
 } from './case-file.js';
 import { recordText } from './case-merge.js';
-import { decryptJSONWithKey, deriveKeyFromPassword, getCryptoKey, getSecurityMode } from './crypto.js';
+import { decryptJSONWithKey, deriveKeyFromPassword, getCryptoKey, getSecurityMode, kdfIterationsOf, plainPartsRefused } from './crypto.js';
 import { isDirtySinceExport } from './export-state.js';
 import { loadAppState } from './launch-preferences.js';
 import { clearLastPosition } from './recovery-cache.js';
@@ -111,21 +111,26 @@ export async function importSavArchiveOrWard(file, options = {}) {
     if (newerFormat) throw new Error(newerFormat);
 
     const currentSalt = await loadAppState('cryptoSalt');
+    // Milestone 76K item 2: the same salt is the same key only at the same count.
+    const sameKey = manifest.salt === currentSalt
+      && kdfIterationsOf(manifest.kdfIterations) === kdfIterationsOf(await loadAppState('cryptoIterations'));
     let key = cryptoKey;
-    if (manifest.securityMode !== 'none' && manifest.salt !== currentSalt) {
+    if (manifest.securityMode !== 'none' && !sameKey) {
       const pw = await promptModal({
         title: 'Password for this backup',
         message: 'This backup was saved with a different password. Enter the password it was saved with:',
         inputType: 'password',
       });
       if (!pw) return false;
-      key = await deriveKeyFromPassword(pw, manifest.salt);
+      key = await deriveKeyFromPassword(pw, manifest.salt, kdfIterationsOf(manifest.kdfIterations));
     }
 
+    // Milestone 76K item 1: a protected backup's unprotected part is refused.
+    const refusePlain = plainPartsRefused(manifest);
     let guardianInfo = null;
     if (manifest.guardian) {
       try {
-        guardianInfo = await decryptJSONWithKey(manifest.guardian, key);
+        guardianInfo = await decryptJSONWithKey(manifest.guardian, key, { refusePlain });
       } catch (e) {
         throw new Error('Wrong password for this file, or the file has been modified/corrupted.');
       }
@@ -145,7 +150,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
       }
       let ward;
       try {
-        ward = await decodeWardRecord(await f.async('string'), key);
+        ward = await decodeWardRecord(await f.async('string'), key, { refusePlain });
       } catch (err) {
         throw new Error(`The file's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was restored.`);
       }
@@ -170,7 +175,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
         partyDismissals: importedPartyDismissalsFile ? await importedPartyDismissalsFile.async('string') : null,
       },
       key,
-      { source: 'from the backup' },
+      { source: 'from the backup', refusePlain },
     );
     if (!imported.length && !guardianInfo) throw new Error('File contained no readable data.');
     unreadable.push(...unreadableCore);

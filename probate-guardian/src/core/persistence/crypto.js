@@ -1,6 +1,28 @@
 // WebCrypto PBKDF2/AES-GCM encryption at rest for Probate Guardian case files.
 
-export const PBKDF2_ITERATIONS = 210000;
+// Milestone 76K item 2 (decision 76K-1, the requester's): key strengthening
+// at OWASP's figure for PBKDF2-HMAC-SHA256, 600,000 rounds, for every new
+// save. It was 210,000, never chosen (the first version), and not recorded in
+// the file -- so each file now records its own (`kdfIterations` in the
+// manifest; none means 210,000), opens with it, and is re-keyed at 600,000 at
+// its next unlock. Only these two counts are accepted: a file naming another
+// was made by something else, or by a newer version.
+export const LEGACY_PBKDF2_ITERATIONS = 210000;
+export const PBKDF2_ITERATIONS = 600000;
+export const KNOWN_PBKDF2_ITERATIONS = Object.freeze([LEGACY_PBKDF2_ITERATIONS, PBKDF2_ITERATIONS]);
+
+/** Whether a recorded count is one this version derives keys with (none recorded is 210,000). */
+export function knownKdfIterations(value) {
+  return value === undefined || value === null || value === '' || KNOWN_PBKDF2_ITERATIONS.includes(Number(value));
+}
+
+/** The count a file or this case's app state records; none recorded is 210,000. */
+export function kdfIterationsOf(value) {
+  if (value === undefined || value === null || value === '') return LEGACY_PBKDF2_ITERATIONS;
+  const n = Number(value);
+  if (!KNOWN_PBKDF2_ITERATIONS.includes(n)) throw new Error(`Unknown key-strengthening setting (${value}).`);
+  return n;
+}
 export const CRYPTO_VERIFIER_PLAINTEXT = 'PG_VERIFIER_V1';
 export const PLAIN_MODE_PREFIX = 'PLAIN:';
 
@@ -74,7 +96,8 @@ export function generateSaltB64() {
   return _b64FromBytes(c.getRandomValues(new Uint8Array(16)));
 }
 
-export async function deriveKeyFromPassword(password, saltB64) {
+export async function deriveKeyFromPassword(password, saltB64, iterations = PBKDF2_ITERATIONS) {
+  if (!KNOWN_PBKDF2_ITERATIONS.includes(iterations)) throw new Error(`Unknown key-strengthening setting (${iterations}).`);
   const c = (typeof crypto !== 'undefined' && crypto) || (typeof window !== 'undefined' && window.crypto);
   if (!c || !c.subtle) {
     throw new Error('window.crypto.subtle unavailable (insecure context)');
@@ -83,7 +106,7 @@ export async function deriveKeyFromPassword(password, saltB64) {
   const salt = _bytesFromB64(saltB64);
   const baseKey = await c.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
   return c.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -104,9 +127,27 @@ export async function encryptJSON(value, explicitKey = null, explicitMode = null
   return `${_b64FromBytes(iv)}:${_b64FromBytes(new Uint8Array(ciphertext))}`;
 }
 
-export async function decryptJSONWithKey(packed, key) {
+// Milestone 76K item 1: a part saved without a password, read where the file
+// says it is password-protected. It was accepted, so someone who edited a
+// protected file -- an emailed copy -- could plant a filing with an altered
+// balance that opened as genuine, or a plain password check that let any
+// password through. Refusing it is keyed to the file's own mark, so a backup
+// saved with no password still imports into a protected case. What this does
+// not stop: a part moved between places, an older part put back, or the mark
+// itself flipped to "none" -- the mark is not authenticated (residual risk).
+export const UNPROTECTED_PART = 'A part of this password-protected file was saved without a password.';
+
+/** Whether a file's parts must all be encrypted: the file says it is protected. */
+export function plainPartsRefused(manifest) {
+  return !!manifest && manifest.securityMode === 'encrypted';
+}
+
+export async function decryptJSONWithKey(packed, key, { refusePlain = false } = {}) {
   const s = String(packed);
-  if (s.startsWith(PLAIN_MODE_PREFIX)) return JSON.parse(s.slice(PLAIN_MODE_PREFIX.length));
+  if (s.startsWith(PLAIN_MODE_PREFIX)) {
+    if (refusePlain) throw new Error(UNPROTECTED_PART);
+    return JSON.parse(s.slice(PLAIN_MODE_PREFIX.length));
+  }
   if (!key) throw new Error('App is locked — no encryption key available');
 
   const c = (typeof crypto !== 'undefined' && crypto) || (typeof window !== 'undefined' && window.crypto);
@@ -126,15 +167,18 @@ export async function decryptJSON(packed, explicitKey = null) {
 
 export async function deriveAndVerifyKey(password, manifest, fileHandle) {
   const salt = manifest.salt || '';
-  const key = await deriveKeyFromPassword(password, salt);
+  // Milestone 76K item 2: with the count the file records (none: 210,000).
+  const key = await deriveKeyFromPassword(password, salt, kdfIterationsOf(manifest.kdfIterations));
+  // Milestone 76K item 1: a plain check in a protected file let any password through.
+  const refusePlain = plainPartsRefused(manifest);
   if (manifest.verifier) {
-    const decoded = await decryptJSONWithKey(manifest.verifier, key);
+    const decoded = await decryptJSONWithKey(manifest.verifier, key, { refusePlain });
     if (decoded !== CRYPTO_VERIFIER_PLAINTEXT) {
       throw new Error('verifier mismatch');
     }
   } else if (manifest.guardian) {
     // V1 archives without a verifier entry verify against the encrypted guardian block
-    await decryptJSONWithKey(manifest.guardian, key);
+    await decryptJSONWithKey(manifest.guardian, key, { refusePlain });
   }
   return key;
 }

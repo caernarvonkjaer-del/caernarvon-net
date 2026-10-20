@@ -24,7 +24,7 @@ import {
   buildSingleWardExportBlob,
   saveBlobAs,
 } from '../../src/core/persistence/case-file.js';
-import { getCaseFile, replaceCaseFile } from '../../src/core/state.js';
+import { setAppState, getCaseFile, replaceCaseFile } from '../../src/core/state.js';
 // Telling other tabs what this one has open (src/core/navigation/tab-state.js since
 // Milestone 70's 70H) and the sidebar's refresh touch the page.
 vi.mock('../../src/core/navigation/tab-state.js', () => ({ notifyProbateGuardianTabStateChanged: () => {}, getProbateGuardianTabState: () => ({}) }));
@@ -33,10 +33,12 @@ vi.mock('../../src/core/shell/sidebar.js', () => ({ refreshWardInfoCard: () => {
 
 describe('persistence crypto services', () => {
   test('constants are properly defined', () => {
-    expect(PBKDF2_ITERATIONS).toBe(210000);
+    // Milestone 76K item 2 (decision 76K-1): new keys at 600,000 rounds.
+    expect(PBKDF2_ITERATIONS).toBe(600000);
     expect(CRYPTO_VERIFIER_PLAINTEXT).toBe('PG_VERIFIER_V1');
     expect(PLAIN_MODE_PREFIX).toBe('PLAIN:');
-    expect(CASE_FILE_FORMAT_VERSION).toBe(1);
+    // Milestone 76K item 2: format 2 is a file keyed at 600,000 rounds.
+    expect(CASE_FILE_FORMAT_VERSION).toBe(2);
   });
 
   test('generateSaltB64 produces 16-byte base64 string', () => {
@@ -113,6 +115,9 @@ describe('case file packaging and filename helpers', () => {
     const { setCryptoKey, setSecurityMode } = await import('../../src/core/persistence/crypto.js');
     setCryptoKey(key);
     setSecurityMode('encrypted');
+    // The case's own record of its key (Milestone 76K item 2), as creating a password writes it.
+    setAppState('cryptoSalt', salt);
+    setAppState('cryptoIterations', PBKDF2_ITERATIONS);
 
     const testCaseFile = {
       activeWardId: 'w-101',
@@ -145,7 +150,10 @@ describe('case file packaging and filename helpers', () => {
 
     const manifest = JSON.parse(await fullZip.file('manifest.json').async('string'));
     expect(manifest.format).toBe('probate-guardian-case');
+    // Milestone 76K item 2: a file keyed at 600,000 rounds says so, as format 2.
     expect(manifest.version).toBe(CASE_FILE_FORMAT_VERSION);
+    expect(CASE_FILE_FORMAT_VERSION).toBe(2);
+    expect(manifest.kdfIterations).toBe(600000);
     expect(manifest.wards.length).toBe(2);
 
     // Single ward export test
@@ -256,13 +264,18 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
   });
 
   // saveData() is case-file.js's since Milestone 70's 70I.
-  test('recovery-cache failures do not invoke the durable save-error banner', async () => {
+  // Milestone 76K item 4 (decision 76K-2, the requester's): no copy of the
+  // case goes to browser storage. saveData() wrote one on every unsaved
+  // change (plain text for a case with no password) for a lock that, since
+  // Milestone 76A, keeps the work sealed in the tab instead; a save still
+  // deletes a copy an earlier version left.
+  test('no copy of the case goes to browser storage; a save deletes one left behind', async () => {
     const { readFile } = await import('node:fs/promises');
     const source = await readFile(new URL('../../src/core/persistence/case-file.js', import.meta.url), 'utf8');
-    const recoveryBlock = source.match(/if\(isDirtySinceExport\(\)\)\{([\s\S]*?)\n  \}\n  \/\/ No "last saved" stamp/);
-    expect(recoveryBlock, 'saveData recovery-cache block should remain explicit').not.toBeNull();
-    expect(recoveryBlock[1]).not.toMatch(/showSaveError\(\)/);
-    expect(recoveryBlock[1]).not.toMatch(/hideSaveError\(\)/);
+    expect(source).not.toMatch(/saveSessionRestoreCache\(\)/);
+    expect(source).toMatch(/await clearSessionRestoreCache\(\)/);
+    const recovery = await import('../../src/core/persistence/recovery-cache.js');
+    expect(Object.keys(recovery).filter((k) => /save|write|put/i.test(k) && !/LastPosition|_sessionCachePut/.test(k))).toEqual([]);
   });
 
   test('beginRecordingExport advances the clock and its rollback restores it', async () => {

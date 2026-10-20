@@ -82,6 +82,13 @@ function handleModalFocus(event) {
   }
 }
 
+// Milestone 76K item 5: screens Escape never closes, as the terms dialog has
+// none (Milestone 48E). Escape dismissed the lock screen with the case already
+// cleared from memory, leaving a blank "Locked" page whose only way out was
+// reloading -- which lost work since the last save; the start and
+// password-choice screens closed the same way, onto nothing.
+const ESCAPE_PROOF = new Set(['unlock-overlay', 'startup-choice-overlay', 'security-choice-overlay', 'pg-terms-overlay']);
+
 function handleModalKeydown(event) {
   const openModals = [...document.querySelectorAll('.modal-overlay.show')];
   const activeModal = openModals[openModals.length - 1];
@@ -89,6 +96,7 @@ function handleModalKeydown(event) {
     prepareModalAccessibility(activeModal);
     if (event.key === 'Escape') {
       event.preventDefault();
+      if (ESCAPE_PROOF.has(activeModal.id)) return;
       if (activeModal.id === 'ward-locked-overlay') closeWardLockedModal();
       else closeModal?.(activeModal.id);
       return;

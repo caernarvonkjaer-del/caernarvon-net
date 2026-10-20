@@ -9,7 +9,7 @@ import { flushPendingSave, forgetCaseFileHandle, holdSaves, loadCaseFileHandle, 
 import { getDiskBase } from '../persistence/case-merge.js';
 import { isDirtySinceExport } from '../persistence/export-state.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
-import { CRYPTO_VERIFIER_PLAINTEXT, clearCryptoKey, decryptJSONWithKey, deriveAndVerifyKey, deriveKeyFromPassword, encryptJSON, generateSaltB64, getCryptoKey, getSecurityMode, setCryptoKey, setSecurityMode } from '../persistence/crypto.js';
+import { CRYPTO_VERIFIER_PLAINTEXT, PBKDF2_ITERATIONS, clearCryptoKey, decryptJSONWithKey, deriveAndVerifyKey, deriveKeyFromPassword, encryptJSON, generateSaltB64, getCryptoKey, getSecurityMode, kdfIterationsOf, setCryptoKey, setSecurityMode } from '../persistence/crypto.js';
 import { loadAppState, saveAppState } from '../persistence/launch-preferences.js';
 import { handleHash, setRouteHash } from '../navigation/router.js';
 import { updateSidebar } from '../shell/sidebar.js';
@@ -63,7 +63,7 @@ export async function ensureUnlocked(){
     // A silent auto-unlock path used to sit here, reading the master password
     // back from the OS credential store through Tauri. No Tauri shell exists
     // in this repo, so it could never fire; the password is always entered.
-    await promptUnlock(salt,verifier);
+    await promptUnlock(salt,verifier,await loadAppState('cryptoIterations'));
     return;
   }
   await promptCreatePassword(getCaseFile().wards.length>0);
@@ -103,7 +103,7 @@ let _unlockResolve=null;
 
 let _unlockMode=null; // 'create' | 'unlock' | 'openFile'
 
-export async function promptUnlock(saltB64,verifierPacked){
+export async function promptUnlock(saltB64,verifierPacked,iterations=null){
   return new Promise((resolve)=>{
     _unlockMode='unlock';
     _unlockResolve=resolve;
@@ -115,6 +115,8 @@ export async function promptUnlock(saltB64,verifierPacked){
     document.getElementById('unlock-error').style.display='none';
     overlay.dataset.salt=saltB64;
     overlay.dataset.verifier=verifierPacked;
+    // Milestone 76K item 2: the count the key was made with (none: 210,000).
+    overlay.dataset.iterations=iterations==null?'':String(iterations);
     overlay.classList.add('show');
     document.getElementById('unlock-password').focus();
   });
@@ -210,6 +212,53 @@ export async function saveUnlockFailState(state){
   await saveAppState('unlockFailState',state);
 }
 
+// Milestone 76K item 2 (decision 76K-4): the open-file prompt's own lockout,
+// flat -- five wrong passwords, then one minute. Kept in this browser (no case
+// is open to hold it, and it names nothing), so reloading does not reset it.
+export const OPEN_FILE_FAIL_THRESHOLD=5;
+export const OPEN_FILE_LOCKOUT_MS=60*1000;
+const OPEN_FILE_LOCKOUT_KEY='pg-open-file-lockout-v1';
+export function openFileLockout(){
+  try{
+    const s=JSON.parse(localStorage.getItem(OPEN_FILE_LOCKOUT_KEY)||'null');
+    return {count:Number(s&&s.count)||0,until:Number(s&&s.until)||0};
+  }catch(e){return {count:0,until:0};}
+}
+function saveOpenFileLockout(state){
+  try{
+    // Nothing to remember after a right password: nothing is kept.
+    if(!state.count&&!state.until)localStorage.removeItem(OPEN_FILE_LOCKOUT_KEY);
+    else localStorage.setItem(OPEN_FILE_LOCKOUT_KEY,JSON.stringify(state));
+  }catch(e){/* storage unavailable: the lockout holds for this page only */}
+}
+
+// Milestone 76K item 2 (decision 76K-1): a case keyed at 210,000 rounds is
+// re-keyed at 600,000 at its unlock, while the password is in hand. The new
+// key (with a new salt) waits until the case has been read with the old one
+// -- the file, or the copy sealed at the lock -- then finishKeyUpgrade() makes
+// it the case's key, records it, and the whole file is written again.
+let _pendingKeyUpgrade=null;
+async function prepareKeyUpgrade(pw,iterations){
+  _pendingKeyUpgrade=null;
+  if(iterations>=PBKDF2_ITERATIONS)return;
+  const salt=generateSaltB64();
+  const key=await deriveKeyFromPassword(pw,salt,PBKDF2_ITERATIONS);
+  _pendingKeyUpgrade={salt,key,verifier:await encryptJSON(CRYPTO_VERIFIER_PLAINTEXT,key,'encrypted')};
+}
+
+/** After an unlock and the case's read: the stronger key, if one waits. Returns whether it changed. */
+export async function finishKeyUpgrade(){
+  const upgrade=_pendingKeyUpgrade;_pendingKeyUpgrade=null;
+  if(!upgrade||!getCryptoKey()||getSecurityMode()==='none')return false;
+  setCryptoKey(upgrade.key);
+  await saveAppState('cryptoSalt',upgrade.salt);
+  await saveAppState('cryptoVerifier',upgrade.verifier);
+  await saveAppState('cryptoIterations',PBKDF2_ITERATIONS);
+  await auditLog('KEY_STRENGTHENED', 'Password protection strengthened; the case file is written again with the new key', true);
+  requestSave();
+  return true;
+}
+
 export function formatLockoutRemaining(ms){
   const s=Math.ceil(ms/1000);
   return s>=60?`${Math.ceil(s/60)} minute${s>=120?'s':''}`:`${s} second${s===1?'':'s'}`;
@@ -228,10 +277,11 @@ export async function submitUnlockForm(){
       // The key is derived into this function and held for the session only
       // once the verifier that proves it is saved (Milestone 70, 70I).
       try{
-        const key=await deriveKeyFromPassword(pw,saltB64);
+        const key=await deriveKeyFromPassword(pw,saltB64,PBKDF2_ITERATIONS);
         const verifier=await encryptJSON(CRYPTO_VERIFIER_PLAINTEXT,key,'encrypted');
         await saveAppState('cryptoSalt',saltB64);
         await saveAppState('cryptoVerifier',verifier);
+        await saveAppState('cryptoIterations',PBKDF2_ITERATIONS);
         setCryptoKey(key);
       }catch(e){
         clearCryptoKey();
@@ -258,8 +308,10 @@ export async function submitUnlockForm(){
 
       // Derived and checked here; held for the session only once it verifies.
       try{
-        const key=await deriveKeyFromPassword(pw,saltB64);
-        const decoded=await decryptJSONWithKey(verifierPacked,key);
+        const iterations=kdfIterationsOf(overlay.dataset.iterations);
+        const key=await deriveKeyFromPassword(pw,saltB64,iterations);
+        // Milestone 76K item 1: unlocking is a password-protected case's, so a plain check is refused.
+        const decoded=await decryptJSONWithKey(verifierPacked,key,{refusePlain:true});
         if(decoded!==CRYPTO_VERIFIER_PLAINTEXT)throw new Error('verifier mismatch');
         setCryptoKey(key);
       }catch(e){
@@ -280,6 +332,7 @@ export async function submitUnlockForm(){
         return;
       }
 
+      await prepareKeyUpgrade(pw,kdfIterationsOf(overlay.dataset.iterations));
       clearPasswordFields();
       await saveUnlockFailState({count:0,lockoutUntil:0});
       await auditLog('UNLOCK_SUCCESS', 'User successfully unlocked the application', true);
@@ -289,13 +342,30 @@ export async function submitUnlockForm(){
       resolve();
     }else if(_unlockMode==='openFile'){
       if(!pw){showUnlockError('Please enter your password.');return;}
+      // Milestone 76K item 2 (decision 76K-4, the requester's: "5 wrong
+      // triggers a 1 minute lockout"): the password asked when opening a file
+      // allowed unlimited guesses.
+      const openLock=openFileLockout();
+      if(openLock.until>Date.now()){
+        showUnlockError(`Too many incorrect passwords. Try again in ${formatLockoutRemaining(openLock.until-Date.now())}.`);
+        return;
+      }
       try{
         setCryptoKey(await deriveAndVerifyKey(pw,_pendingOpenManifest,_pendingOpenZip));
       }catch(e){
         clearCryptoKey();
-        showUnlockError('Incorrect password for this file.');
+        const count=openLock.count+1;
+        if(count>=OPEN_FILE_FAIL_THRESHOLD){
+          saveOpenFileLockout({count:0,until:Date.now()+OPEN_FILE_LOCKOUT_MS});
+          showUnlockError(`Incorrect password for this file. Too many attempts — try again in ${formatLockoutRemaining(OPEN_FILE_LOCKOUT_MS)}.`);
+        }else{
+          saveOpenFileLockout({count,until:0});
+          showUnlockError('Incorrect password for this file.');
+        }
         return;
       }
+      saveOpenFileLockout({count:0,until:0});
+      await prepareKeyUpgrade(pw,kdfIterationsOf(_pendingOpenManifest&&_pendingOpenManifest.kdfIterations));
       clearPasswordFields();
       _pendingOpenManifest=null;_pendingOpenZip=null;
       document.getElementById('unlock-overlay').classList.remove('show');
@@ -322,6 +392,22 @@ export async function submitUnlockForm(){
 //   read again is left as it was, auto-save is detached, and the filer is told.
 // The filing that was open is opened again (it used to close, leaving the
 // filer on the choice of forms).
+// Milestone 76K item 4: while locked, no name stays on the page. The sidebar
+// was hidden but kept the ward picker's name and the ward's info card, and the
+// dialogs built into the page (the filing switcher's list of names) stayed open
+// behind the lock screen. The page is drawn again when the case comes back.
+function clearNamesFromPage(){
+  for(const overlay of document.querySelectorAll('.modal-overlay.show')){
+    if(overlay.id!=='unlock-overlay')overlay.classList.remove('show');
+  }
+  const picker=/** @type {HTMLInputElement|null} */ (document.getElementById('ward-selector'));
+  if(picker)picker.value='';
+  for(const id of ['ward-selector-dropdown','ward-info-display']){
+    const el=document.getElementById(id);
+    if(el)el.innerHTML='';
+  }
+}
+
 export async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
   // Milestone 73L: every pop-up closes first, each with its own "no" -- one
@@ -339,12 +425,16 @@ export async function lockApp(){
     replaceCaseFile(blankCaseFile());
     document.getElementById('sidebar').style.display='none';
     document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
+    clearNamesFromPage();
     await ensureUnlocked();
     if(sealed){
-      replaceCaseFile(await decryptJSONWithKey(sealed,getCryptoKey()));
+      replaceCaseFile(await decryptJSONWithKey(sealed,getCryptoKey(),{refusePlain:true}));
     }else if(handleToReload){
       await reloadCaseFileAfterUnlock(handleToReload);
     }
+    // Milestone 76K item 2: the case is back, read with the key it was saved
+    // with; a stronger one, if the unlock made one, takes over now.
+    await finishKeyUpgrade();
   }finally{
     releaseSaves();
   }

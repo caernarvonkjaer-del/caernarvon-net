@@ -90,6 +90,7 @@
   "tests/e2e/link-and-merge.spec.ts",
   "tests/e2e/live-page-parts.spec.ts",
   "tests/e2e/lock-and-save-state.contract.spec.ts",
+  "tests/e2e/lock-screen-76k.spec.ts",
   "tests/e2e/mixed-version.characterization.spec.ts",
   "tests/e2e/navigation-race.spec.ts",
   "tests/e2e/navigation-status.contract.spec.ts",

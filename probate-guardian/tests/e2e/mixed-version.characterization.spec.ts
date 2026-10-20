@@ -239,9 +239,17 @@ for (const [writer, reader] of DIRECTIONS) {
       expect(await app(b).hasOpenedCaseBefore(b), 'control: not yet').toBe(false);
       const a = await newTab(browser, context, writer);
       await openFixture(a);
-      expect(await app(a).saveRecoverySnapshot(a)).toBe(true);
+      // Milestone 76K item 4 (decision 76K-2): the new version writes no
+      // snapshot -- no copy of the case in browser storage -- so there is
+      // nothing for the old one to read; the old version's is still readable.
+      expect(await app(a).saveRecoverySnapshot(a)).toBe(writer === 'old');
       const names = (await app(a).filings(a)).map((w) => w.wardName);
       expect(await app(b).hasOpenedCaseBefore(b)).toBe(true);
+      if (writer === 'new') {
+        // Nothing written, so nothing for the old version to read.
+        await context.close();
+        return;
+      }
       const snapshot = await app(b).readRecoverySnapshot(b);
       // Milestone 70, 70I: the new version's snapshot also carries the case's
       // circuit with the guardian (and the shared records beside it, which the
@@ -260,11 +268,30 @@ for (const [writer, reader] of DIRECTIONS) {
  * pairs, each an encrypted string -- so locking a case never saved to a file
  * no longer loses them (its build record's findings).
  */
+//
+// And what it no longer writes, each a deliberate, recorded change (Milestone
+// 76K, decisions 76K-2 and 76K-3, the requester's): no recovery snapshot at
+// all -- no copy of the case in browser storage -- and no ward name or case
+// number in the tab heartbeats (the names travel only on the tab message,
+// whose shape is unchanged).
 function withRecordedAdditions(shape: any) {
   const out = JSON.parse(JSON.stringify(shape));
-  const cache = (out.indexedDB || []).find((db: any) => db.name === 'pg-session-cache');
-  const current = cache && cache.stores && cache.stores.snapshot && cache.stores.snapshot.current;
-  if (current) Object.assign(current, { cases: 'string', parties: 'string', partyDismissals: 'string' });
+  out.indexedDB = (out.indexedDB || []).filter((db: any) => db.name !== 'pg-session-cache');
+  const beats = out.localStorage && out.localStorage['pg-tab-heartbeats-v1'];
+  for (const beat of Array.isArray(beats) ? beats : []) {
+    if (beat && beat.activeCase && typeof beat.activeCase === 'object') {
+      delete beat.activeCase.wardName;
+      delete beat.activeCase.caseNumber;
+    }
+  }
+  return out;
+}
+
+/** The new version's session-cache database, if it holds nothing (a save still clears a copy an older version left). */
+function withoutEmptySessionCache(shape: any) {
+  const out = JSON.parse(JSON.stringify(shape));
+  out.indexedDB = (out.indexedDB || []).filter((db: any) => !(db.name === 'pg-session-cache'
+    && Object.values(db.stores || {}).every((s: any) => !s || !Object.keys(s).length)));
   return out;
 }
 
@@ -326,14 +353,14 @@ test('both versions write the same shape into everything they share', async ({ b
     await page.locator('#theme-toggle-btn').click();
     expect(await openFiling(page, await firstFilingId(page))).not.toBe(false);
     await app(page).navigate(page, '/print');
-    expect(await app(page).saveRecoverySnapshot(page)).toBe(true);
+    expect(await app(page).saveRecoverySnapshot(page)).toBe(v === 'old');
     await expect.poll(() => observer.evaluate(() => (window as any).__seen.length), { timeout: 15_000 }).toBeGreaterThan(0);
     const tabMessage = await observer.evaluate(() => (window as any).__seen[(window as any).__seen.length - 1]);
     await page.evaluate((m) => { (window as any).__tabMessageShape = m; }, tabMessage);
     shapes[v] = await sharedStorageShape(page);
     await context.close();
   }
-  expect(shapes.new, 'the new version writes what the old one does, plus the additions recorded below').toEqual(withRecordedAdditions(shapes.old));
+  expect(withoutEmptySessionCache(shapes.new), 'the new version writes what the old one does, with the changes recorded below').toEqual(withRecordedAdditions(shapes.old));
 
   const record = { note: '', oldVersion: OLD_SHA, shape: shapes.old };
   const golden = fs.existsSync(GOLDEN) ? JSON.parse(fs.readFileSync(GOLDEN, 'utf8')) : null;
@@ -342,5 +369,5 @@ test('both versions write the same shape into everything they share', async ({ b
     fs.writeFileSync(GOLDEN, JSON.stringify(record, null, 1) + '\n');
   }
   expect(shapes.old, 'the old version against the golden').toEqual((golden || record).shape);
-  expect(shapes.new, 'the new version against the golden, plus the additions recorded below').toEqual(withRecordedAdditions((golden || record).shape));
+  expect(withoutEmptySessionCache(shapes.new), 'the new version against the golden, with the changes recorded below').toEqual(withRecordedAdditions((golden || record).shape));
 });

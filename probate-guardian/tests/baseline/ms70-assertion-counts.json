@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 10273,
-  "tests": 3054
+  "expects": 10320,
+  "tests": 3065
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -362,6 +362,10 @@
    "tests": 6,
    "expects": 15
   },
+  "tests/e2e/lock-screen-76k.spec.ts": {
+   "tests": 2,
+   "expects": 11
+  },
   "tests/e2e/mixed-version.characterization.spec.ts": {
    "tests": 8,
    "expects": 32
@@ -584,7 +588,7 @@
   },
   "tests/e2e/recovery-cache.spec.ts": {
    "tests": 3,
-   "expects": 9
+   "expects": 10
   },
   "tests/e2e/redraw-keeps-scroll.spec.ts": {
    "tests": 8,
@@ -596,7 +600,7 @@
   },
   "tests/e2e/rollback.contract.spec.ts": {
    "tests": 1,
-   "expects": 8
+   "expects": 12
   },
   "tests/e2e/routes.spec.ts": {
    "tests": 16,
@@ -639,8 +643,8 @@
    "expects": 23
   },
   "tests/e2e/security-contract.spec.ts": {
-   "tests": 3,
-   "expects": 21
+   "tests": 4,
+   "expects": 22
   },
   "tests/e2e/security.spec.ts": {
    "tests": 2,
@@ -900,7 +904,7 @@
   },
   "tests/unit/case-file.spec.js": {
    "tests": 22,
-   "expects": 74
+   "expects": 76
   },
   "tests/unit/case-resolver.spec.js": {
    "tests": 5,
@@ -971,8 +975,8 @@
    "expects": 14
   },
   "tests/unit/crypto-contract.spec.js": {
-   "tests": 8,
-   "expects": 27
+   "tests": 9,
+   "expects": 32
   },
   "tests/unit/dashboard-resources.spec.js": {
    "tests": 26,
@@ -1466,6 +1470,10 @@
    "tests": 8,
    "expects": 17
   },
+  "tests/unit/protected-parts-76k.spec.js": {
+   "tests": 4,
+   "expects": 9
+  },
   "tests/unit/prune-cards.spec.js": {
    "tests": 18,
    "expects": 48
@@ -1503,8 +1511,8 @@
    "expects": 16
   },
   "tests/unit/save-safety.spec.js": {
-   "tests": 24,
-   "expects": 59
+   "tests": 27,
+   "expects": 73
   },
   "tests/unit/schedule-definitions.spec.js": {
    "tests": 6,
@@ -2316,6 +2324,14 @@
    "was": 15,
    "now": 13,
    "reason": "76H item 3 (decision 76H-8): the attorney's county is shown and printed nowhere, so the drift note's attorney cases (its wording, its value) are one assertion that it raises nothing",
+   "date": "2026-10-20"
+  },
+  {
+   "file": "tests/e2e/mixed-version.characterization.spec.ts",
+   "kind": "expects",
+   "was": 33,
+   "now": 32,
+   "reason": "76K item 4 (decision 76K-2): the new version writes no recovery snapshot, so the old-vs-new snapshot test no longer reads one back when the new version is the writer",
    "date": "2026-10-20"
   }
  ]

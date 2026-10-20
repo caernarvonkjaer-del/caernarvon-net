@@ -21,6 +21,8 @@ vi.mock('../../src/core/startup/launch.js', () => ({
 }));
 vi.mock('../../src/core/security/app-lock.js', () => ({
   ensureUnlocked: async () => { calls.push('ensureUnlocked'); },
+  // Milestone 76K item 2: a stronger key after the unlock, when it made one (none here).
+  finishKeyUpgrade: async () => false,
   resumeUnlockedSession: log('resumeUnlockedSession'),
 }));
 vi.mock('../../src/core/persistence/templates.js', () => ({ autoLoadTemplates: async () => { calls.push('autoLoadTemplates'); } }));

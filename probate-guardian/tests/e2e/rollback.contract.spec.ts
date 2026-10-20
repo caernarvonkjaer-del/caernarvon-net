@@ -86,9 +86,18 @@ function lost(expected: any, loaded: any, at = ''): string[] {
   return expected === loaded ? [] : [`${at}: ${JSON.stringify(expected)} expected, ${JSON.stringify(loaded)} read back`];
 }
 
+// Milestone 76K item 2 (decision 76K-1, the requester's): a password-protected
+// file is now keyed at 600,000 rounds and recorded as format 2. No version
+// before 76K can derive that key, so the pre-merge version cannot open such a
+// file. It refuses it as "saved by a newer version" (its refusal from master
+// 5de3707) instead of asking for the password and calling the right one
+// incorrect -- the reason 76K-1 raised the format version. What the contract
+// still holds for it: refused, never opened half-read, and left as it was. A
+// file with no password is unchanged by 76K and opens in full, as before.
 for (const password of [null, PASSWORD]) {
   const kind = password ? 'with a password' : 'without a password';
-  test(`a case file the migrated version saves ${kind} opens in the pre-merge version, with nothing lost`, async ({ browser }) => {
+  const outcome = password ? 'is refused by the pre-merge version and left as it was' : 'opens in the pre-merge version, with nothing lost';
+  test(`a case file the migrated version saves ${kind} ${outcome}`, async ({ browser }) => {
     test.setTimeout(240_000);
     const context = await browser.newContext();
     try {
@@ -126,6 +135,16 @@ for (const password of [null, PASSWORD]) {
       reader.on('pageerror', (e) => pageErrors.push(e.message));
       await openApp(reader, 'old');
       const old: AppDriver = pre70Build;
+      if (password) {
+        const before = fs.readFileSync(file);
+        await reader.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+        await reader.setInputFiles('#startup-open-input', file);
+        await expect(reader.locator('.modal-overlay[id^="dyn-dialog-"].show .modal-box'), 'refused as a newer version\'s file').toContainText('saved by a newer version');
+        await expect(reader.locator('#unlock-overlay'), 'no password is asked for').not.toHaveClass(/show/);
+        expect(fs.readFileSync(file).equals(before), 'the file is left as it was').toBe(true);
+        expect(pageErrors, 'no page error in the pre-merge version').toEqual([]);
+        return;
+      }
       const loaded = await openFile(reader, file, password, old);
       // A filing's lastModified is the one value the pre-merge build changes as
       // it opens a file: it re-stamps a Plan for Minors when opening it, with
