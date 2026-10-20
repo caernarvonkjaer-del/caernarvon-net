@@ -4,7 +4,7 @@
 // carries over, how the Inventory's schedules become the accounting's, and
 // the conversion itself. Moved from legacy-app.js's CONVERT EXISTING WARD.
 import { getOrCreateCaseForWard } from '../case-resolver.js';
-import { carriesResidence, carryOverFields, carrySourcesFor } from './carry-over.js';
+import { carriesFinalHoldings, carriesResidence, carryOverFields, carrySourcesFor } from './carry-over.js';
 import { formEngine, initializeEmptyData, INVENTORY_TYPES } from './filing-registry.js';
 import { emptyRowAnnual } from './models/annual.js';
 import { b2ItemDescription } from './models/guardian.js';
@@ -123,7 +123,7 @@ export function describeConversion(srcType,destType,period=''){
     return 'The Final Accounting starts the day after this filing\'s period ended (Rule 5.680(c): from the date of the previous accounting), and the Simplified Annual Accounting\'s Remaining Assets On Hand (Line 8) becomes its Starting Balance. The attorney block and the certificate-of-service recipients are carried over; the ward\'s status and remuneration start blank, and the Final Accounting\'s schedules start blank for you to complete.';
   }
   if(srcType==='guardian'&&formEngine(destType)==='annual'){
-    return 'Real estate, cash accounts, personal property, intangible assets, debts, income sources, and trusts are carried into the matching schedules, along with the attorney block and the certificate of service\'s recipients. Review each schedule afterward — carrying values and this year\'s actual activity still need to be confirmed.'
+    return 'Real estate, cash accounts, personal property, intangible assets, debts and trusts are carried into the matching schedules, along with the attorney block and the certificate of service\'s recipients. Schedule A (income) starts blank: enter what was actually received. Each trust\'s "Was created after the GID?" is left for you to answer, and Part VIII holds three trusts. Review each schedule afterward — carrying values still need to be confirmed.'
       +(crossesTrust(srcType,destType)?TRUST_NO_CARRY:' The Initial Inventory\'s total becomes the Starting Balance, rounded to cents.');
   }
   if(srcType==='guardian'&&destType==='simplified'){
@@ -141,7 +141,14 @@ export function describeConversion(srcType,destType,period=''){
     const balance=crossesTrust(srcType,destType)
       ?`Starting Balance is left blank: a trust accounting and a guardianship accounting do not share an ending balance, so enter it yourself.`
       :`Starting Balance is set to this filing's ending net assets (Line 30, or Line 20 if it has no Schedule D figures), rounded to cents.`;
-    return `The ward's name, case number, guardian, and attorney details are carried over. ${balance} Certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
+    // Milestone 76G item 4 (decision 76G-3): what the Final carries from an
+    // Annual (carry-over.js's finalHoldingsCarry()). The notice said the
+    // period and every schedule start blank, and that the county came from
+    // the "case record" -- it comes from the ward's record.
+    const rest=carriesFinalHoldings(srcType,destType)
+      ?'Its period starts the day after this Annual\'s period ended (enter its Period To). Schedule D\'s holdings, the Schedule B-4 bank accounts, Part VIII\'s trusts, Part IX\'s bond and the guardian\'s relationship are carried for you to review; the receipts, disbursements and other schedules of the period start blank, and so does the ward\'s status.'
+      :'The accounting period and every schedule start blank for you to complete.';
+    return `The ward's name, case number, guardian, and attorney details are carried over. ${balance} Certificate-of-service recipients are carried too. County is restored from this ward's record rather than copied from this filing. ${rest}`;
   }
   // Milestone 74O / 74J: an Annual Plan made from a plan carries where the
   // ward lives too (carry-over.js's planResidenceCarry()).
@@ -236,14 +243,31 @@ export function convertGuardianSchedulesToAnnual(src,dest){
     ...(src.scheduleA2||[]).map(r=>({description:r.lenderName||'',loanNo:r.accountNumber||'',loanType:r.liabilityType||'',fullDebt:keep(r.fullDebtBalance),wardPct:keep(r.wardPercent),wardBalance:''})),
     ...(src.scheduleB4||[]).map(r=>({description:r.lenderName||'',loanNo:r.accountNumber||'',loanType:r.liabilityType||'',fullDebt:keep(r.fullLiabilityBalance),wardPct:keep(r.wardPercent),wardBalance:''}))
   ];
-  dest.schA=(src.scheduleC1||[]).map(r=>({payer:r.payerName||'',description:r.typeOfIncome||'',bank:'',accountNo:'',amount:keep(r.annualIncomeAmount)}));
+  // Milestone 76G item 2 (decision 76G-2, the requester's): Schedule A starts
+  // blank. It was filled with each C-1 source's full projected amount -- the
+  // ward's share ignored ($24,000 at 50% arrived as $24,000) -- where the
+  // Annual reports what was actually received.
+  dest.schA=[];
+  // Milestone 76G item 2: "Was created after the GID?" is the filer's to
+  // answer -- it decides whether a separate trust accounting is required (the
+  // Clerk's Part VIII) -- so it carries unanswered, one export issue per trust
+  // (AGENTS.md section 4; it was answered 'No'). Part VIII holds three: the
+  // ones it can't hold are returned, so the notice names them.
   const trustRows=(src.scheduleC4||[]).map(r=>({
-    hasTrust:'Yes', createdAfterGID:'No', name:r.trustName||'', trustee:r.trusteeName||'',
+    hasTrust:'Yes', createdAfterGID:'', name:r.trustName||'', trustee:r.trusteeName||'',
     accountNo:r.accountNumber||'', dateCreated:r.dateCreated||'', trustType:r.trustType||'',
     wardPct:keep(r.wardPercent), wardAmount:''
   }));
+  const notCarried=trustRows.slice(3).map((t,i)=>t.name||`Schedule C-4 trust ${i+4}`);
   while(trustRows.length<3)trustRows.push(emptyRowAnnual('trust'));
   dest.trusts=trustRows.slice(0,3);
+  return { trustsNotCarried: notCarried };
+}
+
+/** Milestone 76G item 2: the notice's sentence for trusts Part VIII can't hold. */
+export function trustsNotCarriedNote(names){
+  if(!names||!names.length)return '';
+  return `\n\nPart VIII holds three trusts, so ${names.length===1?'this one was':'these were'} not carried: ${names.join('; ')}.`;
 }
 
 // Non-schedule fields that move from an Initial Inventory into an Annual
@@ -419,8 +443,9 @@ export async function convertExistingWard(sourceWardId,targetType,{trustIndex=''
   // returns blank schedules by design, so running it second would wipe
   // everything mapped here. (Regression guard — that is exactly what
   // happened once the Initial Inventory became a valid carry source.)
+  let extraNote='';
   if(srcType==='guardian'&&formEngine(targetType)==='annual'){
-    convertGuardianSchedulesToAnnual(source,newWard);
+    extraNote=trustsNotCarriedNote(convertGuardianSchedulesToAnnual(source,newWard).trustsNotCarried);
     convertGuardianExtrasToAnnual(source,newWard);
   }else if(targetType==='simplified'){
     convertToSimplified(source,srcType,newWard,{period});
@@ -444,5 +469,5 @@ export async function convertExistingWard(sourceWardId,targetType,{trustIndex=''
   recordModelChange('conversion');
   navigate('/', { reason: DRAW.SWITCH });
   // Milestone 74J: nothing is converted -- a new filing is made from this one.
-  await alertModal(`Created a new ${INVENTORY_TYPES[targetType].name} for ${sourceWard.wardName} from their ${INVENTORY_TYPES[srcType].name}. The ${INVENTORY_TYPES[srcType].name} is unchanged.\n\n${describeConversion(srcType,targetType,period)}`);
+  await alertModal(`Created a new ${INVENTORY_TYPES[targetType].name} for ${sourceWard.wardName} from their ${INVENTORY_TYPES[srcType].name}. The ${INVENTORY_TYPES[srcType].name} is unchanged.\n\n${describeConversion(srcType,targetType,period)}${extraNote}`);
 }

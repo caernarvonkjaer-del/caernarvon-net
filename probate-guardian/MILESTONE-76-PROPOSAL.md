@@ -1343,6 +1343,54 @@ period; `filing-conversion.characterization.spec.ts` records the same
 period, its golden record changed in exactly the Starting Balances above and
 Simplified -> Final's period.
 
+### Build record — items 2-8 BUILT 2026-10-20
+
+Approved by name (the requester, 2026-10-20: "76I, then rest of 76G and
+76H"). What a filer now sees:
+
+- **Item 2 (decision 76G-2):** an Annual Accounting made from an Initial
+  Inventory starts Schedule A blank (it held each income source's full
+  projected amount, the ward's share ignored); each carried trust's "Was
+  created after the GID?" is left unanswered -- one export issue each, for
+  the filer -- instead of "No"; a trust beyond Part VIII's three is named in
+  the notice ("Part VIII holds three trusts, so this one was not carried:
+  ...").
+- **Item 3:** the guardian's residence or office address carries between
+  the Annual family, the Annual Plan and the Simplified (one box on the
+  Clerk's forms); with "same as mailing" ticked it arrives as the mailing
+  address. Every co-guardian entered carries into an Initial Inventory (up to
+  three) and an Initial Plan (up to four), with no blank cards added; a row
+  holding only a signature or a tick is not an entry.
+- **Item 4 (decision 76G-3):** a Final Accounting made from an Annual -- by
+  New Filing from Existing or Load Ward Info From, one carry -- also starts
+  with Schedule D's holdings (and their "no items" answers), the B-4 bank
+  accounts, Part VIII's trusts, Part IX's bond and the guardian's
+  relationship; the transaction schedules and the ward's status start blank.
+  Its notice says so, and every Annual-family notice says the county comes
+  from the ward's record.
+- **Item 5:** "+ New Case" gives the filing a new case from its own case
+  number and county, so a filing linked to the wrong case can be split off.
+- **Item 6:** a Cover county edit updates the filing's own linked case only;
+  a case that merely shares the typed case number is left alone.
+- **Item 7 (decision 76G-4):** when the typed name chose the form to fill in
+  from, Create Form -- in Add New Form and in the Simplified's eligibility
+  dialog -- first asks "Fill in from this ward?", naming that ward's form and
+  case number and saying the new form joins that ward's record and case;
+  "Go back" leaves the dialog open. A form the filer picked from the list --
+  in either dialog, or in Add New Form before it hands a Simplified on to the
+  eligibility dialog -- is not asked about.
+- **Item 8:** Create Form in New Filing from Existing with a typed name, not
+  one chosen from the list, says "Choose the form to start from in the list"
+  instead of doing nothing.
+
+Tests: `conversions-76g.spec.js` (new: items 2, 3, 4 and 6 -- 11 of 12 red
+first); `case-links-76g.spec.ts` (new: items 5, 7 and 8 through the real
+dialogs -- 4 of 5 red first; the fifth pins that a picked source is not
+asked about); `convert-ward.spec.ts` (Annual -> Final now carries Schedule
+D; the county wording); `share-zero-paths.spec.js` (Schedule A blank);
+`filing-county-defaults.spec.js` (its case linked by `caseId`); the browser
+helpers answer the new question as they always behaved ("Fill in and link").
+
 ---
 
 ## 76H — The PDFs

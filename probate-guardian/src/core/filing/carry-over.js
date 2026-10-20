@@ -31,6 +31,7 @@ import { getCaseFile } from '../state.js';
 import { applyCarriedStartingBalance } from './starting-balance-carry.js';
 import { withOldCertificateFilled } from './certificate-migrations.js';
 import { nextIsoDay } from '../form/date-parser.js';
+import { rowStarted } from '../validation/row-started.js';
 
 export const ACCOUNTING_FORM_TYPES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 export const PRIOR_ACCOUNTING_SOURCES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
@@ -50,6 +51,29 @@ export const CARRY_SOURCE_TYPE = {
   finalAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'finalAccounting'), 'planInitial', 'planSimplified', 'planMinor'],
   trustAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'trustAccounting'), 'planInitial', 'planSimplified', 'planMinor'],
 };
+
+// Milestone 76G item 3: the guardian's residence or office address is one box
+// on the Clerk's forms -- the Annual family's and the Annual Plan's "Residence
+// or office address", the Simplified's residence address -- so it carries
+// between them; with "same as mailing" ticked it is the mailing address. It
+// used to carry blank, and the Simplified asked for it again.
+export function guardianOfficeAddress(g) {
+  if (!g) return { street: '', cityStateZip: '' };
+  if (g.officeSameAsMailing === true) {
+    return { street: g.mailingStreet || g.streetAddress || g.street || '', cityStateZip: g.mailingCityStateZip || g.cityStateZip || '' };
+  }
+  return { street: g.officeStreet || g.residenceStreet || '', cityStateZip: g.officeCityStateZip || g.residenceCityStateZip || '' };
+}
+
+// Milestone 76G item 3 (Milestone 37-6: carry a populated co-guardian, never
+// blank padding): the co-guardians the filer entered, after the first, up to
+// the form's own number. A signature, a tick or a preparer mark alone is not
+// an entry. Into an Initial Inventory and an Initial Plan only the first
+// guardian used to carry, and the Plan was padded with three blank cards.
+const NOT_ENTERED = ['signatureDate', 'signatureDateLabel', 'signatureState', 'signatureImage', 'isPreparer', 'certifiesService', 'officeSameAsMailing'];
+export function carriedCoGuardians(gs, max) {
+  return (gs || []).slice(1, max).filter((g) => rowStarted(g, { ignore: NOT_ENTERED }));
+}
 
 export function carrySourcesFor(type) {
   return CARRY_SOURCE_TYPE[type] || [];
@@ -206,7 +230,17 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
   const gs = (src.guardians && src.guardians.length ? src.guardians : src.planGuardians) || [];
 
   if (planType === 'planInitial') {
-    const g = gs[0] || {};
+    const row = (g, first) => ({
+      name: g.name || (first ? gName : '') || '',
+      ssn: g.ssn || g.ssnEin || g.tin || '',
+      street: g.streetAddress || g.street || g.mailingStreet || '',
+      phone: g.phone || '',
+      // Milestone 72C: the Initial Plan's guardian has an email now.
+      email: g.email || '',
+      cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
+      signatureDate: '',
+      relationship: g.relationship || '',
+    });
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
@@ -215,22 +249,8 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
       inceptionDate: src.gid || src.inceptionDate || '',
       guardianNames: gName,
       ...attorney,
-      planGuardians: [
-        {
-          name: g.name || gName || '',
-          ssn: g.ssn || g.ssnEin || g.tin || '',
-          street: g.streetAddress || g.street || g.mailingStreet || '',
-          phone: g.phone || '',
-          // Milestone 72C: the Initial Plan's guardian has an email now.
-          email: g.email || '',
-          cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
-          signatureDate: '',
-          relationship: g.relationship || '',
-        },
-        { name: '', ssn: '', street: '', phone: '', email: '', cityStateZip: '', signatureDate: '', relationship: '' },
-        { name: '', ssn: '', street: '', phone: '', email: '', cityStateZip: '', signatureDate: '', relationship: '' },
-        { name: '', ssn: '', street: '', phone: '', email: '', cityStateZip: '', signatureDate: '', relationship: '' },
-      ],
+      // Milestone 76G item 3: the form takes four guardians.
+      planGuardians: [row(gs[0] || {}, true), ...carriedCoGuardians(gs, 4).map((g) => row(g, false))],
     };
   }
   if (planType === 'planSimplified') {
@@ -273,8 +293,9 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
           signatureDate: '',
           mailingStreet: g.mailingStreet || g.streetAddress || g.street || '',
           mailingCityStateZip: g.mailingCityStateZip || g.cityStateZip || '',
-          officeStreet: g.officeStreet || '',
-          officeCityStateZip: g.officeCityStateZip || '',
+          // Milestone 76G item 3: a Simplified's residence address is this box.
+          officeStreet: g.officeStreet || g.residenceStreet || '',
+          officeCityStateZip: g.officeCityStateZip || g.residenceCityStateZip || '',
           // Milestone 74P: "same as mailing" travels with the addresses, so a
           // hidden office address never surfaces unticked in the new filing.
           officeSameAsMailing: g.officeSameAsMailing === true,
@@ -323,7 +344,16 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
   const gs = src.planGuardians || src.guardians || [];
 
   if (accountingType === 'guardian') {
-    const g = gs[0] || {};
+    const row = (g, first) => ({
+      name: g.name || (first ? gName : '') || '',
+      ssnEin: g.ssn || g.ssnEin || g.tin || '',
+      phone: g.phone || '',
+      // Milestone 72C: the Inventory's guardian has an email now.
+      email: g.email || '',
+      streetAddress: g.street || g.streetAddress || g.mailingStreet || '',
+      cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
+      signatureDate: null,
+    });
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
@@ -336,18 +366,8 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
       // has both emails too -- D-2 always collected them; the note that it
       // had "no email field" was wrong (attorneyCarryFields()).
       ...attorney,
-      guardians: [
-        {
-          name: g.name || gName || '',
-          ssnEin: g.ssn || g.ssnEin || g.tin || '',
-          phone: g.phone || '',
-          // Milestone 72C: the Inventory's guardian has an email now.
-          email: g.email || '',
-          streetAddress: g.street || g.streetAddress || g.mailingStreet || '',
-          cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
-          signatureDate: null,
-        },
-      ],
+      // Milestone 76G item 3: the Inventory takes three guardians.
+      guardians: [row(gs[0] || {}, true), ...carriedCoGuardians(gs, 3).map((g) => row(g, false))],
     };
   }
   if (accountingType === 'simplified') {
@@ -374,8 +394,9 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
           email: g.email || '',
           mailingStreet: addr.street || '',
           mailingCityStateZip: addr.cityStateZip || '',
-          residenceStreet: '',
-          residenceCityStateZip: '',
+          // Milestone 76G item 3: the Annual Plan's residence or office address.
+          residenceStreet: guardianOfficeAddress(g).street,
+          residenceCityStateZip: guardianOfficeAddress(g).cityStateZip,
           signatureDate: '',
         };
       }),
@@ -469,7 +490,9 @@ export function carryOverAccountingToAccounting(src,targetType){
 
   if(engine==='guardian'){
     return {...base, gid:src.gid||'', guardianName, ...attorney,
-      guardians:gs.slice(0,1).map(g=>({
+      // Milestone 76G item 3: Guardian 1 and the co-guardians entered, up to
+      // the Inventory's three.
+      guardians:[...gs.slice(0,1),...carriedCoGuardians(gs,3)].map(g=>({
         name:g.name||'', ssnEin:g.ssnEin||g.ssn||'', phone:g.phone||'',
         // Milestone 72C: the Inventory's guardian has an email now.
         email:g.email||'',
@@ -484,7 +507,9 @@ export function carryOverAccountingToAccounting(src,targetType){
         return {name:g.name||'', ssn:g.ssn||g.ssnEin||'', phone:g.phone||'', email:g.email||'',
           mailingStreet:g.mailingStreet||g.streetAddress||'',
           mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
-          residenceStreet:'', residenceCityStateZip:'', signatureDate:''};
+          // Milestone 76G item 3: the Annual's residence or office address.
+          residenceStreet:guardianOfficeAddress(g).street,
+          residenceCityStateZip:guardianOfficeAddress(g).cityStateZip, signatureDate:''};
       })};
   }
   // annual family (annual / finalAccounting / trustAccounting)
@@ -519,10 +544,40 @@ export function carryOverAccountingToAccounting(src,targetType){
       return {name:g.name||'', ssn:g.ssn||g.ssnEin||'', phone:g.phone||'', email:g.email||'',
         mailingStreet:g.mailingStreet||g.streetAddress||'',
         mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
-        officeStreet:g.officeStreet||'', officeCityStateZip:g.officeCityStateZip||'',
+        // Milestone 76G item 3: a Simplified's residence address is this box.
+        officeStreet:g.officeStreet||g.residenceStreet||'', officeCityStateZip:g.officeCityStateZip||g.residenceCityStateZip||'',
         officeSameAsMailing:g.officeSameAsMailing===true,
         signatureDate:'', signatureDateLabel:''};
     })};
+}
+
+// Milestone 76G item 4 (decision 76G-3, the requester's): a Final Accounting
+// made from an Annual starts from what the Annual holds, as Start New Year
+// keeps it -- Schedule D's holdings, the B-4 bank accounts, Part VIII's
+// trusts, Part IX's bond and the guardian's relationship -- not the ward's
+// status (Milestone 72G: a later filing starts it blank) and not the
+// transaction schedules or dates (Milestone 40H-I). Holdings are not
+// transactions. It started without any of them.
+/** Milestone 74K / 76G-3: an Annual into a Final Accounting -- the next period, and the Annual's holdings. */
+export function carriesFinalHoldings(srcType,destType){
+  return srcType==='annual'&&destType==='finalAccounting';
+}
+export const FINAL_HOLDINGS_FIELDS=Object.freeze(['schD1','schD2','schD3','schD4','schD5','schB4Accounts','trusts',
+  'bondDepositoryState','restrictedDepositoryReceiptDate','bondWaivedDate','bondAmount','bondPeriodFrom','bondPeriodTo','bondingCompany',
+  'guardianRelationship']);
+function finalHoldingsCarry(src){
+  const out={};
+  for(const k of FINAL_HOLDINGS_FIELDS){
+    if(src[k]===undefined)continue;
+    out[k]=src[k]&&typeof src[k]==='object'?JSON.parse(JSON.stringify(src[k])):src[k];
+  }
+  // Schedule D's "no items to report" answers go with its rows.
+  const ticks=src.scheduleNoItems;
+  if(ticks&&typeof ticks==='object'){
+    const kept=Object.fromEntries(Object.entries(ticks).filter(([k])=>/^schd[1-5]$/.test(k)));
+    if(Object.keys(kept).length)out.scheduleNoItems=kept;
+  }
+  return out;
 }
 
 // Single entry point used by every carry-over surface (Add Ward, Convert
@@ -546,9 +601,10 @@ export function carryOverFields(sourceWard,targetType){
   // starts the day after the Annual's period ended (Rule 5.680(c): the final
   // report runs "from the date of the previous annual accounting"); its
   // Period To stays the filer's. Every other carry leaves the period blank.
-  if(sourceWard.inventoryType==='annual'&&targetType==='finalAccounting'){
+  if(carriesFinalHoldings(sourceWard.inventoryType,targetType)){
     const from=nextIsoDay(sourceWard.periodTo);
     if(from)fields.periodFrom=from;
+    Object.assign(fields,finalHoldingsCarry(sourceWard));
   }
   // Milestone 40C-A item 3 / 40C-F item 3. Every builder above now leaves
   // `county` blank; this is the one place that fills it, and it takes the value
@@ -614,6 +670,7 @@ export function refreshCarrySourceSelect(sel,wrap,type,name,autonoteEl){
   // control that says why is discoverable instead.
   wrap.style.display='block';
   if(!allMatches.length){
+    sel.dataset.autoWardId='';
     sel.innerHTML=`<option value="">— ${esc(noCarrySourceText(type))} —</option>`;
     sel.disabled=true;
     if(autonoteEl)autonoteEl.style.display='none';
@@ -625,6 +682,9 @@ export function refreshCarrySourceSelect(sel,wrap,type,name,autonoteEl){
   sel.disabled=false;
   sel.innerHTML='<option value="">— Start Blank —</option>'
     +list.map(w=>`<option value="${esc(w.wardId)}">${esc(w.wardName)}${w.caseNumber?' — '+esc(w.caseNumber):''} (${esc(INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType)})</option>`).join('');
+  // Milestone 76G item 7: which source the name chose, so Add Form asks before
+  // linking to it (filing-dialogs.js's confirmCarryLink()).
+  sel.dataset.autoWardId=namedMatches.length===1?namedMatches[0].wardId:'';
   if(namedMatches.length===1){
     sel.value=namedMatches[0].wardId;
     if(autonoteEl){
@@ -646,7 +706,10 @@ export function updateCarrySourcePicker(){
 // Auto-fills the ward-name field to match the selected source ward, without
 // overriding a name the user has already started typing differently.
 export function onCarrySourceChange(){
-  const sourceId=/** @type {HTMLSelectElement} */ (document.getElementById('carry-source-ward')).value;
+  const sel=/** @type {HTMLSelectElement} */ (document.getElementById('carry-source-ward'));
+  // Milestone 76G item 7: a pick from the list is the filer's own choice.
+  sel.dataset.autoWardId='';
+  const sourceId=sel.value;
   if(!sourceId)return;
   const src=getCaseFile().wards.find(w=>w.wardId===sourceId);
   if(!src)return;

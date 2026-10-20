@@ -1,6 +1,6 @@
 // Milestone 70, 70G: the dialogs that link a filing's slot to a shared person
 // or case record, or create one. Moved from legacy-app.js's WARD MANAGEMENT.
-import { getOrCreateCaseForWard } from '../case-resolver.js';
+import { caseNumberOf, countyOf, createCase } from '../case-resolver.js';
 import { esc } from '../filing/escape-html.js';
 import { renderPage } from '../navigation/router.js';
 import { onChange } from '../navigation/draw-reason.js';
@@ -128,12 +128,16 @@ export async function doPickCase(){
 
 // "+ New Case" — creates a brand-new Case seeded from this filing's own
 // case number/county, then attaches it.
+// Milestone 76G item 5: always a new case. It went through
+// getOrCreateCaseForWard(), which returns the case a filing already has, so a
+// filing linked to the wrong case could not be split off it.
 export async function doCreateCaseFromWard(){
   if(!_pickCaseWardId)return;
   const ward=getCaseFile().wards.find(w=>w.wardId===_pickCaseWardId);
   if(!ward)return;
   closeModal('pickCaseModal');
-  const kase=getOrCreateCaseForWard(ward);
+  const kase=createCase({caseNumber:caseNumberOf(ward),county:countyOf(ward)});
+  if(ward.wardPartyId)kase.wardPartyId=ward.wardPartyId;
   ward.caseId=kase.id;
   await saveWardToState(ward);
   renderPage(getCurrentPage(),onChange());

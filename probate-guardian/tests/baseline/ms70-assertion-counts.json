@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 10160,
-  "tests": 3016
+  "expects": 10217,
+  "tests": 3033
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -114,6 +114,10 @@
    "tests": 3,
    "expects": 14
   },
+  "tests/e2e/case-links-76g.spec.ts": {
+   "tests": 5,
+   "expects": 19
+  },
   "tests/e2e/case-write-through.spec.ts": {
    "tests": 2,
    "expects": 5
@@ -148,7 +152,7 @@
   },
   "tests/e2e/convert-ward.spec.ts": {
    "tests": 9,
-   "expects": 50
+   "expects": 53
   },
   "tests/e2e/cover-county.spec.ts": {
    "tests": 7,
@@ -937,6 +941,10 @@
   "tests/unit/content-corrections.spec.js": {
    "tests": 4,
    "expects": 12
+  },
+  "tests/unit/conversions-76g.spec.js": {
+   "tests": 12,
+   "expects": 35
   },
   "tests/unit/convert-targets.spec.js": {
    "tests": 5,

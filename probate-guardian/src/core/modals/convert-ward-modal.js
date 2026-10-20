@@ -52,6 +52,7 @@ export function updateConvertTargetOptions() {
   if (typeof document === 'undefined') return;
   const input = document.getElementById('convert-source-ward');
   const wardId = (input && input.dataset.wardId) || '';
+  if (wardId) showConvertSourceError(false);
   const caseFile = getCaseFile();
   const ward = (caseFile.wards || []).find((w) => w.wardId === wardId);
   const targetSel = document.getElementById('convert-target-type');
@@ -181,6 +182,13 @@ export function updateConvertTrustOptions(ward, targetType) {
   wrap.hidden = !trusts.length;
 }
 
+// Milestone 76G item 8: Create Form with a typed name, not one chosen from the
+// list, did nothing at all. It now says what it needs.
+function showConvertSourceError(show){
+  const err=document.getElementById('convert-source-error');
+  if(err)err.hidden=!show;
+}
+
 export function updateConvertNotePreview(srcType,destType){
   const noteEl=document.getElementById('convert-note');
   noteEl.textContent=describeConversion(srcType,destType,convertPeriodChoice());
@@ -189,7 +197,12 @@ export function updateConvertNotePreview(srcType,destType){
 export async function doConvertWard(){
   const sourceWardId=document.getElementById('convert-source-ward').dataset.wardId||'';
   const targetType=document.getElementById('convert-target-type').value;
-  if(!sourceWardId||!targetType)return;
+  if(!sourceWardId){
+    showConvertSourceError(true);
+    /** @type {HTMLElement | null} */ (document.getElementById('convert-source-ward'))?.focus();
+    return;
+  }
+  if(!targetType)return;
   const trustWrap=document.getElementById('convert-trust-wrap');
   const trustIndex=trustWrap&&!trustWrap.hidden?document.getElementById('convert-trust').value:'';
   // Decision 76G-1: the period is asked, never assumed.

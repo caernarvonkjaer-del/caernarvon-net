@@ -24,7 +24,7 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await expect(page.locator('#convert-source-ward')).toHaveValue('Second Ward Active');
   });
 
-  test('Annual -> Final Accounting carries starting balance and cert recipients, starts the day after the Annual period ends, leaves schedules blank', async ({ page }) => {
+  test('Annual -> Final Accounting carries starting balance, cert recipients and Schedule D, starts the day after the Annual period ends, leaves the transaction schedules blank', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Source Ward', 'annual');
 
@@ -34,6 +34,7 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
         periodFrom: '2026-01-01',
         periodTo: '2026-12-31',
         schD1: [{ fullAmount: '150000', wardPct: '100', restricted: 'No' }],
+        schA: [{ payer: 'SSA', description: 'Benefits', bank: '', accountNo: '', amount: 100 }],
         certRecipients: [{ name: 'Jane Interested Party', line2: '100 Main St', line3: 'Tampa, FL 33602', line4: '' }],
       });
       (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
@@ -64,12 +65,16 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
       { name: 'Jane Interested Party', line2: '100 Main St', line3: 'Tampa, FL 33602', line4: '' },
     ]);
     // Milestone 74K (decision 74K-2): the Final starts the day after the
-    // Annual's period ended; its Period To stays the filer's. Schedules must
-    // NOT carry -- line-items are this period's own transactions, not last
-    // period's.
+    // Annual's period ended; its Period To stays the filer's. The transaction
+    // schedules must NOT carry -- line-items are this period's own
+    // transactions, not last period's -- but Schedule D's holdings do
+    // (Milestone 76G item 4, decision 76G-3).
     expect(newWard.periodFrom).toBe('2027-01-01');
     expect(newWard.periodTo).toBeFalsy();
-    expect(newWard.schD1).toEqual([]);
+    expect(newWard.schA).toEqual([]);
+    expect(newWard.schD1).toHaveLength(1);
+    expect(newWard.schD1[0]).toMatchObject({ restricted: 'No' });
+    expect(Number(newWard.schD1[0].fullAmount)).toBe(150000);
   });
 
   // Found 2026-09-13 while implementing Milestone 43A: convertGuardianSchedulesToAnnual()
@@ -196,7 +201,8 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     expect(message).toContain('Starting Balance is left blank');
     expect(message).not.toContain('Starting Balance is set to this filing\'s ending net assets');
     expect(message).toContain('Certificate-of-service recipients are carried');
-    expect(message).toContain('County is restored from this ward\'s case record');
+    // Milestone 76G item 4: the county comes from the ward's record, not a case record.
+    expect(message).toContain('County is restored from this ward\'s record');
     expect(message).toContain('accounting period and every schedule start blank');
     // Between two guardianship accountings the balance still carries.
     const toFinal = await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.describe('annual', 'finalAccounting'));

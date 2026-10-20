@@ -71,7 +71,9 @@ describe('Initial Inventory -> Annual keeps every share as entered', () => {
     expect(d.schD1[0].fullAmount).toBe(0);
     expect(d.schD2[0].fullValue).toBe(0);
     expect(d.schD2[0].carryingValue).toBe(0);
-    expect(d.schA[0].amount).toBe(0);
+    // Milestone 76G item 2 (decision 76G-2): Schedule A starts blank -- it
+    // reports what was received, not the Inventory's projected income.
+    expect(d.schA).toEqual([]);
   });
 
   test("an unanswered Yes/No arrives unanswered, never as 'No'; an answer arrives as given", () => {

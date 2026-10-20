@@ -153,7 +153,21 @@ export async function createWardViaDialog(page: Page, name: string, type = 'guar
   await nameBox.evaluate((el) => (el as HTMLInputElement).blur());
   await expect(nameBox).toHaveValue(name);
   await page.click('#addWardModal [data-modal-action="add-ward"]');
-  await page.locator('#addWardModal').waitFor({ state: 'hidden' });
+  await answerCarryLinkQuestion(page, '#addWardModal');
+}
+
+/**
+ * Milestone 76G item 7 (decision 76G-4): a name already on file picks that
+ * ward's form to fill in from, and Create Form then asks before linking the new
+ * form to it. These helpers answer as they always behaved -- "Fill in and
+ * link" -- and wait for `modal` to close. A test of the question itself drives
+ * the dialog directly.
+ */
+export async function answerCarryLinkQuestion(page: Page, modal: string): Promise<void> {
+  const question = page.locator(DYN_DIALOG).filter({ hasText: 'Fill in from this ward?' });
+  await expect.poll(async () => (await question.isVisible()) || !(await page.locator(`${modal}.show`).isVisible())).toBe(true);
+  if (await question.isVisible()) await question.locator('[data-dyn-action="confirm"]').click();
+  await page.locator(modal).waitFor({ state: 'hidden' });
 }
 
 /**
@@ -253,7 +267,7 @@ export async function createSimplifiedWard(page: Page, name: string): Promise<vo
   await page.selectOption('#elig-depository', 'Yes');
   await page.selectOption('#elig-only-transactions', 'Yes');
   await page.click('#simplifiedEligibilityModal [data-modal-action="confirm-simplified-eligibility"]');
-  await page.locator('#simplifiedEligibilityModal').waitFor({ state: 'hidden' });
+  await answerCarryLinkQuestion(page, '#simplifiedEligibilityModal');
 }
 
 /**

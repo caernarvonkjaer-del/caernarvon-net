@@ -159,8 +159,11 @@ export function syncLinkedCaseCounty(filing, county) {
   const caseFile = getCaseFile();
   const cases = caseFile?.cases;
   if (!Array.isArray(cases)) return false;
-  const linked = cases.find((c) => c && filing.casePartyId && c.id === filing.casePartyId)
-    || cases.find((c) => c && c.caseNumber && filing.caseNumber && c.caseNumber === filing.caseNumber);
+  // Milestone 76G item 6: the filing's own link (caseId). It read
+  // `filing.casePartyId`, which no filing has, so it always fell back to a case
+  // whose typed number matched -- a match Milestone 36 says must be confirmed,
+  // never assumed -- and could re-county another ward's case.
+  const linked = filing.caseId ? cases.find((c) => c && c.id === filing.caseId) : null;
   if (!linked || normalizeCountyName(linked.county) === normalized) return false;
   linked.county = normalized;
   linked.updatedAt = new Date().toISOString();

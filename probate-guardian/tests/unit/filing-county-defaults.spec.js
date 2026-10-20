@@ -279,7 +279,9 @@ describe('Milestone 40C-A: the ward-county lifecycle', () => {
   });
 
   test('a linked case record follows an explicit Cover edit, but never seeds one', () => {
-    const filing = newFiling({ caseNumber: '26-000123-GD' });
+    // Milestone 76G item 6: linked by its caseId -- a case that only shares
+    // the typed number is not this filing's (conversions-76g.spec.js).
+    const filing = newFiling({ caseNumber: '26-000123-GD', caseId: 'c1' });
     getCaseFile().cases.push({ id: 'c1', caseNumber: '26-000123-GD', county: 'Pasco' });
 
     wardCounty.commitCoverCounty(filing, 'Orange');

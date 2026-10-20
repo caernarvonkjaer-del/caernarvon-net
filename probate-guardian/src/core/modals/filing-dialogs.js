@@ -6,7 +6,7 @@
 // Annual, and deleting one. Moved from legacy-app.js's MODAL FUNCTIONS; the
 // modal plumbing they open through (showModal(), closeModal(), the ward-name
 // combobox) stays there until 70H.
-import { getOrCreateCaseForWard } from '../case-resolver.js';
+import { caseNumberOf, getOrCreateCaseForWard, resolveCase } from '../case-resolver.js';
 import { refreshCarrySourceSelect, updateCarrySourcePicker } from '../filing/carry-over.js';
 import { deleteFilingConfirmation } from '../filing/delete-confirmation.js';
 import { formDisplayName } from '../filing/filing-registry.js';
@@ -50,10 +50,14 @@ export async function doAddWard(){
     }
   }
   if(type==='simplified'){
+    // Milestone 76G item 7: whether the name chose the source travels with it,
+    // so the eligibility dialog asks only about a source the filer didn't pick.
+    const chosenByName=!!carrySourceId&&document.getElementById('carry-source-ward')?.dataset.autoWardId===carrySourceId;
     closeModal('addWardModal');
-    showSimplifiedEligibilityModal(name,carrySourceId);
+    showSimplifiedEligibilityModal(name,carrySourceId,{chosenByName});
     return;
   }
+  if(carrySourceId&&!(await confirmCarryLink(document.getElementById('carry-source-ward'),carrySourceId,name)))return;
   try{
     const wardId=await filingLifecycle.create(name,type);
     if(carrySourceId){
@@ -81,6 +85,25 @@ export async function doAddWard(){
   }
 }
 
+// Milestone 76G item 7 (decision 76G-4, the requester's): a source the typed
+// name chose on its own is asked about, naming its case, before the new form
+// is filled in from it -- filling in links the new form to that ward's record
+// and case, which the "Auto-filling from ..." note never said. A source the
+// filer picked from the list is their choice already. "Go back" leaves the
+// dialog open.
+export async function confirmCarryLink(sel,sourceId,name){
+  if(!sel||!sourceId||sel.dataset.autoWardId!==sourceId)return true;
+  const src=getCaseFile().wards.find(w=>w.wardId===sourceId);
+  if(!src)return true;
+  const caseNo=resolveCase(src.caseId)?.caseNumber||caseNumberOf(src);
+  return confirmModal({
+    title:'Fill in from this ward?',
+    message:`"${name}" is the name on ${src.wardName}'s ${formDisplayName(src.inventoryType)}${caseNo?`, case ${caseNo}`:', which has no case number yet'}.\n\nFilling in the new form from it links the two: the new form joins that ward's record and case. If this is a different person, go back and choose "Start Blank".`,
+    confirmLabel:'Fill in and link',
+    cancelLabel:'Go back',
+  });
+}
+
 // carrySourceId lets doAddWard() hand off a carry-source selection already
 // made in the main Add Ward modal; the picker inside this modal covers the
 // other entry point, where the "Simplified Accounting" card skips that
@@ -90,7 +113,7 @@ export function refreshEligCarrySource(){
   refreshCarrySourceSelect(document.getElementById('elig-carry-source-ward'),document.getElementById('elig-carry-source-wrap'),'simplified',name,document.getElementById('elig-carry-source-autonote'));
 }
 
-export async function showSimplifiedEligibilityModal(name,carrySourceId){
+export async function showSimplifiedEligibilityModal(name,carrySourceId,{chosenByName=false}={}){
   await ensureFragment('common-modals');
   document.getElementById('elig-ward-name').value=name||'';
   populateWardNameSuggestions('elig-ward-name-suggestions');
@@ -105,7 +128,15 @@ export async function showSimplifiedEligibilityModal(name,carrySourceId){
   // Explicit hand-off from the main Add Ward modal (the "Simplified
   // Accounting" card skips that modal and lands here directly) wins over
   // whatever refreshEligCarrySource() auto-selected from the name alone.
-  if(carrySourceId)document.getElementById('elig-carry-source-ward').value=carrySourceId;
+  // Milestone 76G item 7: a pick from the list is the filer's own choice.
+  const eligSel=document.getElementById('elig-carry-source-ward');
+  eligSel.onchange=()=>{eligSel.dataset.autoWardId='';};
+  if(carrySourceId){
+    const sel=eligSel;
+    sel.value=carrySourceId;
+    // Milestone 76G item 7: a hand-off is the filer's choice unless the name made it.
+    sel.dataset.autoWardId=chosenByName?carrySourceId:'';
+  }
   showModal('simplifiedEligibilityModal');
   document.getElementById('elig-ward-name').focus();
 }
@@ -135,6 +166,7 @@ export async function doConfirmSimplifiedEligibility(){
   const carrySourceId=document.getElementById('elig-carry-source-ward').value;
   if(!name){await alertModal('Please enter a ward name');return;}
   if(!dep||!txn){await alertModal('Please answer both eligibility questions');return;}
+  if(carrySourceId&&!(await confirmCarryLink(document.getElementById('elig-carry-source-ward'),carrySourceId,name)))return;
   const qualifies=dep==='Yes'&&txn==='Yes';
   try{
     if(qualifies){
