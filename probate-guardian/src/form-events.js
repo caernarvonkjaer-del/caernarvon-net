@@ -186,12 +186,13 @@ on('focusout', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (control.dataset.formControl === 'county') setTimeout(() => hideCountyDropdown(control.id), 150);
-  if (boundPath(control)) {
+  const bound = boundPath(control);
+  if (bound) {
     finalizeFieldValue(control, { event });
   }
   // Milestone 76H item 4: a letter the PDF can't print is named as the filer
   // leaves the box (the Inventory's data-bind boxes too).
-  if (boundPath(control) || control.dataset.bind) syncPrintableNote(control);
+  if (bound || control.dataset.bind) syncPrintableNote(control);
 });
 
 // Milestone 50H: keyboard route to the county dropdown -- previously only
