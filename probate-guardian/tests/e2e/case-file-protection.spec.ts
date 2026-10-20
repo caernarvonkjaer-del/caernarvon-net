@@ -214,4 +214,55 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       await context.close();
     }
   });
+
+  // Found in Milestone 76's review (2026-10-19), fixed with the requester's
+  // go-ahead (2026-10-20): the red "Your work could not be saved" banner --
+  // shown after two saves in a row fail to write the case file (a drive
+  // unplugged, permission withdrawn, the file locked, a full disk) -- had a
+  // Dismiss button with no handler, so it covered the top of the window until
+  // a save succeeded, and its text named no file and no next step. Now it
+  // names the file and the way out, Dismiss hides it, and the next failed
+  // save shows it again. Red first: on the code before this the click did
+  // nothing and the text named no file.
+  test('the save-failure banner names the file and the next step, and Dismiss hides it until the next failure', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Unwritable File Ward');
+      await page.evaluate(async () => {
+        const w = window as any;
+        await w.GuardianForms.testing.launchState.rememberHandle({
+          name: 'unplugged-drive.sav',
+          kind: 'file',
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          isSameEntry: async () => false,
+          getFile: async () => { throw new DOMException('The drive is not available', 'NotFoundError'); },
+          createWritable: async () => { throw new DOMException('The drive is not available', 'NotFoundError'); },
+        });
+      });
+      const failSave = () => page.evaluate(async () => {
+        const t = (window as any).GuardianForms.testing;
+        t.save.markDirty();
+        await t.save.saveData();
+      });
+      const banner = page.locator('#save-error-banner');
+      await failSave();
+      await failSave();
+      await expect(banner).toBeVisible();
+      await expect(banner).toContainText('unplugged-drive.sav');
+      await expect(banner).toContainText('Save Backup');
+
+      await banner.getByRole('button', { name: 'Dismiss' }).click();
+      await expect(banner).toBeHidden();
+
+      await failSave();
+      await expect(banner, 'the next failed save shows it again').toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
 });

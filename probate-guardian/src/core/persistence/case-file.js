@@ -882,7 +882,7 @@ async function writeCaseNow(handle, viaTimer) {
   } catch (e) {
     rollback();
     _consecutiveSaveFailures += 1;
-    if (_consecutiveSaveFailures >= SAVE_FAILURE_THRESHOLD) showSaveError();
+    if (_consecutiveSaveFailures >= SAVE_FAILURE_THRESHOLD) showSaveError(handle && handle.name);
     throw e;
   }
   _consecutiveSaveFailures = 0;
@@ -1201,9 +1201,20 @@ export async function flushPendingSave(){
 
 // The persistent "could not save" banner, shown after consecutive failed
 // writes (writeCaseToHandle(), above) and hidden by the next good one.
-export function showSaveError(){
+// It names the file and the way out (2026-10-20): it said only "Check your
+// connection/storage and try again". The changes stay in the tab, and every
+// later save -- after an edit, when the tab is hidden, the retry sweep --
+// tries the file again. Dismiss (shell-events.js) hides it until the next
+// failed save; its button had no handler, so it could not be closed.
+export function showSaveError(fileName=''){
   if(typeof document==='undefined')return;
   const el=document.getElementById('save-error-banner');
+  const text=document.getElementById('save-error-banner-text');
+  if(text){
+    const file=fileName?`"${fileName}"`:'the case file';
+    text.textContent=`Your work could not be saved to ${file}. Your changes are still in this tab. `
+      +'Use Save Backup to save them somewhere else, or check the drive and the file: the next save tries again.';
+  }
   if(el)el.style.display='block';
 }
 
