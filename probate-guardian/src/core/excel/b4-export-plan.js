@@ -28,6 +28,14 @@
 // withholding the workbook.
 
 import { b4AccountLabel } from '../accounting/bank-accounts.js';
+import { isBlankScheduleEntry } from '../form/blank-rows.js';
+
+// Milestone 76I item 6: a row "+ Add" added and the filer never touched is no
+// row (Milestone 73F part 3's rule, which this planner never had) -- whatever
+// account it sits under. Once bank accounts existed, one blocked Save as Excel
+// as "not assigned to a bank account"; with none, it filed a blank numbered
+// line.
+const touched = (row) => !!row && !isBlankScheduleEntry('schB4', { ...row, bankAccountId: '' });
 
 /** @typedef {{page:number, firstRow:number, rows:number}} B4Page */
 /** @typedef {{account:number, pages:B4Page[], capacity:number}} B4Block */
@@ -66,7 +74,7 @@ function layoutRowsOverPages(rows, block) {
  * }}
  */
 export function planSchB4Export(schB4, accounts, blocks) {
-  const rows = Array.isArray(schB4) ? schB4.filter(Boolean) : [];
+  const rows = Array.isArray(schB4) ? schB4.filter(touched) : [];
   const accts = Array.isArray(accounts) ? accounts.filter(Boolean) : [];
   const blockList = Array.isArray(blocks) ? blocks : [];
   const problems = [];

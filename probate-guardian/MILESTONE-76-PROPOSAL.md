@@ -1857,6 +1857,38 @@ of 76I.
 | 8 Legal | Items 3 and 9 follow the Clerk's workbook and the requester's rounding contract. |
 | 9 Cross-form | Items 4, 5, 7 and 9 compared across the three workbooks; item 7's code writes the Annual's Part XI and the Simplified's Part VII; "same as mailing" exists only on the Annual family. |
 
+### Build records
+
+Approved by name (the requester, 2026-10-20: "76I, then rest of 76G and
+76H"). Item 5 needs no change (decision 76I-4: the apostrophe guard stays).
+
+**Part 1 (items 1, 2, 6, 8, 9) — BUILT 2026-10-20.** What a filer now sees:
+
+- **Item 1:** any workbook the app exports imports again -- the sheet limit is
+  120, above the app's own 90-sheet Annual workbook (it was 60).
+- **Item 2 (decisions 76I-1, 76I-5):** another form's workbook is refused,
+  naming both forms ("This is the court's workbook for an Initial Inventory,
+  and this filing is an Annual, Final or Trust Accounting. Nothing in the
+  filing was changed ..."), and a spreadsheet that is no court workbook is
+  refused ("This isn't a court workbook this app can read."), before
+  anything is read; the Annual family counts as one form, recognised from
+  sheets every version has.
+- **Item 6:** a Schedule B-4 row "+ Add" added and never touched is no row --
+  it no longer blocks Save as Excel once bank accounts exist, nor files a
+  blank numbered line; a disbursement with no bank account is refused as
+  "need a bank account", not as a capacity problem.
+- **Item 8:** with "same as mailing" ticked, re-import keeps the office
+  address the filer typed (74P-3); an Inventory C-3 row is kept when any of
+  its own boxes holds something.
+- **Item 9:** the audit-fee tier is read from Line 30 in cents, as it prints
+  (the requester's rounding contract): a Line 30 that floats to
+  25000.000000000004 and prints $25,000.00 takes the $20 tier, not $85.
+
+Tests: `court-workbooks-76i.spec.js` (new; the templates through
+`workbookAdapter()`, the wrong form and an unrelated spreadsheet refused,
+the B-4 plan, the office address and the C-3 row read from saved workbooks,
+the fee tier) -- all eight red first.
+
 ---
 
 ## 76J — The export checks

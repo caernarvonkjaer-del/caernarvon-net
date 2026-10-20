@@ -58,6 +58,10 @@ test.describe('Excel import: cell shapes the app never exports (Milestone 53B)',
       const ExcelJS = (window as any).ExcelJS;
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet(sheetName);
+      // Milestone 76I item 2 (decision 76I-5): a workbook is read only when it
+      // is the filing's court form, known by sheets every version has -- for
+      // the Simplified, PARTS I, II and PARTS V, VI. The second is left empty.
+      wb.addWorksheet('PARTS V, VI ');
 
       // C4 -> wardName: rich text, two runs, second one bold.
       ws.getCell('C4').value = { richText: [{ text: 'Eleanor ' }, { text: 'Whitfield', font: { bold: true } }] };

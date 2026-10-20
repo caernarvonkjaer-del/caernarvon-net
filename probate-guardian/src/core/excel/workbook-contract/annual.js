@@ -432,8 +432,16 @@ export const ANNUAL_CONTRACT = Object.freeze({
     if (filing?.certNoRecipients === 'Yes' && (draft.certRecipients || []).some((r) => rowStarted(r))) draft.certNoRecipients = '';
     const same = (a, b) => String(a ?? '').trim() === String(b ?? '').trim();
     (draft.guardians || []).forEach((row, i) => {
-      if (filing?.guardians?.[i]?.officeSameAsMailing !== true) return;
-      if (!same(row.officeStreet, row.mailingStreet) || !same(row.officeCityStateZip, row.mailingCityStateZip)) row.officeSameAsMailing = false;
+      const had = filing?.guardians?.[i];
+      if (had?.officeSameAsMailing !== true) return;
+      if (!same(row.officeStreet, row.mailingStreet) || !same(row.officeCityStateZip, row.mailingCityStateZip)) { row.officeSameAsMailing = false; return; }
+      // Milestone 76I item 8 (74P-3: with "same as mailing" ticked, what was
+      // typed in the office boxes is kept and returns when unticked): the
+      // workbook's office boxes hold the mailing address the export filed
+      // there, so they say nothing about the office address the filer typed.
+      // Re-import wrote them over it.
+      row.officeStreet = had.officeStreet ?? '';
+      row.officeCityStateZip = had.officeCityStateZip ?? '';
     });
   },
   afterRead(draft, workbook) {

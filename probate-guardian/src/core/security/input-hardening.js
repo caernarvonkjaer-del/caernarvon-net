@@ -84,7 +84,13 @@ export function getImportProgressEl(input){
 // app from doing anything further with a workbook shaped nothing like a
 // Clerk of Court template, with a plain-language reason instead of it just
 // silently working through something enormous.
-export const EXCEL_IMPORT_LIMITS = {maxSheets:60,maxRowsPerSheet:5000};
+// Milestone 76I item 1: 120 sheets -- above the app's own Annual workbook
+// (90 since Milestone 57D extended it to twelve bank accounts), so a workbook
+// the app exported always imports again. At 60 (when the Clerk's original had
+// 58), a filing keeping nine or more full bank accounts exported a workbook
+// its own import refused. It runs after the full read, so it protects
+// nothing on its own; a guard before reading is not part of this.
+export const EXCEL_IMPORT_LIMITS = {maxSheets:120,maxRowsPerSheet:5000};
 export function assertWorkbookWithinLimits(workbook){
   const sheets=workbook.worksheets||[];
   if(sheets.length>EXCEL_IMPORT_LIMITS.maxSheets){

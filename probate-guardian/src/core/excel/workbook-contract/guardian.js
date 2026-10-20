@@ -234,7 +234,13 @@ export const GUARDIAN_CONTRACT = Object.freeze({
       // column B's printed Line # and the case number after the description;
       // that layout is read too.
       kind: 'rows', path: 'scheduleC3', pages: pages(SCHEDULE_C3_PAGES),
-      present: (r) => !!r.__line1,
+      // Milestone 76I item 8: a row is kept when any of its own lines or
+      // boxes holds something (73T row 7: a row holding only an amount comes
+      // back). Only the first line counted, so a lawsuit with its status,
+      // court, case number and amount but no defendant was dropped. (The
+      // share is left out, and an amount of 0: a blank row reads back so.)
+      present: (r) => !!r.__line1 || ['status', 'courtJurisdiction', 'caseNumber', 'actionDate', 'estimatedSettlement']
+        .some((k) => r[k] !== '' && r[k] != null && r[k] !== 0),
       columns: [lineCol('status', 'C', 1, text), lineCol('courtJurisdiction', 'C', 2, text), lineCol('caseNumber', 'C', 3, text),
         col('actionDate', 'E', date), col('estimatedSettlement', 'F', amountRaw), col('wardPercent', 'G', share)],
       combined: [{

@@ -78,11 +78,16 @@ export function calcTotalsAnnual(customD) {
   // Bond calc
   const bondReq = (schD1_total - schD1_restricted) + schD3_ward + (schD4_ward - schD4_restricted);
 
-  // Audit fee
+  // Audit fee. Milestone 76I item 9: the tier is read from Line 30 in cents,
+  // as it prints, per the requester's rounding contract (2026-09-20) and as
+  // the Inventory's fee and the bond check already compare. Three D-1 rows
+  // summing to 25000.000000000004 took the $85 tier beside a printed
+  // "$25,000.00" -- the workbook's schedule says $25,000 or less is $20.
+  const feeBase = roundCents(netAssetsFromD);
   let auditFee = 0;
-  if (netAssetsFromD > 500000) auditFee = 250;
-  else if (netAssetsFromD > 100000) auditFee = 170;
-  else if (netAssetsFromD > 25000) auditFee = 85;
+  if (feeBase > 500000) auditFee = 250;
+  else if (feeBase > 100000) auditFee = 170;
+  else if (feeBase > 25000) auditFee = 85;
   else auditFee = 20;
 
   // Milestone 40H-H: Schedule E/F-1/F-2 were the only three schedule totals

@@ -118,7 +118,15 @@ export async function doSaveExcel(){
     // says why it can't go on -- a capacity limit, or requirements still
     // outstanding (it used to redraw Preview and say nothing).
     const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
-    if (capIssues.length) {
+    // Milestone 76I item 6: a disbursement with no bank account is not a
+    // capacity problem -- the refusal said "more entries than the template can
+    // hold ... Save as PDF instead".
+    const unassigned = capIssues.filter(i => /-unassigned-rows$/.test(i.code || ''));
+    if (unassigned.length) {
+      await alertModal('Cannot export to Excel — Schedule B-4 disbursements need a bank account:\n\n'
+        + unassigned.map(o => `• ${o.message}`).join('\n')
+        + '\n\nOn Schedule B-4, choose the bank account each one was paid from. The PDF is not affected.');
+    } else if (capIssues.length) {
       await alertModal('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
         + capIssues.map(o => `• ${o.message}`).join('\n')
         + '\n\nSave as PDF instead — the PDF includes every entry.');

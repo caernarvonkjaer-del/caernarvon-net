@@ -102,6 +102,44 @@ export function excelOmissions(filing) {
   return contract?.excelOmits ? contract.excelOmits(filing) : [];
 }
 
+// Milestone 76I item 2 (decisions 76I-1 and 76I-5, the requester's): which
+// court workbook a file is, from sheets every version has (the Clerk's
+// originals and the app's exports, which drop blank register pages). Another
+// form's workbook, or a spreadsheet that is none, was imported anyway: each
+// schedule it lacks was emptied (the B-4 register, the Inventory's guardian
+// and recipients) with no word that it was the wrong form. The Annual, Final
+// and Trust Accountings are one form: they share one Clerk instrument, and a
+// filing keeps its own type (73T part 3).
+const FORM_SHEETS = Object.freeze({
+  annual: Object.freeze(['PART I', 'PART II, III', 'PART IV, V']),
+  guardian: Object.freeze(['SUMMARY I', 'SUMMARY II', 'PART V']),
+  simplified: Object.freeze(['PARTS I, II', 'PARTS V, VI']),
+});
+const FORM_WORDS = Object.freeze({
+  annual: 'an Annual, Final or Trust Accounting',
+  guardian: 'an Initial Inventory',
+  simplified: 'a Simplified Annual Accounting',
+});
+
+/** The court workbook a file is ('annual' for the Annual family, 'guardian', 'simplified'), or null. */
+export function workbookFormOf(workbook) {
+  const names = new Set((workbook?.worksheets || []).map((ws) => String(ws?.name || '').trim().toUpperCase()));
+  for (const [form, sheets] of Object.entries(FORM_SHEETS)) {
+    if (sheets.every((sheet) => names.has(sheet))) return form;
+  }
+  return null;
+}
+
+/** Refuses a workbook that isn't this filing's court form, naming what it is. Nothing is read from it. */
+export function assertWorkbookForm(workbook, inventoryType) {
+  const expected = formEngine(inventoryType);
+  const found = workbookFormOf(workbook);
+  if (!found) throw new Error("This isn't a court workbook this app can read. Nothing in the filing was changed.");
+  if (found !== expected) {
+    throw new Error(`This is the court's workbook for ${FORM_WORDS[found]}, and this filing is ${FORM_WORDS[expected]}. Nothing in the filing was changed; import it into ${FORM_WORDS[found]} instead.`);
+  }
+}
+
 /** The draft alone (readWorkbookDraft()'s), for callers that need nothing else. */
 export function draftFromWorkbook(workbook, inventoryType, ctx = {}) {
   return readWorkbookDraft(workbook, inventoryType, { ctx }).draft;
@@ -135,6 +173,7 @@ export function workbookAdapter({ data, sourceName, inventoryType, filing = null
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(data);
     assertWorkbookWithinLimits(workbook);
+    assertWorkbookForm(workbook, inventoryType);
     const contract = contractFor(inventoryType);
     const { draft, rowSources, dateDrafts, workbookType } = readWorkbookDraft(workbook, inventoryType, { filing });
     const unboxed = Object.fromEntries(Object.entries(contract.preserve).filter(([role]) => role !== 'guardian'));
