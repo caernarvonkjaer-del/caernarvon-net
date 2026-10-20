@@ -323,13 +323,12 @@ export function buildPlanInitialModel(D, options) {
       // they printed after Question 11.
       { type: 'checklist', title: T.q10E, items: devices('needs') },
       ...explainNotice('needsExplain'),
+      // Milestone 76H item 10 (decision 76H-2): 10F is a Yes/No question, so
+      // it prints its answer; as a two-row checklist it read "No — Yes" and
+      // "Yes — No".
       {
-        type: 'checklist',
-        title: T.q10F,
-        items: [
-          { checked: triStateText(d.committeeIncorporated) === 'Yes', label: 'Yes' },
-          { checked: triStateText(d.committeeIncorporated) === 'No', label: 'No' },
-        ],
+        type: 'key-value-grid',
+        items: [{ label: T.q10F, value: triStateText(d.committeeIncorporated) || '' }],
       },
       ...explainNotice('committeeExplain'),
     ],

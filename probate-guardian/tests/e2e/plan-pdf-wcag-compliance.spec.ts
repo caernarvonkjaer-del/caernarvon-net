@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
-import { extractPdfText } from './support/pdf-extract';
+import { extractPdfText, pdfActualTexts } from './support/pdf-extract';
 
 // Milestone 19-2: brings the four plan-* features (previously raster
 // html2pdf/html2canvas only, outside the Milestone 17-19 accessibility
@@ -49,6 +49,9 @@ type WcagConfig = {
   model: Record<string, unknown>;
   minPages: number;
   expectedText: string[];
+  // Milestone 76H item 10: checklist rows a screen reader hears as ticked
+  // (their tag's /ActualText, "Checked: ...").
+  expectedChecked?: string[];
 };
 
 const CONFIGS: WcagConfig[] = [
@@ -96,7 +99,10 @@ const CONFIGS: WcagConfig[] = [
     },
     // Legacy useSlashS values are inert: normal filings use the standard
     // electronic /s/ presentation.
-    expectedText: ['Private Residence', 'Yes', 'Ann Rivera', 'Signature (Electronic /s/', 'Jordan Alvarez', '/s/ Jordan Alvarez', '0123456'],
+    // Milestone 76H item 10 (decision 76H-2): the ticked row prints its label
+    // alone; its "Yes" is in its tag (expectedChecked), not on the page.
+    expectedText: ['Private Residence', 'Ann Rivera', 'Signature (Electronic /s/', 'Jordan Alvarez', '/s/ Jordan Alvarez', '0123456'],
+    expectedChecked: ['Private Residence'],
   },
   {
     name: 'Plan Annual',
@@ -244,6 +250,12 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
       expect(result.hasNoRasterImage).toBe(true);
       expect(result.numPages).toBeGreaterThan(config.minPages);
       for (const text of config.expectedText) expect(extractedText).toContain(text);
+      if (config.expectedChecked) {
+        const states = (await pdfActualTexts(result.rawPdfString)).map((t) => t.replace(/\s+/g, ' '));
+        for (const label of config.expectedChecked) {
+          expect(states.some((t) => t.startsWith('Checked: ') && t.includes(label)), `${label} is tagged ticked`).toBe(true);
+        }
+      }
 
       // Milestone 43F: PDF/UA-1 heading order must never skip a level.
       let prevLevel = 0;

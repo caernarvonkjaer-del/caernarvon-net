@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, fillMinimalValidGuardianWard } from './support/target';
 import { installFixtureSupport, expectFileableFixture } from './support/fixture-completeness';
 import { MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_SIMPLIFIED } from './support/fixtures';
-import { extractPdfText } from './support/pdf-extract';
+import { extractPdfText, pdfActualTexts } from './support/pdf-extract';
 import { expectedPdfMetadataTitle } from './support/filing-matrix';
 
 test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Content', () => {
@@ -595,8 +595,13 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
 
     const extracted191Text = await extractPdfText(result.rawPdfString);
     expect(extracted191Text).toContain('Synthetic checklist item number 1 verifies');
-    expect(extracted191Text).toContain('Yes');
-    expect(extracted191Text).toContain('No');
+    // Milestone 76H item 10 (decision 76H-2): each row's ticked state is in its
+    // tag's /ActualText, on the row's first part; no "Yes — "/"No — " prints.
+    const states = (await pdfActualTexts(result.rawPdfString)).map((t) => t.replace(/\s+/g, ' '));
+    expect(states.filter((t) => /^(Checked|Not checked): Synthetic checklist item number \d+ /.test(t))).toHaveLength(70);
+    expect(states.some((t) => t.startsWith('Checked: '))).toBe(true);
+    expect(states.some((t) => t.startsWith('Not checked: '))).toBe(true);
+    expect(extracted191Text).not.toMatch(/(?:Yes|No) — Synthetic/);
     // Wet-ink signatures carry no electronic-signature legal notice.
     expect(extracted191Text).not.toContain('pursuant to Fla. R. Gen. Prac');
     expect(extracted191Text).toContain('Signature');

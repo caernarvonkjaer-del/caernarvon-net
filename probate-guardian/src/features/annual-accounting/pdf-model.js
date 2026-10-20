@@ -4,7 +4,7 @@
 import { FINAL_LISTS, isFinalAccountingType } from '../../core/filing/final-report.js';
 import { describesATrust } from '../../core/filing/trust-identity.js';
 import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } from './totals.js';
-import { wardShare, formatShare } from '../../core/format/money.js';
+import { wardShare, formatShare, n as moneyValue } from '../../core/format/money.js';
 import { presentAmount } from '../../core/form/amount-codec.js';
 import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { remunerationBlocks } from '../../core/pdf/remuneration-part.js';
@@ -537,8 +537,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   DISB_CATS.forEach((c) => { catTotals[c] = 0; });
   (d.schB4 || []).forEach((r) => {
     if (r.category && catTotals[r.category] !== undefined) {
-      const num = parseFloat(r.amount);
-      catTotals[r.category] += isNaN(num) ? 0 : num;
+      // Milestone 76H item 7: the one reader (money.js's n()).
+      catTotals[r.category] += moneyValue(r.amount);
     }
   });
 
@@ -961,8 +961,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       fmtD(r.courtOrderDate),
       fmtS(r.salePrice),
     ]);
-    const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-    const totalF1 = (d.schF1 || []).reduce((s, r) => s + num(r.salePrice), 0);
+    const totalF1 = (d.schF1 || []).reduce((s, r) => s + moneyValue(r.salePrice), 0);
     sections.push({
       id: 'schF1',
       title: 'SCHEDULE F-1: Sales of Real Property During Period',
@@ -996,8 +995,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       fmtD(r.courtOrderDate),
       fmtS(r.salePrice),
     ]);
-    const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-    const totalF2 = (d.schF2 || []).reduce((s, r) => s + num(r.salePrice), 0);
+    const totalF2 = (d.schF2 || []).reduce((s, r) => s + moneyValue(r.salePrice), 0);
     sections.push({
       id: 'schF2',
       title: 'SCHEDULE F-2: Sales of Personal Property During Period',

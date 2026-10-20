@@ -1,6 +1,6 @@
 import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
 import { renderUcnField } from '../../core/form/cards/case-caption-card.js';
-import { withMinusCue } from '../../core/form/amount-codec.js';
+import { presentAmount, withMinusCue } from '../../core/form/amount-codec.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
@@ -51,7 +51,6 @@ import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-car
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { browserRecommendationNotice, linkAccordions } from '../../core/form/form-runtime.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
-import { formatMoney } from '../../core/format/money.js';
 import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML } from '../../core/filing/unrepresented-filing.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 
@@ -304,7 +303,9 @@ export function mountNav(container) {
 // module dynamically importing them, since neither side needs the other's
 // export until a function body actually runs, well after both are loaded).
 // Milestone 71E: formatMoney() -- the Clerk's workbook's own rounding; ($1,234.56) for a negative.
-export function fmtS(n){if(n===''||n===null||n===undefined)return '';const v=parseFloat(n);if(isNaN(v))return '';return formatMoney(v,{style:'dollarParens'});}
+// Milestone 76H item 7: through presentAmount() -- text that can't be read
+// shows as typed, "not counted" (it showed nothing, or parseFloat's guess).
+export function fmtS(n){if(n===''||n===null||n===undefined)return '';return presentAmount(n);}
 // Milestone 73H: on a screen a negative also says "minus" to a screen reader
 // (withMinusCue()); the figures are as before, the one style every form uses.
 const fmtH=(v)=>withMinusCue(fmtS(v));

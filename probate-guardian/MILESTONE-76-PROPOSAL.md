@@ -1753,6 +1753,36 @@ before; `date-fields.spec.js` (the Initial Plan's order date under Yes only);
 `circuit-lookup.spec.js` (the minor caption), `case-county-drift.spec.js` (no
 attorney-county note).
 
+**Items 7 and 10 — BUILT 2026-10-20.** What a filer now sees:
+
+- **Item 7 (decision 76H-3, a calculation change accepted by name):** an
+  amount or a share the app can't read counts as 0 everywhere -- on screen,
+  on the PDF and in every total, the bond and the audit fee included (one
+  reader, money.js's `n()`, read through the amount codec). The PDF prints
+  the text as typed with "(not counted: can't be read)": "1.500,00" printed
+  and totalled $1.50, "approx 900" printed $0.00. Readable text is read as
+  typed: "(50)" is -$50.00 and "$1,234.56" is $1,234.56 (both read as $0.00
+  or a guess before). A share typed "50%" is 0% and prints "—" on the
+  Inventory too (it was figured at 50%). The Simplified's Part II prints each
+  typed line as typed; its totals count it as 0. The court's workbook never
+  holds such an amount: Save as Excel refuses it (76I-3).
+- **Item 10 (decision 76H-2):** a checklist row prints its label alone, as
+  the court's form reads ("The guardian has consulted with the Ward..."), and
+  its tag carries the ticked state for screen readers as /ActualText --
+  "Checked: ..." or "Not checked: ..." -- written as a UTF-16 text string so
+  "—" and accented letters survive. The visible "Yes — " / "No — " prefix
+  (Milestone 19-1) is gone. The Initial Plan's 10F, a Yes/No question,
+  prints its answer ("No") instead of a two-row checklist ("No — Yes",
+  "Yes — No").
+
+Tests: `unreadable-amounts-76h.spec.js` (new; the reader, the presenter, each
+form's totals and PDF, Schedule D's figure) -- all six red first;
+`checklist-state-76h.spec.js` (new; the text string, 10F's answer) -- all
+three red first; `pdf-structure-tags.spec.ts` and
+`plan-initial-multiselect.spec.ts` read each row's /ActualText with pdf-lib
+(`pdfActualTexts()` in `tests/e2e/support/pdf-extract.ts`) -- red first on
+the old engine (no state in the tags once the prefix went).
+
 ---
 
 ## 76I — The court workbooks

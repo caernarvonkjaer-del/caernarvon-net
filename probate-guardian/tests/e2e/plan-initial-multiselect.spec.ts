@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
-import { extractPdfText } from './support/pdf-extract';
+import { extractPdfText, pdfActualTexts } from './support/pdf-extract';
 
 // Milestone 68E. The court's Initial Guardianship Plan shows questions 2
 // (residential setting), 4 (mental health services) and 5 (personal care) as
@@ -48,20 +48,25 @@ test('questions 2, 4 and 5 hold several answers, and every ticked box reaches th
     .toEqual({ q2ALF: true, q2GroupHome: true, q4Psych: true, q4Outpatient: true, q5CareFacility: true, q5FamilyFriends: true });
   expect((await messages(page)).filter((m) => /^(2–3|4–5)\./.test(m)), 'several answers are valid answers').toEqual([]);
 
-  // The PDF prints each ticked row as ticked -- the engine's checklist rows
-  // carry "Yes — "/"No — " in the tagged text (the box glyph is decorative),
-  // so the text layer says which rows are ticked.
+  // The PDF prints each ticked row as ticked. Milestone 76H item 10 (decision
+  // 76H-2): the row prints its label alone, as the court's form reads, and
+  // its tag's /ActualText says "Checked: ..." or "Not checked: ..." (the box
+  // glyph is decorative); the "Yes — "/"No — " prefix is gone.
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   const button = page.locator('[data-form-action="save-pdf-plan-initial"]');
   await expectExportReady(button, 20_000);
   const dl = clickExport(button, 40_000);
-  const text = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
+  const bytes = await readAll(await (await dl).createReadStream());
+  const text = (await extractPdfText(bytes)).replace(/\s+/g, ' ');
+  const states = (await pdfActualTexts(bytes)).map((t) => t.replace(/\s+/g, ' '));
   for (const label of ['Assisted Living (ALF)', 'Group Home', 'Routine examination by Psychiatrist/Psychologist', 'Ongoing Treatment Outpatient', 'Care Facility', 'Family and Friends']) {
-    expect(text, `${label} is printed ticked`).toContain(`Yes — ${label}`);
+    expect(text, `${label} is printed`).toContain(label);
+    expect(states, `${label} is tagged ticked`).toContain(`Checked: ${label}`);
   }
-  expect(text, 'an unticked row is printed unticked').toContain('No — Ongoing Treatment Inpatient');
-  expect(text).not.toContain('Yes — Ongoing Treatment Inpatient');
+  expect(states, 'an unticked row is tagged unticked').toContain('Not checked: Ongoing Treatment Inpatient');
+  expect(states).not.toContain('Checked: Ongoing Treatment Inpatient');
+  expect(text, 'no row prints a Yes/No prefix').not.toMatch(/(?:Yes|No) — (?:Assisted Living|Ongoing Treatment|Care Facility)/);
 });
 
 test('question 4: "None" is exclusive with its siblings, in both directions, on the click', async ({ page }) => {

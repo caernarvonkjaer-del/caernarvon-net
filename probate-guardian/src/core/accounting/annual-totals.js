@@ -6,11 +6,12 @@
 // src/core/validation/engines/ can read the reconciliation state -- core may not
 // import a feature.
 import { getD } from '../state.js';
-import { wardShare, roundCents } from '../format/money.js';
+import { wardShare, roundCents, n as moneyValue } from '../format/money.js';
 
+// Milestone 76H item 7 (decision 76H-3): the one reader -- text that can't be
+// read is 0, "(50)" is -50 (money.js).
 export function n(v) {
-  const num = parseFloat(v);
-  return isNaN(num) ? 0 : num;
+  return moneyValue(v);
 }
 
 // Ward's % is always a percentage: 50 means half, 1 means 1%. Until

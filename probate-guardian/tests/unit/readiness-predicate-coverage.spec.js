@@ -115,7 +115,8 @@ const CONDITIONAL_FIXTURES = {
     q4Other: true, q5Other: true, q6Other: true,
     q7Trusts: 'Yes',
     mentalOther: true, physOther: true, usesOther: true, needsOther: true,
-    q11ExecOther: true, committeeIncorporated: 'No',
+    // Milestone 76J item 2: 11B's "Other" text is checked only once directives are marked executed.
+    q11Executed: true, q11ExecOther: true, committeeIncorporated: 'No',
     q9Providers: [{ providerType: 'physician' }],
     attorney_name: 'Dana Reyes',
     planGuardians: [{ signatureState: 'typed' }],

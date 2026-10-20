@@ -11,7 +11,7 @@ import { annualReconcileState } from '../../accounting/annual-totals.js';
 import { certifyingCandidates, resolveServiceCertifier } from '../../filing/unrepresented-filing.js';
 import { checkDateOrder } from '../date-rules.js';
 import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
-import { formatMoney } from '../../format/money.js';
+import { presentAmount } from '../../form/amount-codec.js';
 import { getD } from '../../state.js';
 import { rowStarted } from '../row-started.js';
 import { getCollection } from '../../form/collections.js';
@@ -32,7 +32,8 @@ export function annualDescriptor(data = getD()) {
 // Milestone 73H (decision 73H-1, and 73H-N1: a dollar sign on every amount):
 // $5,000.00 and ($5,000.00), as on every screen and PDF -- the Annual's
 // screens showed 5,000.00 and (5,000.00). Blank and unreadable stay ''.
-export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return formatMoney(x,{style:'dollarParens'});}
+// Milestone 76H item 7: through presentAmount(), as every amount prints.
+export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';return presentAmount(v);}
 
 export function collectAnnualIssues(d){
   const errs=[];

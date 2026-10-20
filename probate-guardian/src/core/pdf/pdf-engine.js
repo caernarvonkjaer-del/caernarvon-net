@@ -1330,9 +1330,15 @@ export async function generateCourtFormPdf(model, options = {}) {
         // WinAnsiEncoding, so drawing them with the standard-14 Helvetica
         // font would silently fail to render. Instead: a small vector
         // checkbox glyph (decorative /Artifact, drawn either empty or
-        // with an X) carries the visual look, and an unambiguous
-        // "Yes —"/"No —" text prefix in the tagged content carries the
-        // actual checked-state information for screen readers.
+        // with an X) carries the visual look.
+        //
+        // Milestone 76H item 10 (decision 76H-2, the requester's): the row
+        // prints its label alone, as the court's form reads ("☐ The guardian
+        // has consulted with the Ward..."), and its paragraph tag carries the
+        // ticked state for screen readers as /ActualText -- "Checked: ..." or
+        // "Not checked: ..." -- on the row's first part. A visible "Yes — " /
+        // "No — " prefix carried it (Milestone 19-1), so every certification
+        // read "No — The guardian has consulted...", and 10F read "No — Yes".
         const items = block.items || [];
         const shouldRenderChecklistTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
         const CHECK_LINE_H = 11;
@@ -1340,10 +1346,9 @@ export async function generateCourtFormPdf(model, options = {}) {
         const CHECK_LABEL_MAX_W = contentWidth - 20;
         const checklistLines = (item) => {
           const label = String((item && item.label) || '');
-          const prefix = (item && item.checked) ? 'Yes — ' : 'No — ';
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(9);
-          return doc.splitTextToSize(prefix + label, CHECK_LABEL_MAX_W);
+          return doc.splitTextToSize(label, CHECK_LABEL_MAX_W);
         };
         if (shouldRenderChecklistTitle) {
           const checklistHeading = subHeading(block.title);
@@ -1392,6 +1397,7 @@ export async function generateCourtFormPdf(model, options = {}) {
                 pageNumber: pageNum,
                 isLeaf: true,
                 parent: partNode,
+                actualText: first ? `${checked ? 'Checked' : 'Not checked'}: ${slices[0].join(' ')}` : null,
               });
               writeMarkedContentStart(doc, 'P', rowNode.mcid);
               doc.setFont('PGSans', 'normal');

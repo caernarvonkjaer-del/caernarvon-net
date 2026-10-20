@@ -3,11 +3,13 @@
 // src/features-loader.js since 70K) because the sidebar's headline total reads
 // it for a Simplified filing whose feature has never been opened.
 import { getD } from '../../core/state.js';
+import { n as moneyValue } from '../../core/format/money.js';
 
 // The open filing's totals, or those of the filing given (the dashboard's
 // headline total for a filing that is not open, Milestone 70, 70J).
 export function calcTotals(d=getD()){
-  const n=v=>parseFloat(v)||0;
+  // Milestone 76H item 7 (decision 76H-3): the one reader (money.js).
+  const n=moneyValue;
   const starting=n(d.startingBalance);
   const interest=n(d.interestIncome);
   const deposits=n(d.depositsSettlement);

@@ -4,11 +4,25 @@
 // formatDashboardCurrency() from src/legacy-app.js. Annual Accounting's
 // importer used a local copy of r2() (master's 945b5a8) -- the same formula for
 // the numbers it passes -- and imports this one now.
+import { parseAmount } from '../form/amount-parse.js';
 
-/** Numeric coercion: blank, null, and unparseable all read as 0. */
+/**
+ * Numeric coercion: blank, null, and unparseable all read as 0.
+ *
+ * Milestone 76H item 7 (decision 76H-3, the requester's, a calculation change
+ * accepted by name under AGENTS.md section 5): text is read as the amount
+ * codec reads it -- "(50)" is -50, "$1,234.56" 1234.56 -- and text it can't
+ * read is 0, never the digits it happens to start with. parseFloat() counted
+ * "1.500,00" as 1.50 and a share of "50%" as 50% (while the share printed
+ * "—"), so the screens, the PDFs, the bond and the audit fee could all show a
+ * figure the filer never typed. Milestone 71D's rule for shares (unreadable
+ * is 0%), extended to amounts. The court's workbook never holds such an
+ * amount: Save as Excel refuses it (76I-3).
+ */
 export function n(v) {
-  const num = parseFloat(v);
-  return Number.isFinite(num) ? num : 0;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  const read = parseAmount(v);
+  return 'value' in read && typeof read.value === 'number' ? read.value : 0;
 }
 
 /**
@@ -127,7 +141,27 @@ export function formatShare(v) {
  * -$1,234.56 on the Inventory's screens. amount-codec.js's presentAmount() is
  * the same thing under the codec's name.
  */
-export const fmt = (v)=>formatMoney(v, { style: 'dollarParens' });
+/** What a printed amount the app can't read says after it (decision 76H-3). */
+export const NOT_COUNTED = "not counted: can't be read";
+
+/**
+ * Milestone 76H item 7 (decision 76H-3): the court style ($5,000.00,
+ * ($5,000.00)), except text that can't be read, which prints as typed with
+ * "(not counted: can't be read)" -- never as a figure the filer didn't type
+ * ("1.500,00" printed $1.50 and "approx 900" $0.00). Every total counts it
+ * as 0 (n()). amount-codec.js's presentAmount() is this.
+ * @param {unknown} v
+ * @returns {string}
+ */
+export function presentAmountText(v) {
+  if (typeof v === 'string') {
+    const read = parseAmount(v);
+    if ('unreadable' in read) return `${read.text} (${NOT_COUNTED})`;
+  }
+  return formatMoney(v, { style: 'dollarParens' });
+}
+
+export const fmt = (v)=>presentAmountText(v);
 
 /** The dashboard's and sidebar's figure: ($1,234.56) for a negative, "—" for none. */
 export function formatDashboardCurrency(v){

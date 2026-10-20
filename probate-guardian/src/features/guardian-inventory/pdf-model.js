@@ -11,6 +11,7 @@ import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepos
 import { b2ItemDescription } from '../../core/filing/models/guardian.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
 import { presentAmount } from '../../core/form/amount-codec.js';
+import { formatShare } from '../../core/format/money.js';
 import { BLANK_DATE_LINE, dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
@@ -45,10 +46,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const fmt = presentAmount;
   // A blank Ward's % is 0% in the calculation (as in the workbook) and prints
   // as unanswered, never as "100%" -- the two must not disagree on the page.
-  const fmtPct = (p) => {
-    const num = parseFloat(p);
-    return Number.isFinite(num) ? `${num}%` : '—';
-  };
+  // Milestone 76H item 7: formatShare() (money.js), the Annual's rule -- "50%"
+  // typed as text printed "50%" while it counted as 0%.
+  const fmtPct = formatShare;
   const triText = (value, legacyValue) => triStateText(value) || triStateText(legacyValue) || '—';
   const triIsYes = (value, legacyValue) => triText(value, legacyValue) === 'Yes';
 

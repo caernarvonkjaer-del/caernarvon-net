@@ -4,10 +4,13 @@
 // and catalog accessibility metadata (/MarkInfo, /ViewerPreferences, /Metadata, /Lang).
 
 export class PdfStructureNode {
-  constructor({ tag, title = null, alt = null, summary = null, attributes = null, parent = null }) {
+  constructor({ tag, title = null, alt = null, actualText = null, summary = null, attributes = null, parent = null }) {
     this.tag = tag; // Standard structure type: Document, Part, H1, H2, H3, Table, TR, TH, TD, P, Figure, etc.
     this.title = title;
     this.alt = alt;
+    // Milestone 76H item 10: what assistive technology reads in place of the
+    // element's content (/ActualText) -- a checklist row's ticked state.
+    this.actualText = actualText;
     this.summary = summary; // For Table summary or element description
     this.attributes = attributes; // e.g. { O: 'Table', Scope: 'Column', ColSpan: 3 }
     this.parent = parent;
@@ -51,9 +54,9 @@ export class PdfStructureTree {
     return mcid;
   }
 
-  addStructureElement({ tag, title = null, alt = null, summary = null, attributes = null, pageNumber = null, isLeaf = false, parent = null }) {
+  addStructureElement({ tag, title = null, alt = null, actualText = null, summary = null, attributes = null, pageNumber = null, isLeaf = false, parent = null }) {
     const parentNode = parent || this.currentNode || this.rootNode;
-    const node = new PdfStructureNode({ tag, title, alt, summary, attributes, parent: parentNode });
+    const node = new PdfStructureNode({ tag, title, alt, actualText, summary, attributes, parent: parentNode });
     parentNode.addChild(node);
 
 
@@ -117,6 +120,9 @@ export class PdfStructureTree {
       }
       if (node.alt) {
         doc.internal.write(`/Alt (${escapePdfString(node.alt)})`);
+      }
+      if (node.actualText) {
+        doc.internal.write(`/ActualText ${pdfTextString(node.actualText)}`);
       }
 
       // Attributes (e.g. Table Header Column Scope, ColSpan, Table Summary under /O /Table)
@@ -201,6 +207,18 @@ export class PdfStructureTree {
     doc.internal.write('endstream');
     doc.internal.write('endobj');
   }
+}
+
+// Milestone 76H item 10: a PDF text string any reader decodes alike -- a
+// literal for plain ASCII, otherwise UTF-16BE with its byte-order mark, as hex
+// (a checklist label carries "—", curly quotes or the letters 76H item 4
+// added, which a literal string would garble).
+export function pdfTextString(str) {
+  const s = String(str || '');
+  if (/^[\x20-\x7e]*$/.test(s)) return `(${escapePdfString(s)})`;
+  let hex = 'FEFF';
+  for (let i = 0; i < s.length; i++) hex += s.charCodeAt(i).toString(16).toUpperCase().padStart(4, '0');
+  return `<${hex}>`;
 }
 
 function escapePdfString(str) {

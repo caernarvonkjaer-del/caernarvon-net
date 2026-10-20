@@ -3,7 +3,7 @@
  "note": "Milestone 70, 70A: every export of the browser test support layer, which specs use it, and which are fixture factories that must change with the application factories 70C moves (AGENTS.md section 8.3). Informational.",
  "summary": {
   "supportModules": 18,
-  "exports": 112,
+  "exports": 114,
   "factories": 21,
   "unusedExports": [
    "case-file-shape.contract.ts::validParty",
@@ -23,7 +23,6 @@
    "fixtures.ts::MINIMAL_VALID_PLAN_MINOR",
    "fixtures.ts::MINIMAL_VALID_PLAN_INITIAL",
    "fixtures.ts::MINIMAL_VALID_TRUST",
-   "fixtures.ts::MINIMAL_VALID",
    "fixtures.ts::mergeFixture",
    "pre-merge-case.ts::startCase",
    "target-profile.ts::targetProfile",
@@ -32,6 +31,7 @@
    "target.ts::startNewWard",
    "target.ts::freshStartWardNoPassword",
    "target.ts::createWardViaDialog",
+   "target.ts::answerCarryLinkQuestion",
    "target.ts::readDynDialogMessage",
    "target.ts::fillDynPrompt",
    "target.ts::exportState",
@@ -44,7 +44,7 @@
   ]
  },
  "factories": [
-  "filing-matrix.ts::FILING_MATRIX (1 specs)",
+  "filing-matrix.ts::FILING_MATRIX (2 specs)",
   "fixture-completeness.ts::installFixtureSupport (3 specs)",
   "fixture-completeness.ts::expectFileableFixture (3 specs)",
   "fixtures.ts::MINIMAL_VALID_GUARDIAN (3 specs)",
@@ -64,7 +64,7 @@
   "target.ts::fillMinimalValidPlanAnnualWard (22 specs)",
   "target.ts::fillMinimalValidPlanMinorWard (15 specs)",
   "target.ts::fillMinimalValidPlanInitialWard (17 specs)",
-  "target.ts::fillMinimalValidAnnualWard (49 specs)"
+  "target.ts::fillMinimalValidAnnualWard (52 specs)"
  ],
  "helpers": [
   {
@@ -218,7 +218,7 @@
    "module": "tests/e2e/support/filing-matrix.ts",
    "name": "FILING_MATRIX",
    "kind": "value",
-   "specFiles": 1,
+   "specFiles": 2,
    "factory": true
   },
   {
@@ -316,7 +316,7 @@
    "module": "tests/e2e/support/fixtures.ts",
    "name": "MINIMAL_VALID",
    "kind": "value",
-   "specFiles": 0,
+   "specFiles": 1,
    "factory": false
   },
   {
@@ -330,7 +330,7 @@
    "module": "tests/e2e/support/pdf-extract.ts",
    "name": "extractPdfTextRuns",
    "kind": "function",
-   "specFiles": 5,
+   "specFiles": 7,
    "factory": false
   },
   {
@@ -359,6 +359,13 @@
    "name": "inspectPdf",
    "kind": "function",
    "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/pdf-extract.ts",
+   "name": "pdfActualTexts",
+   "kind": "function",
+   "specFiles": 3,
    "factory": false
   },
   {
@@ -463,7 +470,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "gotoApp",
    "kind": "function",
-   "specFiles": 25,
+   "specFiles": 26,
    "factory": false
   },
   {
@@ -512,7 +519,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 165,
+   "specFiles": 173,
    "factory": false
   },
   {
@@ -526,12 +533,19 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 148,
+   "specFiles": 155,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "createWardViaDialog",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "answerCarryLinkQuestion",
    "kind": "function",
    "specFiles": 0,
    "factory": false
@@ -561,7 +575,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createSimplifiedWard",
    "kind": "function",
-   "specFiles": 43,
+   "specFiles": 45,
    "factory": false
   },
   {
@@ -603,7 +617,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidAnnualWard",
    "kind": "function",
-   "specFiles": 49,
+   "specFiles": 52,
    "factory": true
   },
   {
@@ -645,7 +659,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "acceptDynDialog",
    "kind": "function",
-   "specFiles": 27,
+   "specFiles": 29,
    "factory": false
   },
   {

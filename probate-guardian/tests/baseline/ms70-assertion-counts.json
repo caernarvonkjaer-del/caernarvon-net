@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 10245,
-  "tests": 3045
+  "expects": 10273,
+  "tests": 3054
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -460,7 +460,7 @@
   },
   "tests/e2e/pdf-structure-tags.spec.ts": {
    "tests": 3,
-   "expects": 70
+   "expects": 72
   },
   "tests/e2e/pdf-table-semantics.spec.ts": {
    "tests": 2,
@@ -516,7 +516,7 @@
   },
   "tests/e2e/plan-initial-multiselect.spec.ts": {
    "tests": 5,
-   "expects": 31
+   "expects": 33
   },
   "tests/e2e/plan-initial-period.spec.ts": {
    "tests": 1,
@@ -528,7 +528,7 @@
   },
   "tests/e2e/plan-pdf-wcag-compliance.spec.ts": {
    "tests": 1,
-   "expects": 6
+   "expects": 7
   },
   "tests/e2e/plan-readiness.contract.spec.ts": {
    "tests": 3,
@@ -917,6 +917,10 @@
   "tests/unit/certificate-recipients.spec.js": {
    "tests": 9,
    "expects": 28
+  },
+  "tests/unit/checklist-state-76h.spec.js": {
+   "tests": 3,
+   "expects": 5
   },
   "tests/unit/circuit-lookup.spec.js": {
    "tests": 9,
@@ -1677,6 +1681,10 @@
   "tests/unit/ucn-reminder.spec.js": {
    "tests": 8,
    "expects": 29
+  },
+  "tests/unit/unreadable-amounts-76h.spec.js": {
+   "tests": 6,
+   "expects": 18
   },
   "tests/unit/unticked-boxes-keep-text.spec.js": {
    "tests": 5,

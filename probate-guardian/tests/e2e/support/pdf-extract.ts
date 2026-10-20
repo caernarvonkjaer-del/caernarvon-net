@@ -1,4 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { PDFDict, PDFDocument, PDFHexString, PDFName, PDFString } from 'pdf-lib';
 
 const DATA_URI_PREFIX = 'data:application/pdf;base64,';
 
@@ -156,4 +157,21 @@ export async function inspectPdf(pdfData: Uint8Array | string): Promise<PdfInspe
     text: (await pageTextItems(pdf)).map((runs) => runs.join(' ') + '\n').join(''),
     metadata: readInfoDictionary((await pdf.getMetadata()).info),
   }));
+}
+
+/**
+ * Milestone 76H item 10: every structure element's /ActualText, decoded --
+ * what assistive technology reads in place of the element's content (a
+ * checklist row's ticked state). Read with pdf-lib's object model, never a
+ * regex over the file (AGENTS.md section 10, P2).
+ */
+export async function pdfActualTexts(pdfData: Uint8Array | string): Promise<string[]> {
+  const doc = await PDFDocument.load(toUint8Array(pdfData), { updateMetadata: false });
+  const out: string[] = [];
+  for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+    if (!(obj instanceof PDFDict) || obj.get(PDFName.of('Type')) !== PDFName.of('StructElem')) continue;
+    const actual = obj.get(PDFName.of('ActualText'));
+    if (actual instanceof PDFString || actual instanceof PDFHexString) out.push(actual.decodeText());
+  }
+  return out;
 }

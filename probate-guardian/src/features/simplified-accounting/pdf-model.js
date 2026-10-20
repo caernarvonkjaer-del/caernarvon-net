@@ -7,6 +7,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { remunerationBlocks } from '../../core/pdf/remuneration-part.js';
 import { presentAmount } from '../../core/form/amount-codec.js';
+import { n as moneyValue } from '../../core/format/money.js';
 import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
@@ -47,13 +48,16 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   };
 
   // Calculate totals
-  const starting = parseFloat(d.startingBalance) || 0;
-  const interest = parseFloat(d.interestIncome) || 0;
-  const settlement = parseFloat(d.depositsSettlement) || 0;
+  // Milestone 76H item 7 (decision 76H-3): the one reader (money.js's n()).
+  // A typed line prints as stored: blank as $0.00, as before.
+  const typedLine = (v) => fmtS(v === '' || v == null ? 0 : v);
+  const starting = moneyValue(d.startingBalance);
+  const interest = moneyValue(d.interestIncome);
+  const settlement = moneyValue(d.depositsSettlement);
   const totalIncome = interest + settlement;
 
-  const serviceCharges = parseFloat(d.serviceCharges) || 0;
-  const fedTax = parseFloat(d.federalIncomeTax) || 0;
+  const serviceCharges = moneyValue(d.serviceCharges);
+  const fedTax = moneyValue(d.federalIncomeTax);
   const totalDisbursements = serviceCharges + fedTax;
 
   const remaining = starting + totalIncome - totalDisbursements;
@@ -135,12 +139,15 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         title: 'Accounting Summary',
         headers: ['Line', 'Description', 'Amount'],
         rows: [
-          ['Line 1', 'Starting Balance [Net Assets per the Prior Report]', fmtS(starting)],
-          ['Line 2', 'Interest Income', fmtS(interest)],
-          ['Line 3', 'Deposits Pursuant to Settlement', fmtS(settlement)],
+          // Milestone 76H item 7: the lines the filer types print what was
+          // typed -- text that can't be read as typed, "not counted" -- while
+          // the totals count it as 0.
+          ['Line 1', 'Starting Balance [Net Assets per the Prior Report]', typedLine(d.startingBalance)],
+          ['Line 2', 'Interest Income', typedLine(d.interestIncome)],
+          ['Line 3', 'Deposits Pursuant to Settlement', typedLine(d.depositsSettlement)],
           ['Line 4', 'Total Income (Lines 2 + 3)', fmtS(totalIncome)],
-          ['Line 5', 'Financial Institution Service Charges', fmtS(serviceCharges)],
-          ['Line 6', 'Federal Income Tax', fmtS(fedTax)],
+          ['Line 5', 'Financial Institution Service Charges', typedLine(d.serviceCharges)],
+          ['Line 6', 'Federal Income Tax', typedLine(d.federalIncomeTax)],
           ['Line 7', 'Total Disbursements (Lines 5 + 6)', fmtS(totalDisbursements)],
           ['Line 8', 'Remaining Assets On Hand (Line 1 + Line 4 - Line 7)', fmtS(remaining)],
         ],
