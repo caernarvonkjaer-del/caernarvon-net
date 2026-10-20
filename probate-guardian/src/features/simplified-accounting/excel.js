@@ -123,7 +123,7 @@ export async function importExcel(input){
         // Milestone 73T: a date cell holding text no reader understands comes
         // back as a date still being typed -- shown in its box and named at
         // Preview -- not as a blank.
-        for (const d of read?.dateDrafts || []) recordDateDraft({ data: f, path: d.path, rawValue: d.text, section: 'Imported from Excel' });
+        for (const d of read?.dateDrafts || []) recordDateDraft({ data: f, path: d.path, rawValue: d.text, imported: true });
       },
     });
     if(!result.committed){setStatus(prog,'Import cancelled — nothing was changed.');scheduleStatusClear(prog);}

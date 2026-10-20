@@ -89,6 +89,11 @@ const ALLOWED = {
   // engines' own table: that module judges a filing through
   // output-preflight.js, which reads these.
   'src/core/filing/consistency-advisories.js': "the within-filing contradiction checks, by engine id (MS 74H)",
+  // Milestone 76E: each form's date boxes and the answers that hide them --
+  // per-schema data like the list rules above -- naming the attorney test's
+  // engine for each form and the one filing type whose PDF prints the trust
+  // dates by its type.
+  'src/core/filing/date-fields.js': "each form's date boxes and the answers that hide them, by schema and engine id (MS 76E)",
   // Per-type dashboard presentation/derived-stat logic (headline figures,
   // deadlines) -- behavior that depends on filing type, not a second
   // listing of the identity registry itself.

@@ -18,6 +18,17 @@ import { commitModelChange } from '../model-change.js';
 // They keep their names here for this module's callers and tests.
 export { BLANK_CARD_COLLECTIONS, BLANK_SCHEDULE_ENTRY, isBlankCard, isBlankScheduleEntry };
 
+// Milestone 76E (decision 76E-1, the requester's; Milestone 25's rule, "never
+// prune draft-only rows"): a row holding a date still being typed counts as
+// touched. The blank tests read only the stored values, and a half-typed
+// date is a draft, not a value -- so a row whose only content was "02/30/2026"
+// was removed, and its draft was left blocking every output for a line that
+// no longer existed.
+function holdsDraft(data, key, index) {
+  const prefix = `${key}.${index}.`;
+  return Object.keys((data && data.__fieldDrafts) || {}).some((path) => path.startsWith(prefix));
+}
+
 /**
  * Drops every card the user left completely untouched across schedules and party cards.
  * Returns the count of removed cards.
@@ -36,11 +47,16 @@ export function pruneBlankCards(targetData, targetType) {
   for (const key of Object.keys(BLANK_SCHEDULE_ENTRY)) {
     const arr = data[key];
     if (!Array.isArray(arr) || !arr.length) continue;
-    const kept = arr.filter(e => !isBlankScheduleEntry(key, e, BLANK_SCHEDULE_ENTRY));
-    if (kept.length !== arr.length) {
-      removed += arr.length - kept.length;
-      data[key] = kept;
+    const keep = [];
+    arr.forEach((e, i) => { if (!isBlankScheduleEntry(key, e, BLANK_SCHEDULE_ENTRY) || holdsDraft(data, key, i)) keep.push(i); });
+    if (keep.length !== arr.length) {
+      removed += arr.length - keep.length;
       changed.push(key);
+      // Milestone 76E: rows go through keepRows(), as the card pass's do, so
+      // a date still being typed moves with its row (Milestone 25 required
+      // it; only the card pass had it -- a draft stayed on its old line
+      // number, now another row's, or a row that no longer existed).
+      keepRows(data, key, keep);
     }
   }
 
@@ -55,7 +71,7 @@ export function pruneBlankCards(targetData, targetType) {
     // entered. A list may keep its first card whatever it holds (keepFirst).
     const isBlank = activeType ? getCollection(activeType, key).isBlank : isBlankCard;
     const keep = [];
-    arr.forEach((card, i) => { if ((spec.keepFirst && i === 0) || !isBlank(card)) keep.push(i); });
+    arr.forEach((card, i) => { if ((spec.keepFirst && i === 0) || !isBlank(card) || holdsDraft(data, key, i)) keep.push(i); });
     for (let i = 0; i < arr.length && keep.length < spec.min; i++) {
       if (!keep.includes(i)) keep.push(i);
     }

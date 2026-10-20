@@ -41,6 +41,7 @@ import { sameName, samePerson as containsName } from './import-keep.js';
 import { noItemsKeyFor } from '../form/no-items-keys.js';
 import { rowStarted } from '../validation/row-started.js';
 import { keepRows, LINKED_ID_ARRAYS } from '../form/row-links.js';
+import { getPath } from '../form/paths.js';
 
 // Never taken from a draft: what the filing is, and what this app keeps that
 // no source carries -- its identity, its type (a filing keeps its own type,
@@ -213,6 +214,24 @@ export function conflictApplies(conflict, choices) {
   return !conflict.onlyIf || choices[conflict.onlyIf.id] === conflict.onlyIf.value;
 }
 
+// Milestone 76E: a date still being typed on a field the import fills goes
+// with the value it was replacing. It was kept (the drafts are among
+// KEPT_KEYS, so the filer's typing survives an import that doesn't touch its
+// field), and so sat over the imported date: still blocking every output, and
+// on correcting it, written over what the workbook had brought in. A list the
+// import replaces whole loses every draft on its rows; guardian rows and
+// nested records only those on the fields the source carries.
+function dropReplacedDrafts(filing, incoming, guardianList) {
+  const drafts = filing.__fieldDrafts;
+  if (!isRecord(drafts)) return;
+  for (const path of Object.keys(drafts)) {
+    const top = path.split('.')[0];
+    if (KEPT_KEYS.includes(top) || !Object.hasOwn(incoming, top)) continue;
+    const replacedWhole = Array.isArray(incoming[top]) && top !== guardianList;
+    if (replacedWhole || getPath(incoming, path) !== undefined) delete drafts[path];
+  }
+}
+
 /**
  * Applies a confirmed plan: the filing and the shared records together, in
  * one synchronous step -- nothing renders or saves between them. Returns
@@ -241,6 +260,7 @@ function commitImport(filing, draft, plan, choices, { unboxed = {}, rowSources }
     }
     filing[key] = merged(filing[key], value);
   }
+  dropReplacedDrafts(filing, incoming, list);
 
   const updated = [], unlinked = [];
   for (const p of people) {

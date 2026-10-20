@@ -611,10 +611,17 @@ const keepsBlank = (control) => control?.dataset?.fieldBlank === 'keep';
 // — Label", the section being the page's own heading (the row is added when
 // the message is drawn: commit-coordinator.js's getFieldDraftIssues()). It
 // used to read "Date entry - gid" on the Inventory.
+// Milestone 76E: the heading's own words -- not the test-system warning
+// (test-system-title.js) or the header's buttons the page puts inside it,
+// which made a date read "TEST SYSTEM - Do not use for filing - 10. Advance
+// Directives All Filings? — ...".
 function draftSection(control) {
   if (control.dataset?.fieldSection) return control.dataset.fieldSection;
   const heading = typeof document !== 'undefined' ? document.querySelector('#main-content h1') : null;
-  return String(heading?.textContent || '').replace(/\s+/g, ' ').trim();
+  if (!heading) return '';
+  const words = /** @type {HTMLElement} */ (heading.cloneNode(true));
+  words.querySelectorAll('.test-system-title-prefix, .form-header-actions').forEach((el) => el.remove());
+  return String(words.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
 /**

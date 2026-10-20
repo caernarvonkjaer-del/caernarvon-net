@@ -36,6 +36,10 @@ import { renderFormField } from '../../core/form/form-fields.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
+// Milestone 76E: a date box drawn here shows a date still being typed, as
+// every form field does (form-fields.js) -- it showed the last good date, or
+// nothing, while the half-typed one blocked every output.
+import { getFieldDraftDisplay } from '../../core/form/commit-coordinator.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
 import { getD, requestSave } from '../../core/state.js';
@@ -400,7 +404,7 @@ function pagePlanMSignatures(){
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: gd.relationship })}</div>
           <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.tin`, label: 'SSN/EIN #', value: gd.tin, required: true })}</div>
           <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Telephone #', value: gd.phone, required: true })}</div>
-          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${signatureDateRequired({ path: `planGuardians.${i}`, state: gd.signatureState })?REQ_MARK:''}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${signatureDateRequired({ path: `planGuardians.${i}`, state: gd.signatureState })?REQ_MARK:''}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(getFieldDraftDisplay(`planGuardians.${i}.signatureDate`,formatDisplayDate(gd.signatureDate||'')))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: gd.signatureState, date: gd.signatureDate, route: '/p6', signatureImage: gd.signatureImage })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Address', value: gd.mailingStreet, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingCityStateZip`, label: 'City/State/Zip', value: gd.mailingCityStateZip })}</div>

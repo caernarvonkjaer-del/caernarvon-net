@@ -15,6 +15,7 @@ import { clearCertificateAnswers } from './service-method.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 import { recordModelChange } from '../model-change.js';
 import { nextIsoDay } from '../form/date-parser.js';
+import { getPath, setPath } from '../form/paths.js';
 import { clearSignaturesForNewYear, keepYearSignaturePolicy } from '../signature/signature-policy.js';
 
 // A ward's flat top-level fields (schedules, balances, signatures, etc.)
@@ -88,7 +89,38 @@ export function newYearNote(type){
   return "The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.";
 }
 
+// Milestone 76E: Start New Year clears the dates still being typed on exactly
+// the fields it resets, and keeps those on fields it carries (the 2026-10-17
+// rule). It kept them all: an impossible date on a reset Schedule B-1 line
+// went on blocking every output of the new year, its box gone from the page.
+// Which fields reset is the reset's own business, form by form, so it is not
+// listed twice: the same reset runs first on a copy with a marker in each
+// draft's field, and a draft whose marker the reset removed goes.
+const DRAFT_PROBE='\u0000draft-field';
+const PROBE_SKIP=new Set(['scheduleDocs','printAnnotations']); // large; no draft lives there
+function clearDraftsOfResetFields(data,type){
+  const drafts=data&&data.__fieldDrafts;
+  if(!drafts||typeof drafts!=='object'||!Object.keys(drafts).length)return;
+  const probe=JSON.parse(JSON.stringify(data,(k,v)=>(PROBE_SKIP.has(k)?undefined:v)));
+  const probed=Object.keys(drafts).filter((path)=>{
+    const dot=path.lastIndexOf('.');
+    const parent=dot<0?probe:getPath(probe,path.slice(0,dot));
+    if(!parent||typeof parent!=='object')return false;
+    setPath(probe,path,DRAFT_PROBE);
+    return true;
+  });
+  resetYearlyFields(probe,type);
+  for(const path of Object.keys(drafts)){
+    if(!probed.includes(path)||getPath(probe,path)!==DRAFT_PROBE)delete drafts[path];
+  }
+}
+
 export function resetYearlyFieldsForNewYear(data,type){
+  clearDraftsOfResetFields(data,type);
+  resetYearlyFields(data,type);
+}
+
+function resetYearlyFields(data,type){
   const carriedAssignee=typeof data.dashboardWorkflow?.assigneeName==='string'
     ? data.dashboardWorkflow.assigneeName.trim().replace(/\s+/g,' ').slice(0,120)
     : '';
@@ -346,7 +378,11 @@ export async function startNewWardYear(wardId){
   // court's fiscal-year order.
   const nextFrom=nextIsoDay(seed.periodTo);
   resetYearlyFieldsForNewYear(seed,ward.inventoryType);
-  if(nextFrom&&'periodFrom' in seed)seed.periodFrom=nextFrom;
+  if(nextFrom&&'periodFrom' in seed){
+    seed.periodFrom=nextFrom;
+    // Milestone 76E: a Period From still being typed was last year's typing.
+    if(seed.__fieldDrafts)delete seed.__fieldDrafts.periodFrom;
+  }
   if(carries){
     seed.startingBalance=carried.startingBalance;
     seed.startingBalanceCarry=carried.startingBalanceCarry;

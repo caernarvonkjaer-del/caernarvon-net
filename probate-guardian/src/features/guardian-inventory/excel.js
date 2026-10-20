@@ -149,7 +149,7 @@ export async function importExcel(input){
         // understands (a free-text date from before Milestone 67B) comes back
         // as a date still being typed -- shown in its box and named at
         // Preview -- not as a blank.
-        for (const d of read?.dateDrafts || []) recordDateDraft({ data: f, path: d.path, rawValue: d.text, section: 'Imported from Excel' });
+        for (const d of read?.dateDrafts || []) recordDateDraft({ data: f, path: d.path, rawValue: d.text, imported: true });
         // Milestone 67B: the workbook has no cell for the bond / restricted
         // depository arrangement, so an answer this filing already had stands.
         // Milestone 73M: a blank one is read from what the workbook carried

@@ -279,6 +279,26 @@ describe('nested records and rows that move (73T part 2)', () => {
   });
 });
 
+// Milestone 76E: the dates still being typed are kept through an import
+// (the filer's typing on a field the source doesn't carry survives), but one
+// on a field the import fills sat over the imported date -- still blocking,
+// and on correcting it, written over what the workbook brought in.
+describe('dates still being typed on what the import fills (76E)', () => {
+  it('go with the values they were replacing; the others stay', async () => {
+    const { open } = setUpCase();
+    const typed = (rawValue) => ({ kind: 'date', rawValue, label: 'Date Paid', section: 'Schedule B-1', route: '/schb1' });
+    open.schB1 = [{ payee: 'Old', datePaid: '' }];
+    open.__fieldDrafts = { 'schB1.0.datePaid': typed('02/30/2026'), 'guardians.0.signatureDate': typed('13/45/2026'), certDate: typed('99/99/2026') };
+    await runImportTransaction({
+      filing: open,
+      adapter: async () => ({ draft: workbook({ schB1: [{ payee: 'New', datePaid: '2025-02-01', amount: 5 }], guardians: [{ name: 'Ann Guardian', phone: '555-0001', signatureDate: '' }] }) }),
+      confirmChoices: async () => ({}),
+    });
+    expect(open.schB1[0].datePaid).toBe('2025-02-01');
+    expect(Object.keys(open.__fieldDrafts)).toEqual(['certDate']);
+  });
+});
+
 describe("the confirmation, in a filer's words", () => {
   it('says what is replaced, a different ward and type, and asks each question -- the record question only if a near match is the same person', () => {
     const { open } = setUpCase();

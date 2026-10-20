@@ -5,8 +5,8 @@
 **Draft, Revision 2 (2026-10-19). 76A, 76B, 76C and 76D approved to build
 (the requester, 2026-10-19, on Revision 2: "76A–76D, data loss"), in that
 order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
-approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5"); the
-rest authorizes no change.** Every decision is settled (Appendix
+approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
+76E built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
@@ -905,6 +905,59 @@ All come from one store, the filing's unfinished-date drafts
 | 7 UI | Issues name their page and box like every other. |
 | 8 Legal | None. |
 | 9 Cross-form | All forms share the store. |
+
+### Build record — BUILT 2026-10-20
+
+Approved by name (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5"). What a
+filer now sees: a date they can't see never blocks a filing, and every
+impossible date names the page, line and box where it can be corrected.
+
+- **In use (design 1).** `src/core/filing/date-fields.js` lists every date box
+  of the three forms that import workbooks, and the Plans' advance-directive
+  dates, with the page, the section and row words the forms' own checks use,
+  and the answer that hides each conditional box: 11 on the Annual family, 2
+  on the Simplified, 9 on the Inventory, 4 on the Plans (read from each page,
+  its PDF and its workbook contract). An impossible date blocks only while its
+  box is shown or printed; a hidden one is kept and blocks again, in its box,
+  when the answer shows it. The bond period, hidden yet printed while the bond
+  question is unanswered (Inventory and Annual family), still blocks and says
+  "Its box shows once the bond question is answered with a bond". The Trust
+  Accounting's trust dates follow the same rule (shown by the Filing Type,
+  printed by the filing's type; the two differ only on a filing the export
+  checks already refuse).
+- **Rows.** Leaving a page keeps a row or card whose only content is a date
+  still being typed (decision 76E-1), and the schedule clean-up moves dates
+  with their rows, as the card clean-up did. An impossible date whose row is
+  gone blocks nothing and is dropped.
+- **Start New Year** clears the dates still being typed on exactly the fields
+  it resets (found by running the reset on a marked copy, so the list is not
+  kept twice) and keeps those on fields it carries.
+- **Imports.** A workbook date that can't be read is named by its page, line
+  and box, and quotes the workbook's text ("Schedule B-1 — Line 2 — Court
+  Order Date … The imported workbook has "3rd of May" here."). An import drops
+  the dates still being typed on the fields it fills.
+- **Names.** "Trust 2" (was "Line 2"), the Inventory's "C-2 row 2" (was
+  "Line 2" under the page's heading), "Directive 1" on the Plans. A date typed
+  on a page was named by the page's whole heading, which carried the test
+  system's warning and the header's buttons ("TEST SYSTEM - Do not use for
+  filing - Cover & Part I — Required Information All Filings? — …"); it is now
+  the heading's own words, and the checks' section words for the dates the
+  list names.
+- **Found while testing, fixed with it:** the Plans' 11 hand-drawn date boxes
+  showed the last good date, or nothing, after a redraw while the half-typed
+  date still blocked; they now show it, as every other date box does.
+
+Tests: `date-fields.spec.js` (new: each hidden box, the bond period's note,
+the names, an imported date; every workbook-contract date field has a place
+in the list) and `drafts-follow-rows.spec.js`'s 76E cases, calling
+`pruneBlankCards()` and the new-year reset themselves; `import-transaction.spec.js`
+(an import's dates still being typed). All red first on the code before 76E
+for the stated reasons. Browser: `hidden-date-drafts.spec.ts` (new) checks each
+conditional box against its page for five forms (every condition seen both
+ways), and drives a hidden box's bad date, a date-only row leaving the page and
+a Plan's box redrawn -- red first on the old code (the heading's words, the row
+removed, the box empty).
+
 
 ---
 
