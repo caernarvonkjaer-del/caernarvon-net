@@ -8,7 +8,10 @@ order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
 approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
 76E, 76G item 1 and 76H items 1, 2, 4 and 5 built 2026-10-20. 76F and 76J
 approved to build, in that order (the requester, 2026-10-20: "76F, then
-76J") -- both built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
+76J") -- both built 2026-10-20. 76I, then the rest of 76G (items 2-8)
+and of 76H (items 3 and 6-14), approved to build in that order (the
+requester, 2026-10-20: "76I, then rest of 76G and 76H"); 76K and 76L
+authorize no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
