@@ -25,6 +25,7 @@
 // never to this module.
 import { presentAmountText, NOT_COUNTED } from '../format/money.js';
 import { MINUS_SIGNS, parseAmount } from './amount-parse.js';
+import { esc } from '../filing/escape-html.js';
 
 export { parseAmount } from './amount-parse.js';
 
@@ -121,11 +122,18 @@ export { NOT_COUNTED };
  * For a screen: a presented amount in parentheses also says "minus" to a
  * screen reader, which does not read the parentheses as a sign. Takes
  * presentAmount()'s text (digits, "$", ",", ".", parentheses only) and returns
- * HTML; anything else comes back as it was.
+ * HTML; anything else comes back escaped.
+ *
+ * Milestone 76H item 7 follow-up: since an amount that can't be read is shown
+ * as typed ("about 200 (not counted: can't be read)"), what comes in can be
+ * the filer's own text, so it is escaped -- a crafted case file's amount was
+ * drawn as markup on the Simplified's and the Annual family's summary pages
+ * (tests/e2e/escaped-text.spec.ts).
  *
  * @param {string} text
  * @returns {string}
  */
 export function withMinusCue(text) {
-  return /^\(\$[\d,.]+\)$/.test(String(text ?? '')) ? `<span class="visually-hidden">minus </span>${text}` : String(text ?? '');
+  const s = String(text ?? '');
+  return /^\(\$[\d,.]+\)$/.test(s) ? `<span class="visually-hidden">minus </span>${s}` : esc(s);
 }
