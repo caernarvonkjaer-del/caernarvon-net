@@ -57,32 +57,19 @@ describe('Plan tri-state PDF output', () => {
     expect(minor.find((item) => item.label === 'Amended Form?').value).toBe('No');
   });
 
+  // Milestone 76H item 10 (decision 76H-2): 10F prints its answer on a
+  // labelled line (it was a Yes/No checklist that read "No — Yes").
+  const committeeAnswer = (model) => model.sections.flatMap((section) => section.blocks || [])
+    .flatMap((block) => block.items || [])
+    .find((item) => String(item.label || '').includes('recommendations of the examining committee'))?.value;
+
   test('marks an Initial Plan legacy false committee answer as No', () => {
-    const model = buildPlanInitialModel({ committeeIncorporated: false });
-    const committee = model.sections.flatMap((section) => section.blocks || [])
-      .find((block) => block.type === 'checklist' && block.title?.includes('recommendations of the examining committee'));
-    expect(committee.items).toEqual(expect.arrayContaining([
-      expect.objectContaining({ label: 'No', checked: true }),
-      expect.objectContaining({ label: 'Yes', checked: false }),
-    ]));
+    expect(committeeAnswer(buildPlanInitialModel({ committeeIncorporated: false }))).toBe('No');
   });
 
   test('marks an Initial Plan explicit Yes and No committee answers accurately', () => {
-    const modelYes = buildPlanInitialModel({ committeeIncorporated: 'Yes' });
-    const committeeYes = modelYes.sections.flatMap((section) => section.blocks || [])
-      .find((block) => block.type === 'checklist' && block.title?.includes('recommendations of the examining committee'));
-    expect(committeeYes.items).toEqual(expect.arrayContaining([
-      expect.objectContaining({ label: 'Yes', checked: true }),
-      expect.objectContaining({ label: 'No', checked: false }),
-    ]));
-
-    const modelNo = buildPlanInitialModel({ committeeIncorporated: 'No', committeeExplain: 'Awaiting updated report' });
-    const committeeNo = modelNo.sections.flatMap((section) => section.blocks || [])
-      .find((block) => block.type === 'checklist' && block.title?.includes('recommendations of the examining committee'));
-    expect(committeeNo.items).toEqual(expect.arrayContaining([
-      expect.objectContaining({ label: 'No', checked: true }),
-      expect.objectContaining({ label: 'Yes', checked: false }),
-    ]));
+    expect(committeeAnswer(buildPlanInitialModel({ committeeIncorporated: 'Yes' }))).toBe('Yes');
+    expect(committeeAnswer(buildPlanInitialModel({ committeeIncorporated: 'No', committeeExplain: 'Awaiting updated report' }))).toBe('No');
   });
 
   test('prints Initial Plan Q7 as Yes, No, or unanswered rather than a Yes-only checklist', () => {
