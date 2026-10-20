@@ -6,7 +6,7 @@
 (the requester, 2026-10-19, on Revision 2: "76A–76D, data loss"), in that
 order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
 approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
-76E and 76G item 1 built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
+76E, 76G item 1 and 76H item 2 built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
@@ -1533,6 +1533,22 @@ filing's county, the box prints nowhere.*
 | 7 UI | Item 14's page uses the routed-reveal pattern (67F). |
 | 8 Legal | Items 3 and 9 follow the Clerk's workbook; 76H-5 the court's form, still flagged for a qualified person (73N); 76H-2 changes how certifications read; 76H-7 option 2 is a legal reading. |
 | 9 Cross-form | Items 3, 6, 9, 12, 13 and 14 checked across the sibling forms. |
+
+### Build records
+
+Items 1, 2, 4 and 5 approved by name (the requester, 2026-10-20: "76E, 76G-1,
+76H 1/2/4/5"); the other items are not approved.
+
+**Item 2 — BUILT 2026-10-20.** What a filer now sees: a Part VIII trust card
+with a trustee, account or amount but no name is named at Preview ("Part VIII
+— Trust 2 — Name", an issue they can override, per D9), and the PDF prints it
+with its amount, under its own card number. Before, export passed it and the
+PDF dropped it with its $50,000 while the workbook wrote it; and a blank card
+1 with a filled card 2 was reported as "Trust 1". One rule decides "describes
+a trust" for both (`describesATrust()`, `trust-identity.js`). Tests:
+`annual-trust-and-remuneration-rules.spec.js` and
+`annual-accounting-pdf-model.spec.js`, each red first (no issue for card 2;
+no trust table printed).
 
 ---
 

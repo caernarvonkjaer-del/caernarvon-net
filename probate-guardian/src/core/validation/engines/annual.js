@@ -22,6 +22,7 @@ import { issueFactory } from '../validation-issue.js';
 import { percentProblem } from '../percent-range.js';
 import { resolveFilingDescriptor } from '../../filing/filing-descriptor.js';
 import { RECIPIENT_FIELDS } from '../../filing/recipient-shape.js';
+import { describesATrust } from '../../filing/trust-identity.js';
 
 // Milestone 73O part 2: every field of the one recipient shape.
 export const RECIPIENT_STARTED_FIELDS = RECIPIENT_FIELDS;
@@ -320,7 +321,6 @@ export function collectAnnualIssues(d){
   checkRows(d.schF2,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-2','schF2');
   req(d.trusts?.[0]?.hasTrust,'Part VIII — Does the Ward have one or more Trusts?','trusts.0.hasTrust');
   if(d.trusts?.[0]?.hasTrust==='Yes'){
-    const describesATrust=t=>Object.entries(t||{}).some(([key,value])=>key!=='hasTrust'&&value!==''&&value!=null);
     const described=(d.trusts||[]).filter(describesATrust);
     // Milestone 57E-1. Answering "#1. Does the Ward have one or more Trusts?"
     // with Yes and leaving every card blank used to export clean: the filter
@@ -340,7 +340,14 @@ export function collectAnnualIssues(d){
     // Adding a literal issue-registry.js key would make it unbypassable, which
     // is what 57A's other half needed and this one must not have.
     if(described.length===0)req(d.trusts?.[0]?.name,'Part VIII — Trust 1 — Name','trusts.0.name');
-    described.forEach((t,i)=>{
+    // Milestone 76H item 2: each described card by its own number, and its
+    // name too -- bypassable as above (D9). Numbered among the described
+    // cards, a blank card 1 and a filled card 2 named "Trust 1", pointing at
+    // the blank one; and only an all-blank Part VIII asked for a name, so a
+    // trust with no name passed export and dropped out of the PDF.
+    (d.trusts||[]).forEach((t,i)=>{
+      if(!describesATrust(t))return;
+      req(t.name,`Part VIII — Trust ${i+1} — Name`,`trusts.${i}.name`);
       req(t.createdAfterGID,`Part VIII — Trust ${i+1} — Was created after the GID?`,`trusts.${i}.createdAfterGID`);
     });
   }

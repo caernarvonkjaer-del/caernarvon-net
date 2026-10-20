@@ -2,6 +2,7 @@
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
 import { FINAL_LISTS, isFinalAccountingType } from '../../core/filing/final-report.js';
+import { describesATrust } from '../../core/filing/trust-identity.js';
 import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } from './totals.js';
 import { wardShare, formatShare } from '../../core/format/money.js';
 import { presentAmount } from '../../core/form/amount-codec.js';
@@ -1013,7 +1014,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
     });
   }
 
-  const trustList = (d.trusts || []).filter((t) => t && t.name);
+  // Milestone 76H item 2: every trust the export checks call described, under
+  // its card's number -- not only named ones (a trust with no name dropped out
+  // with its amount, while the workbook wrote it).
+  const trustList = (d.trusts || []).map((t, card) => ({ t, card })).filter(({ t }) => describesATrust(t));
   const hasAnyTrust = d.trusts?.[0]?.hasTrust === 'Yes';
   const trustBlocks = [
     {
@@ -1029,8 +1033,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   // are hidden and kept (AGENTS.md section 4) -- they printed after the
   // "No", so the filed PDF contradicted itself.
   if (hasAnyTrust && trustList.length > 0) {
-    const trustRows = trustList.map((t, i) => [
-      String(i + 1),
+    const trustRows = trustList.map(({ t, card }) => [
+      String(card + 1),
       t.name || '',
       t.trustee || '',
       t.accountNo || '',

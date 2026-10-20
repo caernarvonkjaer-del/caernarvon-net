@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9998,
-  "tests": 2964
+  "expects": 10010,
+  "tests": 2967
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -783,8 +783,8 @@
    "expects": 21
   },
   "tests/unit/annual-accounting-pdf-model.spec.js": {
-   "tests": 14,
-   "expects": 45
+   "tests": 15,
+   "expects": 50
   },
   "tests/unit/annual-accounting-totals.spec.js": {
    "tests": 11,
@@ -803,8 +803,8 @@
    "expects": 17
   },
   "tests/unit/annual-trust-and-remuneration-rules.spec.js": {
-   "tests": 8,
-   "expects": 19
+   "tests": 10,
+   "expects": 26
   },
   "tests/unit/annual-ward-percentage.spec.js": {
    "tests": 7,

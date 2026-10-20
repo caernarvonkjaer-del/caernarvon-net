@@ -224,3 +224,29 @@ describe('Milestone 64B-2, item 10.2: Part VIII prints Date Created and Type of 
     expect(row[5]).toBe('');
   });
 });
+
+// Milestone 76H item 2: a trust described on Part VIII but not named dropped
+// out of the PDF with its $50,000 -- only named trusts printed -- while the
+// workbook wrote it. Every trust the export checks call described now
+// prints, under its own card's number.
+describe('76H item 2: every described trust prints, by its card number', () => {
+  const details = (model) => model.sections.find((s) => s.id === 'part8').blocks
+    .find((b) => b.title === 'Trust Accounts Details');
+
+  test('a trust with no name prints with its amount; a blank card 1 leaves card 2 as "2"', () => {
+    const model = buildAnnualAccountingModel({
+      inventoryType: 'annual',
+      trusts: [
+        { hasTrust: 'Yes', createdAfterGID: '', name: '', trustee: '', accountNo: '', dateCreated: '', trustType: '', wardPct: '', wardAmount: '' },
+        { name: '', trustee: 'First Bank Trust Co', accountNo: '***4321', trustType: 'Special Needs', createdAfterGID: 'No', wardPct: 100, wardAmount: 50000 },
+        { name: '', trustee: '', accountNo: '', dateCreated: '', trustType: '', wardPct: '', wardAmount: '' },
+      ],
+    });
+    const rows = details(model).rows;
+    expect(rows).toHaveLength(1);
+    expect(rows[0][0]).toBe('2');
+    expect(rows[0][1]).toBe('');
+    expect(rows[0][2]).toBe('First Bank Trust Co');
+    expect(rows[0][8]).toContain('50,000.00');
+  });
+});

@@ -65,6 +65,31 @@ describe('57E-1: an affirmative trust answer must name a trust (Part VIII, /p8)'
   });
 });
 
+// Milestone 76H item 2: a trust described but not named passed export (only
+// an all-blank Part VIII asked for a name) and dropped out of the PDF; and
+// the cards were numbered among the described ones, so a blank card 1 and a
+// filled card 2 were reported as "Trust 1", pointing at the blank card.
+describe('76H item 2: each described trust is asked its name, by its own card number', () => {
+  const card2 = { name: '', trustee: 'First Bank Trust Co', accountNo: '***4321', trustType: 'Special Needs', wardPct: 100, wardAmount: 50000 };
+
+  test('a described card with no name raises its own, bypassable issue (D9)', () => {
+    const d = annual({ trusts: [{ hasTrust: 'Yes' }, card2, {}] });
+    const part8 = messages(d, 'Part VIII');
+    expect(part8).toContain('Part VIII — Trust 2 — Name');
+    expect(part8).toContain('Part VIII — Trust 2 — Was created after the GID?');
+    expect(part8).not.toContain('Part VIII — Trust 1 — Name');
+    expect(part8).not.toContain('Part VIII — Trust 1 — Was created after the GID?');
+    const issue = blockers(d).find((i) => i.message === 'Part VIII — Trust 2 — Name');
+    expect(issue.path).toBe('trusts.1.name');
+    expect(issue.bypassable).not.toBe(false);
+  });
+
+  test('named, it is satisfied', () => {
+    const d = annual({ trusts: [{ hasTrust: 'Yes' }, { ...card2, name: 'Special Needs Trust', createdAfterGID: 'No' }, {}] });
+    expect(messages(d, 'Part VIII')).toEqual([]);
+  });
+});
+
 describe('58D: Part XI must be answered before export (/p11)', () => {
   const noItems = (flag) => ({ ...(m.fixtures.MINIMAL_VALID_ANNUAL.scheduleNoItems || {}), remuneration: flag });
 

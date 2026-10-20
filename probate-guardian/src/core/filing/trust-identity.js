@@ -11,6 +11,16 @@
 // which Part VIII doesn't ask, start blank. A first trust accounting's
 // Starting Balance stays blank, the work slip quoted (decision 74N-2).
 
+// Milestone 76H item 2: whether a Part VIII trust card describes a trust --
+// any answer on it besides the first card's "does the ward have trusts?". The
+// export checks ask each such card for its name, and the PDF prints each one
+// under its card's number; one rule for both. A card with a trustee, an
+// account, a type and $50,000 but no name passed export and dropped out of
+// the PDF, which printed only named trusts.
+export function describesATrust(t) {
+  return Object.entries(t || {}).some(([key, value]) => key !== 'hasTrust' && value !== '' && value != null);
+}
+
 /** The block's fields, in the order the Cover and the PDF show them. */
 export const TRUST_INFO_FIELDS = Object.freeze(['name', 'trustee', 'trusteeIsGuardian', 'dateCreated', 'dateFunded', 'accountNo']);
 
