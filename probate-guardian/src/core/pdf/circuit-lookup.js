@@ -131,8 +131,14 @@ export function getCaseCaptionTitle(wardName, wardType) {
   const name = (wardName || 'Ward').trim().toUpperCase();
   const type = (wardType || '').toLowerCase();
 
+  // Milestone 76H item 11 (decision 76H-5): the Plan for Minors' caption as
+  // the court's form reads it (reference/plan-forms/plan-minor-original.pdf):
+  // "IN RE: The Guardianship of", the name, then "Minor" -- no "A". Nothing
+  // asked for it before, so the plan printed the general caption without
+  // "Minor". Whether the caption is legally sufficient stays flagged for a
+  // qualified person (Milestone 73N).
   if (type.includes('minor')) {
-    return `IN RE: THE GUARDIANSHIP OF ${name}, A MINOR`;
+    return `IN RE: The Guardianship of\n${name}\nMinor`;
   }
   if (type.includes('advocate') || type.includes('advocacy')) {
     return `IN RE: THE GUARDIAN ADVOCACY OF ${name}`;

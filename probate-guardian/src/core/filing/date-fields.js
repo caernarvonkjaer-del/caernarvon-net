@@ -133,8 +133,9 @@ const PLAN_ANNUAL = [
 const PLAN_INITIAL = [
   { list: 'q11Directives', field: 'dateSigned', route: '/p8', section: '11. Advance Directives', row: 'Directive', label: 'Date executed/signed',
     shown: (d) => !!d?.q11Executed },
+  // Milestone 76H item 14: shown only under "suspended or revoked? Yes", as the Annual Plan's.
   { list: 'q11Directives', field: 'orderDate', route: '/p8', section: '11. Advance Directives', row: 'Directive', label: 'Date of Order',
-    shown: (d) => !!d?.q11Executed },
+    shown: (d, row) => !!d?.q11Executed && row?.courtRevoked === 'Yes' },
 ];
 
 const BY_TYPE = {

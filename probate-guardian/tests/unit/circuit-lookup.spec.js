@@ -108,7 +108,8 @@ describe('circuit-lookup helpers', () => {
 
   test('formats case caption titles with minor and advocate variants', () => {
     expect(getCaseCaptionTitle('Harold Thomas Bennett', 'guardian')).toBe('IN RE: THE GUARDIANSHIP OF HAROLD THOMAS BENNETT');
-    expect(getCaseCaptionTitle('Tommy Pickles', 'minor')).toBe('IN RE: THE GUARDIANSHIP OF TOMMY PICKLES, A MINOR');
+    // Milestone 76H item 11 (decision 76H-5): as the court's Plan for Minors reads.
+    expect(getCaseCaptionTitle('Tommy Pickles', 'minor')).toBe('IN RE: The Guardianship of\nTOMMY PICKLES\nMinor');
     expect(getCaseCaptionTitle('Jane Doe', 'advocate')).toBe('IN RE: THE GUARDIAN ADVOCACY OF JANE DOE');
     expect(getCaseCaptionTitle('John Smith', 'veteran')).toBe('IN RE: THE GUARDIANSHIP OF JOHN SMITH');
   });

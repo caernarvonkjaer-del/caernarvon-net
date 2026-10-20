@@ -5,7 +5,7 @@ import { yesNoText } from '../../core/form/form-contract.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
-import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
+import { remunerationBlocks } from '../../core/pdf/remuneration-part.js';
 import { presentAmount } from '../../core/form/amount-codec.js';
 import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
@@ -373,45 +373,17 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   // for the same reason the Annual filter does -- a payment with no type typed
   // beside it is still a disclosable benefit, and dropping the row would file
   // a declaration that omits it.
-  const remList = (d.remuneration || []).filter(r => r && (r.guardian || r.type || r.description || r.amount));
-  const remDeclaredNone = !!(d.scheduleNoItems && d.scheduleNoItems.remuneration);
-  if (remList.length > 0 || remDeclaredNone) {
-    sections.push({
-      id: 'part7',
-      title: 'Part VII — GUARDIAN(S) DECLARATION OF REMUNERATION',
-      bookmarkTitle: 'Part VII - Remuneration',
-      parentBookmark: null,
-      level: 1,
-      pageBreakBefore: false,
-      blocks: [
-        {
-          type: 'notice',
-          tag: 'P',
-          text: `Per s. 744.367(3)(a), Florida Statutes: ${REMUNERATION_DECLARATION}`,
-        },
-        remList.length > 0 ? {
-          type: 'table',
-          tag: 'Table',
-          title: 'Declaration of Remuneration',
-          headers: ['#', 'Guardian Name', 'Type', 'Description', 'Amount'],
-          rows: remList.map((r, i) => [
-            String(i + 1),
-            r.guardian || '',
-            r.type || '',
-            r.description || '',
-            r.amount === '' || r.amount == null ? '' : fmtS(r.amount),
-          ]),
-          colWidths: [6, 22, 18, 38, 16],
-          colAlign: ['center', 'left', 'left', 'left', 'right'],
-        } : {
-          type: 'notice',
-          tag: 'P',
-          title: 'Declaration of Remuneration',
-          text: REMUNERATION_NONE_REPORTED,
-        },
-      ],
-    });
-  }
+  // Milestone 76H item 6 (decision 76H-7): always, overridden or not --
+  // unanswered, with blank lines to complete by hand (remuneration-part.js).
+  sections.push({
+    id: 'part7',
+    title: 'Part VII — GUARDIAN(S) DECLARATION OF REMUNERATION',
+    bookmarkTitle: 'Part VII - Remuneration',
+    parentBookmark: null,
+    level: 1,
+    pageBreakBefore: false,
+    blocks: remunerationBlocks(d, fmtS),
+  });
 
   // Milestone 73A: each signature block's print mode, from its signer's role
   // and the year's signature policy (src/core/pdf/signature-modes.js).

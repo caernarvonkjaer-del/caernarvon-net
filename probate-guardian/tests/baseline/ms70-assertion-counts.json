@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 10217,
-  "tests": 3033
+  "expects": 10245,
+  "tests": 3045
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -896,7 +896,7 @@
   },
   "tests/unit/case-county-drift.spec.js": {
    "tests": 6,
-   "expects": 15
+   "expects": 13
   },
   "tests/unit/case-file.spec.js": {
    "tests": 22,
@@ -984,7 +984,7 @@
   },
   "tests/unit/date-fields.spec.js": {
    "tests": 10,
-   "expects": 29
+   "expects": 30
   },
   "tests/unit/date-parser.spec.js": {
    "tests": 13,
@@ -1337,6 +1337,10 @@
   "tests/unit/pdf-model-column-integrity.spec.js": {
    "tests": 3,
    "expects": 4
+  },
+  "tests/unit/pdf-models-76h.spec.js": {
+   "tests": 12,
+   "expects": 29
   },
   "tests/unit/pdf-preview-print.spec.js": {
    "tests": 3,
@@ -2297,6 +2301,14 @@
    "now": 0,
    "reason": "Milestone 76B (decision 76B-1): the retired text stripping's own assertions went -- form-contract.spec.js and form-fields.spec.js no longer check what the blur sanitizer removed, workbook-contract.spec.js no longer checks < > and backticks removed (each now asserts the text kept); sanitize-keeps-stored-files.spec.js is renamed text-kept-as-typed.spec.js",
    "date": "2026-10-19"
+  },
+  {
+   "file": "tests/unit/case-county-drift.spec.js",
+   "kind": "expects",
+   "was": 15,
+   "now": 13,
+   "reason": "76H item 3 (decision 76H-8): the attorney's county is shown and printed nowhere, so the drift note's attorney cases (its wording, its value) are one assertion that it raises nothing",
+   "date": "2026-10-20"
   }
  ]
 }

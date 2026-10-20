@@ -7,7 +7,7 @@ import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } f
 import { wardShare, formatShare } from '../../core/format/money.js';
 import { presentAmount } from '../../core/form/amount-codec.js';
 import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
-import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
+import { remunerationBlocks } from '../../core/pdf/remuneration-part.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
@@ -377,7 +377,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: copy.attorneyStatement(wardName, dateOrLine(d.periodFrom), dateOrLine(d.periodTo), d.attorney_county || county),
+        // Milestone 76H item 3: the filing's county, as the Clerk's workbook
+        // fills this statement ('PART IV, V'!B29 ='PART I'!H2). It named the
+        // attorney's own county when one was entered.
+        text: copy.attorneyStatement(wardName, dateOrLine(d.periodFrom), dateOrLine(d.periodTo), county),
       },
       {
         type: 'signature-block',
@@ -539,10 +542,13 @@ export function buildAnnualAccountingModel(D, options = {}) {
     }
   });
 
+  // Milestone 76H item 8: a category that nets negative (a refund) prints its
+  // figure, as the workbook's summary shows ($50.00) -- it printed "—", and the
+  // lines didn't add up to the total. Only a category with nothing shows "—".
   const catRows = DISB_CATS.map((c, i) => [
     String(i + 1),
     c,
-    catTotals[c] > 0 ? fmtS(catTotals[c]) : '—',
+    Math.abs(catTotals[c]) >= 0.005 ? fmtS(catTotals[c]) : '—',
   ]);
 
   const schB4Blocks = [
@@ -1107,24 +1113,34 @@ export function buildAnnualAccountingModel(D, options = {}) {
           { label: 'Date of Restricted Depository Receipt', value: revealsDepository(inferBondDepositoryState(d)) ? fmtD(d.restrictedDepositoryReceiptDate) : '' },
         ],
       },
+      // Milestone 76H item 9 (decision 76H-4): the workbook's own layout and
+      // words ('PART IX ' rows 11-19). The two RESTRICTED lines stand apart in
+      // their own column (H12-H13) and are not added in; the bond requirement
+      // is the three liquid lines (H17 =SUM(G14:G16)), "Total for BOND
+      // REQUIREMENT". All five shared one column, so the lines didn't add up
+      // to the total, and the label cited a statute the workbook doesn't. As
+      // the Initial Inventory's Part V table (Milestone 60H).
+      {
+        type: 'notice',
+        tag: 'P',
+        title: 'Bond Calculation',
+        text: 'Bond Calculation consists of liquid assets: all cash, personal property or intangible assets. Only real property is not considered liquid. Guardianship bond amount should be the amount of all liquid assets less those in a restricted depository or frozen account.',
+      },
       {
         type: 'table',
         tag: 'Table',
-        title: 'Statutory Bond Calculation Breakdown',
-        headers: ['Bond Component', 'Amount'],
+        title: 'Bond Requirement (calculated)',
+        headers: ['Schedule', 'Bond Calculation', 'Restricted (not bonded)', 'Liquid (bonded)'],
         rows: [
-          ['Schedule D-1 — Cash Assets in RESTRICTED Depository', fmtS(t.schD1_restricted)],
-          ['Schedule D-4 — Intangible Assets RESTRICTED', fmtS(t.schD4_restricted)],
-          ['Schedule D-1 — Cash Assets NOT in Restricted Depository', fmtS(t.schD1_total - t.schD1_restricted)],
-          ['Schedule D-3 — Personal Property Assets', fmtS(t.schD3_ward)],
-          ['Schedule D-4 — Intangible Assets (Unrestricted)', fmtS(t.schD4_ward - t.schD4_restricted)],
+          ['Schedule D-1', 'Cash Assets in RESTRICTED Depository', fmtS(t.schD1_restricted), '—'],
+          ['Schedule D-4', 'Other Liquid Assets - Intangible Assets RESTRICTED', fmtS(t.schD4_restricted), '—'],
+          ['Schedule D-1', 'Cash Assets NOT in a Restricted Depository', '—', fmtS(t.schD1_total - t.schD1_restricted)],
+          ['Schedule D-3', 'Other Liquid Assets - Personal Property Assets', '—', fmtS(t.schD3_ward)],
+          ['Schedule D-4', 'Other Liquid Assets - Intangible Assets', '—', fmtS(t.schD4_ward - t.schD4_restricted)],
         ],
-        totals: {
-          label: 'Total Required Bond Amount (§ 744.351)',
-          value: fmtS(t.bondReq),
-        },
-        colWidths: [75, 25],
-        colAlign: ['left', 'right'],
+        totals: { label: 'Total for BOND REQUIREMENT', values: [{ value: '' }, { value: fmtS(t.bondReq) }] },
+        colWidths: [16, 46, 19, 19],
+        colAlign: ['left', 'left', 'right', 'right'],
       },
       {
         type: 'key-value-grid',
@@ -1261,7 +1277,6 @@ export function buildAnnualAccountingModel(D, options = {}) {
   });
 
   // ── Part XI: Remuneration ──────────────────────────────────────────────────
-  const remList = (d.remuneration || []).filter(r => r && (r.amount || r.guardian || r.type || r.description));
   // Milestone 58D: Part XI prints on every Annual filing, not only when there
   // are entries. 744.367(3)(a) requires the report to INCLUDE a declaration of
   // remuneration, and "no section at all" is not a declaration -- a reader
@@ -1269,47 +1284,20 @@ export function buildAnnualAccountingModel(D, options = {}) {
   // question. With no entries the section now carries the statutory paragraph
   // and an explicit statement that none was received, which is what the filer
   // affirmed to get here (export is blocked until Part XI is answered).
-  const remDeclaredNone = !!(d.scheduleNoItems && d.scheduleNoItems.remuneration);
-  if (remList.length > 0 || remDeclaredNone) {
-    sections.push({
-      id: 'part11',
-      title: 'Part XI — GUARDIAN(S) DECLARATION OF REMUNERATION',
-      bookmarkTitle: 'Part XI - Remuneration',
-      parentBookmark: null,
-      level: 1,
-      pageBreakBefore: true,
-      blocks: [
-        {
-          type: 'notice',
-          tag: 'P',
-          // Milestone 60I: quoted from s. 744.367(3)(a) itself, shared with
-          // Simplified's Part VII. This used to print only a paraphrase of the
-          // first half and dropped the definition sentence entirely.
-          text: `Per s. 744.367(3)(a), Florida Statutes: ${REMUNERATION_DECLARATION}`,
-        },
-        remList.length > 0 ? {
-          type: 'table',
-          tag: 'Table',
-          title: 'Declaration of Remuneration',
-          headers: ['#', 'Guardian Name', 'Type', 'Description', 'Amount'],
-          rows: remList.map((r, i) => [
-            String(i + 1),
-            r.guardian || '',
-            r.type || '',
-            r.description || '',
-            r.amount === '' || r.amount == null ? '' : fmtS(r.amount),
-          ]),
-          colWidths: [6, 22, 18, 38, 16],
-          colAlign: ['center', 'left', 'left', 'left', 'right'],
-        } : {
-          type: 'notice',
-          tag: 'P',
-          title: 'Declaration of Remuneration',
-          text: REMUNERATION_NONE_REPORTED,
-        },
-      ],
-    });
-  }
+  // Milestone 76H item 6 (decision 76H-7): always, overridden or not --
+  // unanswered, with blank lines to complete by hand (remuneration-part.js).
+  sections.push({
+    id: 'part11',
+    title: 'Part XI — GUARDIAN(S) DECLARATION OF REMUNERATION',
+    bookmarkTitle: 'Part XI - Remuneration',
+    parentBookmark: null,
+    level: 1,
+    pageBreakBefore: true,
+    // Milestone 60I: the statute quoted from s. 744.367(3)(a) itself, shared
+    // with Simplified's Part VII (it printed only a paraphrase of the first
+    // half and dropped the definition sentence).
+    blocks: remunerationBlocks(d, fmtS),
+  });
 
   // Milestone 74J-2 (decision 74J-N1): the Final Accounting's Rule 5.680(c)
   // lists, which the Clerk's workbook has no place for -- each a table, or

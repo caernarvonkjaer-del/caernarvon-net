@@ -59,6 +59,8 @@ export function buildPlanMinorModel(D) {
     keywords: 'Florida, Probate, Guardianship, Annual Plan, Minor',
     lang: 'en-US',
     wardName,
+    // Milestone 76H item 11: the caption names a minor (circuit-lookup.js).
+    wardType: 'minor',
     caseNumber,
     ucn,
     county,

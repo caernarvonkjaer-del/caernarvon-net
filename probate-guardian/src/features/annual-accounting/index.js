@@ -831,7 +831,8 @@ defineLivePart('annual-b4-categories',{
     (d.schB4||[]).forEach(r=>{if(r.category&&cats[r.category]!==undefined)cats[r.category]+=n(r.amount);});
     let cNum=1;
     return '<table class="doc-table mt-2"><thead><tr><th>#</th><th>Category</th><th class="right">Amount</th></tr></thead><tbody>'
-      +DISB_CATS.map(c=>`<tr><td>${cNum++}</td><td>${c}</td><td class="right">${cats[c]>0?fmtA(cats[c]):'—'}</td></tr>`).join('')
+      // Milestone 76H item 8: a negative category shows, as on the PDF.
+      +DISB_CATS.map(c=>`<tr><td>${cNum++}</td><td>${c}</td><td class="right">${Math.abs(cats[c])>=0.005?fmtA(cats[c]):'—'}</td></tr>`).join('')
       +'</tbody></table>';
   },
 });
@@ -874,11 +875,14 @@ function pagePart5Annual(){
   const started=isAttorneyStarted(d,'annual');
   // Milestone 73J part 2: a live part (above), so it goes once an attorney is typed.
   const noAttorney=livePartHtml('annual-no-attorney');
+  // Milestone 76H item 3 (decision 76H-8): no attorney County box -- the
+  // statement uses the filing's county, as the workbook does, so the
+  // attorney's own printed nowhere. A stored value is kept.
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
   ${noAttorney}
-  <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',displayDate(d.periodFrom)||'—',displayDate(d.periodTo)||'—',d.attorney_county||d.county||'[county]'))}</div>
+  <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',displayDate(d.periodFrom)||'—',displayDate(d.periodTo)||'—',d.county||'[county]'))}</div>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
       <div class="entry-card mb-0 h-100">
@@ -898,7 +902,6 @@ function pagePart5Annual(){
             <div class="col-md-4">${inpD("Secondary Email (optional)",d.attorney_secondaryEmail,"D.attorney_secondaryEmail=this.value",false,'email')}</div>
             <div class="col-md-8">${inpD("Street Address",d.attorney_street,"D.attorney_street=this.value",started)}</div>
             <div class="col-md-8">${inpD("City / State / Zip Code",d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value",started)}</div>
-            <div class="col-md-4">${countyInputD("County",d.attorney_county,"D.attorney_county=this.value")}</div>
           </div>
         </div>
       </div>

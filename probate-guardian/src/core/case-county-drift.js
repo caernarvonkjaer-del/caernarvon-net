@@ -22,10 +22,10 @@ export function countyDriftWarnings(filing) {
   if (!caseCounty) return [];
   const candidates = [
     ['filing', filing?.county, 'County on this filing'],
-    // attorney_county is a separate field with its own meaning -- the attorney's
-    // own county of record. It is never derived from the ward's county, so a
-    // difference here is even weaker evidence of an error than the filing one.
-    ['attorney', filing?.attorney_county, "The attorney's county of record"],
+    // Milestone 76H item 3 (decision 76H-8): the attorney's own county is no
+    // longer on the page or the PDF (the statement uses the filing's county,
+    // as the workbook does), so a mismatch with it is not reported -- there
+    // is nothing to see or change. The stored value is kept.
   ];
   return candidates
     .filter(([, value]) => String(value || '').trim() && norm(value) !== norm(caseCounty))

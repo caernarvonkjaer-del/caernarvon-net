@@ -786,7 +786,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           ['Schedule B-2', 'Other Liquid Assets - Personal Property Assets', '—', fmt(totalB2)],
           ['Schedule B-3', 'Other Liquid Assets - Intangible Assets NOT RESTRICTED', '—', fmt(t.unrestrictedIntang)],
         ],
-        totals: { label: 'Total for BOND REQUIREMENT (liquid assets)', values: [{ value: '' }, { value: fmt(t.bondRequired) }] },
+        // Milestone 76H (decision 76H-6): the workbook's Part V label.
+        totals: { label: 'Total for BOND REQUIREMENT', values: [{ value: '' }, { value: fmt(t.bondRequired) }] },
         colWidths: [16, 46, 19, 19],
         colAlign: ['left', 'left', 'right', 'right'],
       },

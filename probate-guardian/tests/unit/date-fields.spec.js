@@ -68,7 +68,7 @@ describe('a draft blocks only while its box is in use', () => {
     }
   });
 
-  it("the Plans' advance directives: only while the directives are ticked; the order date on the Annual Plan only under a court's Yes", () => {
+  it("the Plans' advance directives: only while the directives are ticked; the order date only under a court's Yes", () => {
     const a = { inventoryType: 'planAnnual', q10Executed: false, q10Directives: [{ courtRevoked: 'No' }], __fieldDrafts: { 'q10Directives.0.dateSigned': typed('10. Advance Directives', 'Date executed / signed', '/p9'), 'q10Directives.0.orderDate': typed('10. Advance Directives', 'Date of order', '/p9') } };
     expect(messages(a)).toEqual([]);
     a.q10Executed = true;
@@ -81,6 +81,9 @@ describe('a draft blocks only while its box is in use', () => {
     const i = { inventoryType: 'planInitial', q11Executed: false, q11Directives: [{}], __fieldDrafts: { 'q11Directives.0.orderDate': typed('11. Advance Directives', 'Date of Order', '/p8') } };
     expect(messages(i)).toEqual([]);
     i.q11Executed = true;
+    // Milestone 76H item 14: the Initial Plan's order date too, as the Annual Plan's.
+    expect(messages(i)).toEqual([]);
+    i.q11Directives[0].courtRevoked = 'Yes';
     expect(messages(i)).toHaveLength(1);
   });
 

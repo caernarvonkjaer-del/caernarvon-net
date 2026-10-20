@@ -403,7 +403,9 @@ export function buildPlanInitialModel(D, options) {
         { label: DL.relationship, value: r.relationship || '' },
         { label: DL.contact, value: r.contact || '' },
         { label: DL.courtRevoked, value: r.courtRevoked || '' },
-        ...(r.orderDate || r.orderCounty ? [{ label: DL.orderDate, value: `${r.orderDate ? fmtDate(r.orderDate) : BLANK_DATE_LINE}${r.orderCounty ? ' entered ' + r.orderCounty : ''}` }] : []),
+        // Milestone 76H item 14: the order prints only under Yes -- after "No"
+        // it printed the revoking order still held from an earlier answer.
+        ...(r.courtRevoked === 'Yes' && (r.orderDate || r.orderCounty) ? [{ label: DL.orderDate, value: `${r.orderDate ? fmtDate(r.orderDate) : BLANK_DATE_LINE}${r.orderCounty ? ' entered ' + r.orderCounty : ''}` }] : []),
       ],
     }))] : [{ type: 'notice', text: 'No advance directives on file.' }],
   });
@@ -468,7 +470,8 @@ export function buildPlanInitialModel(D, options) {
 
   // Page 10: Additional co-guardian signatures (conditional)
   // Milestone 61C: see the Co-Guardian note above.
-  const extras = startedRows((g || []).slice(2));
+  // Milestone 76H item 13: each keeps its card's number, not its position.
+  const extras = (g || []).map((p, card) => ({ p, card })).slice(2).filter(({ p }) => rowStarted(p));
   if (extras.length) {
     sections.push({
       id: 'certification-extra',
@@ -479,7 +482,7 @@ export function buildPlanInitialModel(D, options) {
       pageBreakBefore: true,
       blocks: [
         { type: 'notice', title: 'Additional Guardian Signatures', text: 'All guardians of person must sign and provide the most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.' },
-        ...extras.map((p, i) => makeSigBlock(`Co-Guardian ${i + 3}`, p)),
+        ...extras.map(({ p, card }) => makeSigBlock(`Co-Guardian ${card + 1}`, p)),
       ],
     });
   }

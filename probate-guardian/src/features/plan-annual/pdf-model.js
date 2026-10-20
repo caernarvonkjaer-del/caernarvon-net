@@ -9,7 +9,7 @@ import { amountForStore, presentAmount } from '../../core/form/amount-codec.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
-import { startedRows } from '../../core/validation/row-started.js';
+import { rowStarted, startedRows } from '../../core/validation/row-started.js';
 import { PLAN_ADLS, PLAN_BENEFITS, PLAN_RIGHTS, planRightLabel } from '../../core/filing/models/plan-annual.js';
 import { PLAN_ANNUAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
@@ -584,7 +584,9 @@ export function buildPlanAnnualModel(D) {
   // Page 13: Additional co-guardian signatures (conditional)
   // Milestone 61C: a co-guardian given an SSN, phone or address but not
   // yet a name is a started signer, not an empty placeholder.
-  const extras = startedRows((g || []).slice(1));
+  // Milestone 76H item 13: each keeps its card's number -- card 3 with card 2
+  // blank printed "Co-Guardian 2" (Milestone 74B's rule: never by position).
+  const extras = (g || []).map((p, card) => ({ p, card })).slice(1).filter(({ p }) => rowStarted(p));
   if (extras.length) {
     sections.push({
       id: 'certification-extra',
@@ -595,7 +597,7 @@ export function buildPlanAnnualModel(D) {
       pageBreakBefore: true,
       blocks: [
         { type: 'notice', title: 'Additional Guardian Signatures', text: '' },
-        ...extras.map((p, i) => makeSigBlock(`Co-Guardian ${i + 2}`, p)),
+        ...extras.map(({ p, card }) => makeSigBlock(`Co-Guardian ${card + 1}`, p)),
       ],
     });
   }

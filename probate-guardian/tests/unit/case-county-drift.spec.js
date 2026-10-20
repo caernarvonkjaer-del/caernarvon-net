@@ -9,7 +9,6 @@ describe('countyDriftWarnings', () => {
     resolveCase.mockReturnValue({ county: 'Pinellas' });
     expect(countyDriftWarnings({ caseId: 'case-1', county: 'Pasco', attorney_county: 'Hillsborough' })).toEqual([
       expect.objectContaining({ code: 'county-drift.filing', severity: 'advisory', caseCounty: 'Pinellas' }),
-      expect.objectContaining({ code: 'county-drift.attorney', severity: 'advisory', caseCounty: 'Pinellas' }),
     ]);
   });
 
@@ -29,21 +28,18 @@ describe('countyDriftWarnings', () => {
       expect(filingWarning.message).not.toMatch(/\bmust\b/i);
     });
 
-    test('the attorney advisory is described as the attorney\'s own county of record', () => {
+    // Milestone 76H item 3 (decision 76H-8): the attorney's county is shown and
+    // printed nowhere, so a mismatch with it is not reported.
+    test("the attorney's own county raises nothing", () => {
       resolveCase.mockReturnValue({ county: 'Pinellas' });
-      const warnings = countyDriftWarnings({ caseId: 'case-1', attorney_county: 'Hillsborough' });
-      expect(warnings).toHaveLength(1);
-      expect(warnings[0].message).toContain("attorney's county of record");
-      // attorney_county is never derived from the ward county, so this advisory
-      // must not imply the filing county should have supplied it.
-      expect(warnings[0].message).not.toMatch(/ward/i);
+      expect(countyDriftWarnings({ caseId: 'case-1', attorney_county: 'Hillsborough' })).toEqual([]);
     });
 
     test('both values are reported unchanged -- the advisory rewrites nothing', () => {
       resolveCase.mockReturnValue({ county: 'Pinellas' });
       const filing = { caseId: 'case-1', county: 'Pasco', attorney_county: 'Hillsborough' };
       const warnings = countyDriftWarnings(filing);
-      expect(warnings.map((w) => w.value)).toEqual(['Pasco', 'Hillsborough']);
+      expect(warnings.map((w) => w.value)).toEqual(['Pasco']);
       expect(filing.county).toBe('Pasco');
       expect(filing.attorney_county).toBe('Hillsborough');
     });

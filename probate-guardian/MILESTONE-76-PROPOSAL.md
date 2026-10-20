@@ -1709,6 +1709,50 @@ payee's at or below the footer). `pdf-engine-notice-title.spec.js` reads the
 notice's new keep-together rule. The PDF browser specs (geometry, margins,
 tags, tables, fonts, notices) pass unchanged.
 
+**Items 3, 6, 8, 9, 11, 12, 13 and 14 — BUILT 2026-10-20** (approved by name,
+the requester, 2026-10-20: "76I, then rest of 76G and 76H"). What a filer now
+sees:
+
+- **Item 3 (decision 76H-8):** the Annual family's attorney statement, on
+  the page and the PDF, names the filing's county (Part I), as the Clerk's
+  workbook fills it ('PART IV, V'!B29 ='PART I'!H2); it named the attorney's
+  own county when one was entered. Part V no longer shows an attorney County
+  box; a stored value is kept. The Preview note comparing that county with
+  the case's is gone with it -- it would name a value the filer can neither
+  see nor change.
+- **Item 6 (decision 76H-7):** Part XI (Annual family) and Part VII
+  (Simplified) always print. Left unanswered and overridden, they print the
+  statute and five blank lines titled "Declaration of Remuneration (to be
+  completed)" -- never "No remuneration reported" (60J's reason). One shared
+  builder, `src/core/pdf/remuneration-part.js`, for both forms.
+- **Item 8:** a Schedule B-4 category that nets negative (a refund) shows
+  its figure, ($50.00), on the PDF and the page; only an empty category
+  shows "—".
+- **Item 9 (decisions 76H-4, 76H-6):** the Annual's Part IX bond table is
+  laid out as the workbook's: its two RESTRICTED lines in their own column,
+  not added in; the three liquid lines in the next; "Total for BOND
+  REQUIREMENT" (no "(§ 744.351)"), with the workbook's explanation above it
+  -- as the Initial Inventory's Part V table (60H). The Inventory's total
+  reads "Total for BOND REQUIREMENT" too, as its workbook does.
+- **Item 11 (decision 76H-5):** the Plan for Minors' caption reads "IN RE:
+  The Guardianship of / [NAME] / Minor", as the court's form (nothing told
+  the PDF the plan was a minor's, so it printed the general caption). 73N's
+  flag stands: its legal sufficiency is for a qualified person.
+- **Item 12:** the Simplified Plan always prints Guardian 1's signature
+  block; an untouched card printed "No signature entered." and no line.
+- **Item 13:** Plan co-guardians keep their card's number on the PDF (card 3
+  with card 2 blank is "Co-Guardian 3"), on the Annual and Initial Plans.
+- **Item 14:** the Initial Plan's revoking-order date and county show, and
+  print, only under "suspended or revoked? Yes", as the Annual Plan's do; a
+  date still being typed in a hidden box no longer blocks (the 76E rule).
+
+Tests: `pdf-models-76h.spec.js` (new; each form's PDF model) -- 10 of 12 red
+first, the other two pinning that an answered Part and a "Yes" order print as
+before; `date-fields.spec.js` (the Initial Plan's order date under Yes only);
+`annual-accounting-pdf-model.spec.js` (the bond table's columns),
+`circuit-lookup.spec.js` (the minor caption), `case-county-drift.spec.js` (no
+attorney-county note).
+
 ---
 
 ## 76I — The court workbooks

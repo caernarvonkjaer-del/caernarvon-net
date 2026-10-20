@@ -599,6 +599,9 @@ function pagePlanIDisabilities(){
 function pagePlanIDirectives(){
   const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
+  // Milestone 76H item 14: a directive's order date and county show only once
+  // a court has suspended or revoked it, as on the Annual Plan; they showed
+  // always, and an answer of No still printed the order.
   const dirs=(d.q11Directives||[]).map((r,i)=>{
     return `<div class="col-12"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -616,8 +619,10 @@ function pagePlanIDirectives(){
         <div class="col-md-6"><label class="form-label">Name of any Alternate Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" data-form-path="q11Directives.${i}.alternates" data-field-path="q11Directives.${i}.alternates"></div>
         <div class="col-md-6"><label class="form-label">Contact information for Agent(s)/Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" data-form-path="q11Directives.${i}.contact" data-field-path="q11Directives.${i}.contact"></div>
         <div class="col-md-6">${yesNoCheckboxS(`q11dir_${i}_revoked`,'Has a Court suspended or revoked the Order/Directive?',r.courtRevoked,false,'/p8')}</div>
+        ${r.courtRevoked==='Yes'?`
         <div class="col-md-6"><label class="form-label" for="q11_dir_${i}_orderDate">Date of Order</label><input type="text" inputmode="text" class="form-control" id="q11_dir_${i}_orderDate" placeholder="MM/DD/YYYY" value="${esc(getFieldDraftDisplay(`q11Directives.${i}.orderDate`,formatDisplayDate(r.orderDate||'')))}" data-form-path="q11Directives.${i}.orderDate" data-field-path="q11Directives.${i}.orderDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q11_dir_${i}_orderDate_hint"><div id="q11_dir_${i}_orderDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
         <div class="col-md-6"><label class="form-label">County/State entered</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q11Directives.${i}.orderCounty" data-field-path="q11Directives.${i}.orderCounty"></div>
+        `:''}
       </div></div>
     </div></div>`;
   }).join('');

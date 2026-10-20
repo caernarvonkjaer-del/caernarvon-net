@@ -114,11 +114,13 @@ describe('Milestone 64B-1: printed Carrying Value is unscaled; D-4 Restricted Am
       schD4: [{ description: 'Brokerage Account', fullAmount: '100000', wardPct: '50', carryingValue: '80000', restricted: 'Yes' }],
     });
     const part9 = model.sections.find((s) => s.id === 'part9');
-    const bondBlock = part9.blocks.find((b) => b.title === 'Statutory Bond Calculation Breakdown');
-    const restrictedRow = bondBlock.rows.find((r) => r[0] === 'Schedule D-4 — Intangible Assets RESTRICTED');
-    const unrestrictedRow = bondBlock.rows.find((r) => r[0] === 'Schedule D-4 — Intangible Assets (Unrestricted)');
-    expect(restrictedRow[1]).toBe('$50,000.00');
-    expect(unrestrictedRow[1]).toBe('$0.00');
+    // Milestone 76H item 9: the workbook's layout -- restricted figures in
+    // their own column, the bonded ones in the next.
+    const bondBlock = part9.blocks.find((b) => b.title === 'Bond Requirement (calculated)');
+    const restrictedRow = bondBlock.rows.find((r) => r[1] === 'Other Liquid Assets - Intangible Assets RESTRICTED');
+    const unrestrictedRow = bondBlock.rows.find((r) => r[1] === 'Other Liquid Assets - Intangible Assets');
+    expect(restrictedRow.slice(2)).toEqual(['$50,000.00', '—']);
+    expect(unrestrictedRow.slice(2)).toEqual(['—', '$0.00']);
   });
 });
 

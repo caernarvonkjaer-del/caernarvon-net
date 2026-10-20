@@ -158,7 +158,10 @@ export function buildPlanSimplifiedModel(D) {
         title: 'CERTIFICATION AND SIGNATURE OF GUARDIAN(S) / GUARDIAN ADVOCATE(S)',
         text: T.declaration,
       },
-      ...(hasSigData(g[0]) ? [makeSigBlock('Guardian / Guardian Advocate', g[0])] : [{ type: 'notice', text: 'No signature entered.' }]),
+      // Milestone 76H item 12: Guardian 1's signature line always prints, as on
+      // every other Plan -- with the card untouched (a filing made by
+      // override) the PDF printed "No signature entered." and no line to sign.
+      makeSigBlock('Guardian / Guardian Advocate', g[0] || {}),
       ...(hasSigData(g[1]) ? [makeSigBlock('Guardian / Guardian Advocate', g[1])] : []),
       {
         type: 'notice',

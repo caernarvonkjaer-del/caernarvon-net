@@ -48,7 +48,10 @@ const SWEEP: Array<{ type: string; base: Record<string, unknown>; pages: Record<
   { type: 'planAnnual', base: { q10Directives: [{ courtRevoked: '' }] }, pages: {
     '/p9': [{ q10Executed: true, 'q10Directives.0.courtRevoked': 'Yes' }, { 'q10Directives.0.courtRevoked': 'No' }, { q10Executed: false }],
   } },
-  { type: 'planInitial', base: { q11Directives: [{}] }, pages: { '/p8': [{ q11Executed: true }, { q11Executed: false }] } },
+  // Milestone 76H item 14: the Initial Plan's order date, as the Annual Plan's, only under a court's Yes.
+  { type: 'planInitial', base: { q11Directives: [{ courtRevoked: '' }] }, pages: {
+    '/p8': [{ q11Executed: true, 'q11Directives.0.courtRevoked': 'Yes' }, { 'q11Directives.0.courtRevoked': 'No' }, { q11Executed: false }],
+  } },
 ];
 
 for (const form of SWEEP) test(`${form.type}: each date box another answer hides is on the page exactly when date-fields.js says it is shown`, async ({ page }) => {
