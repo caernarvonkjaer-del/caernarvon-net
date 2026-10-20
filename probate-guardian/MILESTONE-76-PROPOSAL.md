@@ -8,7 +8,7 @@ order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
 approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
 76E, 76G item 1 and 76H items 1, 2, 4 and 5 built 2026-10-20. 76F and 76J
 approved to build, in that order (the requester, 2026-10-20: "76F, then
-76J"); the rest authorizes no change.** Every decision is settled (Appendix
+76J") -- 76F built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
@@ -1095,6 +1095,49 @@ into Year 2's guardian Carol's record.*
 | 7 UI | The existing year dialogs and lock notice. |
 | 8 Legal | None. |
 | 9 Cross-form | All filing types have years; the documents key differs on the Inventory. |
+
+### Build record — BUILT 2026-10-20
+
+Approved by name (the requester, 2026-10-20: "76F, then 76J"; to proceed once
+the regression of the batch before passed, which it did: 3,404 unit and 1,053
+browser tests). What a filer now sees:
+
+- **New Year follows the latest year** (decision 76F-1), whichever is open:
+  with 2023-2024 open for a correction and 2024-2025 the latest, the new year
+  starts 07/01/2025 from 2024-2025's ending balance, and the dialog says "The
+  new year follows 2024-2025, the latest year -- not 2023-2024, which is open
+  now." The dashboard's unfiled-year note describes the latest year too.
+- **The case and ward links are the filing's** (decision 76F-2): opening an
+  older year keeps the filing in its case group, its county no longer makes a
+  second ward record, and a New Filing from Existing made from it joins the
+  case. A case file saved before 76F moves them on open (the latest year's,
+  `year-links.js`); a year that was linked to another case or ward record
+  keeps that link as its own and Prior Years says so. Merges and unmerges
+  reach the archived years' guardian, attorney and preparer links (the
+  merge record names each year).
+- **An earlier year open for correction behaves like a closed filing**
+  (decision 76F-4): its edits stay in that year, and its Cover says so ("This
+  is an earlier year, open for correction."), with any drift and its Sync
+  buttons.
+- **The Initial Inventory's first-year documents stay** (item 3): "Year 1"
+  is its 'initial' folder; documents already filed under "Year 1" join it on
+  open, and deleting Year 1 takes them.
+- **Deleting a year keeps a folder another year uses** (decision 76F-3) and
+  the confirmation says so.
+- **The year dialogs stop while another tab has the filing open** (item 5):
+  New Year and Edit this year when the filing can't be opened; Delete Year
+  shows the lock notice (it never asked).
+
+Data model: `wards[].caseId`, `wards[].wardPartyId`, `wards[].yearCaseId`,
+`wards[].yearWardPartyId`, `parties[].mergeRecord.repointedSlots[].yearKey`.
+
+Tests: `years-and-links.spec.js` (new; red first: seven of ten on the old
+code -- links carried with a year's data, the Inventory's "Year 1" folder,
+both years' documents deleted, an older year not closed, an archived year's
+guardian left on the merged record) and `years-and-links.spec.ts` (new; red
+first: the dialog named no latest year, Year 1 lost the case link, Delete
+Year went ahead past the lock); `party-resolver.spec.js` reads the merge
+record's year.
 
 ---
 

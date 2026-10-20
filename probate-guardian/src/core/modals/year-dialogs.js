@@ -1,7 +1,11 @@
 // Milestone 70, 70G: the Start New Year and Prior Years dialogs. Moved from
 // legacy-app.js's MULTI-YEAR ACCOUNTING.
 import { esc } from '../filing/escape-html.js';
-import { describeYearLabel, newYearNote } from '../filing/filing-years.js';
+import { describeYearLabel, newYearNote, yearSharingDocuments } from '../filing/filing-years.js';
+import { isOlderYearOpen, latestYearKey } from '../filing/year-links.js';
+import { canLockWard, showWardLockedModal } from '../ward-lock.js';
+import { resolveCase } from '../case-resolver.js';
+import { resolveParty } from '../party-resolver.js';
 import { navigate, renderPage } from '../navigation/router.js';
 import { DRAW, onChange } from '../navigation/draw-reason.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
@@ -25,7 +29,11 @@ export async function showStartNewYearModal(wardId,{unfiledNote=''}={}){
   if(!ward)return;
   await ensureFragment('common-modals');
   _yearModalWardId=wardId;
-  const note=newYearNote(ward.inventoryType);
+  // Milestone 76F item 1 (decision 76F-1): the new year follows the latest
+  // year, whichever is open; with an earlier one open, the dialog says so.
+  const latest=isOlderYearOpen(ward)?(ward.years||[]).find(y=>y.key===latestYearKey(ward)):null;
+  const follows=latest?`The new year follows ${latest.label}, the latest year -- not ${describeYearLabel(ward,ward)}, which is open now. `:'';
+  const note=follows+newYearNote(ward.inventoryType);
   document.getElementById('new-year-ward-name').textContent=ward.wardName||'(unnamed ward)';
   document.getElementById('new-year-note').textContent=note;
   const unfiled=document.getElementById('new-year-unfiled');
@@ -37,17 +45,35 @@ export async function confirmStartNewYear(){
   const wardId=_yearModalWardId;
   if(!wardId)return;
   closeModal('startNewYearModal');
-  await filingLifecycle.switchTo(wardId);
+  // Milestone 76F item 5: nothing happens while another tab has the filing
+  // open (it went ahead: switchTo() refused and the new year was made anyway).
+  if(!await filingLifecycle.switchTo(wardId))return;
   await filingLifecycle.newYear(wardId);
   navigate('/',{reason:DRAW.SWITCH});
 }
 
+// Milestone 76F (decision 76F-2): a year that was linked to another case, or
+// to another of the ward's shared records, says so -- the filing's links are
+// the latest year's, and an older one's is kept, never overwritten.
+function otherLinksNote(data){
+  const notes=[];
+  if(data&&data.yearCaseId){
+    const kase=resolveCase(data.yearCaseId);
+    notes.push(`filed then in another case${kase&&kase.caseNumber?` (${kase.caseNumber})`:''}`);
+  }
+  if(data&&data.yearWardPartyId){
+    const party=resolveParty(data.yearWardPartyId);
+    notes.push(`linked then to another shared record of the ward${party&&party.name?` (${party.name})`:''}`);
+  }
+  return notes.length?`<div class="small text-muted" data-year-other-links>This year was ${esc(notes.join(', and '))}.</div>`:'';
+}
+
 export function renderPriorYearsList(ward){
   const activeLabel=describeYearLabel(ward,ward);
-  const rows=[`<div class="prior-year-row prior-year-current"><span>${esc(activeLabel)} — currently open</span></div>`]
+  const rows=[`<div class="prior-year-row prior-year-current"><span>${esc(activeLabel)} — currently open${otherLinksNote(ward)}</span></div>`]
     .concat((ward.years||[]).slice().reverse().map(y=>`
       <div class="prior-year-row">
-        <span>${esc(y.label)}</span>
+        <span>${esc(y.label)}${otherLinksNote(y.data)}</span>
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-sm btn-outline-primary" data-form-action="edit-prior-year" data-ward-id="${esc(ward.wardId)}" data-year-key="${esc(y.key)}">Edit this year</button>
           <button type="button" class="btn btn-sm btn-outline-danger" data-form-action="confirm-delete-ward-year" data-ward-id="${esc(ward.wardId)}" data-year-key="${esc(y.key)}" title="Permanently delete this year">${ic('trash',13)}</button>
@@ -68,7 +94,8 @@ export async function showPriorYearsModal(wardId){
 
 export async function editPriorYear(wardId,key){
   closeModal('priorYearsModal');
-  await filingLifecycle.switchTo(wardId);
+  // Milestone 76F item 5: not while another tab has the filing open.
+  if(!await filingLifecycle.switchTo(wardId))return;
   await filingLifecycle.switchYear(wardId,key);
   navigate('/',{reason:DRAW.SWITCH});
 }
@@ -81,13 +108,22 @@ export async function confirmDeleteWardYear(wardId,yearKey){
   if(!ward||!entry)return;
   await ensureFragment('common-modals');
   _pendingDeleteYear={wardId,yearKey};
-  document.getElementById('delete-year-msg').textContent=`Are you sure you want to delete the ${entry.label} accounting for "${ward.wardName}"? Any supporting documents or comments uploaded for that year will be deleted too. This action cannot be undone.`;
+  // Milestone 76F item 4 (decision 76F-3): a year sharing its documents'
+  // folder with another (the same reporting period) leaves them in place.
+  const sharing=yearSharingDocuments(ward,yearKey);
+  const docs=sharing
+    ?`Its supporting documents and comments are kept: ${sharing.label} has the same reporting period and uses them too.`
+    :'Any supporting documents or comments uploaded for that year will be deleted too.';
+  document.getElementById('delete-year-msg').textContent=`Are you sure you want to delete the ${entry.label} accounting for "${ward.wardName}"? ${docs} This action cannot be undone.`;
   showModal('deleteYearModal');
 }
 
 export async function doDeleteWardYear(){
   if(!_pendingDeleteYear)return;
   const {wardId,yearKey}=_pendingDeleteYear;
+  // Milestone 76F item 5: not while another tab has the filing open (it
+  // never asked).
+  if(!await canLockWard(wardId)){closeModal('deleteYearModal');showWardLockedModal();return;}
   try{
     await filingLifecycle.removeYear(wardId,yearKey);
     // Milestone 74S (74S-4): recorded, naming the filing and the year.

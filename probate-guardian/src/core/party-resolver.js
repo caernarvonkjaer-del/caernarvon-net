@@ -12,6 +12,7 @@
 import { formEngine } from './filing/filing-registry.js';
 import { getCaseFile } from './state.js';
 import { markFilingRevisionChanged } from './filing/output-revision.js';
+import { isOlderYearOpen } from './filing/year-links.js';
 import { markDirtySinceExport } from './persistence/case-file.js';
 import { resolveServiceCertifier } from './filing/unrepresented-filing.js';
 import { resolveCertSigner, planCertAttorneyName } from './filing/plan-certificate-of-service.js';
@@ -428,8 +429,12 @@ function mergeFlatFieldsIntoParty(party, fields) {
 // user asks, via syncFilingSlotWithParty() below -- from Manage Shared
 // Records or the filing's own Cover. Marking it Open again resumes live sync
 // going forward without rewriting anything.
+// Milestone 76F (decision 76F-4): an earlier year opened for correction is
+// treated as closed -- its edits don't reach the shared ward, guardian or
+// attorney records, and differences show as drift -- so fixing a typo in last
+// year's filing can't change this year's.
 export function isFilingClosed(filing) {
-  return !!(filing && filing.archived);
+  return !!(filing && (filing.archived || isOlderYearOpen(filing)));
 }
 
 // One slot's copy versus its party. Only fields the filing type actually
@@ -988,9 +993,20 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
   const caseFile = getCaseFile();
   for (const ward of (caseFile && caseFile.wards) || []) {
     for (const slot of slotsReferencing(ward, discardId)) {
-      record.repointedSlots.push({ wardId: ward.wardId, role: slot.role, index: slot.index });
+      record.repointedSlots.push({ wardId: ward.wardId, yearKey: ward.activeYearKey || null, role: slot.role, index: slot.index });
       setPartyIdForSlot(ward, slot.role, slot.index, keepId);
       if (!isFilingClosed(ward)) hydrateFromParty(keep, ward, slot.role, slot.index);
+    }
+    // Milestone 76F (decision 76F-2): a merge reaches the archived years'
+    // guardian, attorney and preparer links too -- their copies of the
+    // details are left alone, as a closed filing's are. An archived year
+    // stayed linked to the merged-away record.
+    for (const year of Array.isArray(ward.years) ? ward.years : []) {
+      if (!year || !year.data) continue;
+      for (const slot of slotsReferencing(year.data, discardId)) {
+        record.repointedSlots.push({ wardId: ward.wardId, yearKey: year.key, role: slot.role, index: slot.index });
+        setPartyIdForSlot(year.data, slot.role, slot.index, keepId);
+      }
     }
   }
   for (const kase of (caseFile && caseFile.cases) || []) {
@@ -1048,11 +1064,16 @@ export function unmergeParty(subId) {
   markFilingRevisionChanged('party-unmerge');
   const record = sub.mergeRecord;
 
-  for (const { wardId, role, index } of record.repointedSlots || []) {
+  for (const { wardId, yearKey, role, index } of record.repointedSlots || []) {
     const ward = (caseFile.wards || []).find(w => w.wardId === wardId);
-    if (!ward || getPartyIdForSlot(ward, role, index) !== primary.id) continue;
-    setPartyIdForSlot(ward, role, index, sub.id);
-    if (!isFilingClosed(ward)) hydrateFromParty(sub, ward, role, index);
+    // Milestone 76F: the year the merge repointed, wherever it is now -- open,
+    // or archived since (a record from before 76F names no year: the open one).
+    const target = !ward ? null
+      : (yearKey === undefined || yearKey === (ward.activeYearKey || null)) ? ward
+        : ((ward.years || []).find(y => y && y.key === yearKey) || {}).data;
+    if (!target || getPartyIdForSlot(target, role, index) !== primary.id) continue;
+    setPartyIdForSlot(target, role, index, sub.id);
+    if (target === ward && !isFilingClosed(ward)) hydrateFromParty(sub, ward, role, index);
   }
   for (const caseId of record.repointedCases || []) {
     const kase = (caseFile.cases || []).find(k => k.id === caseId);

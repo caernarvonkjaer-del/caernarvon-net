@@ -17,6 +17,8 @@ import { recordModelChange } from '../model-change.js';
 import { nextIsoDay } from '../form/date-parser.js';
 import { getPath, setPath } from '../form/paths.js';
 import { clearSignaturesForNewYear, keepYearSignaturePolicy } from '../signature/signature-policy.js';
+import { latestYearKey, isOlderYearOpen } from './year-links.js';
+import { inventoryDocKey, resolveActiveDocPeriod } from './doc-period.js';
 
 // A ward's flat top-level fields (schedules, balances, signatures, etc.)
 // always represent whichever year is currently "active" — every existing
@@ -24,8 +26,10 @@ import { clearSignaturesForNewYear, keepYearSignaturePolicy } from '../signature
 // window.D exactly as before, with no awareness that years exist at all.
 // Prior years are simply snapshotted off those same fields into
 // ward.years[] and swapped back in on request. These keys are the only
-// ones that are NOT part of a year's data.
-export const WARD_SYSTEM_KEYS=['wardId','inventoryType','createdDate','lastModified','archived','scheduleDocs','years','activeYearKey','yearCounter'];
+// ones that are NOT part of a year's data. Milestone 76F (decision 76F-2):
+// the case link and the ward link are the filing's, not a year's
+// (year-links.js) -- an older year opened lost them.
+export const WARD_SYSTEM_KEYS=['wardId','inventoryType','createdDate','lastModified','archived','scheduleDocs','years','activeYearKey','yearCounter','caseId','wardPartyId'];
 
 export function snapshotCurrentYearData(ward){
   const data={};
@@ -39,7 +43,11 @@ export function applyYearData(ward,data){
   for(const k of Object.keys(ward)){
     if(!WARD_SYSTEM_KEYS.includes(k))delete ward[k];
   }
-  Object.assign(ward,JSON.parse(JSON.stringify(data)));
+  // Milestone 76F: a year's data never overwrites what is the filing's (an
+  // archived year saved before 76F held its own case and ward links).
+  const copy=JSON.parse(JSON.stringify(data));
+  for(const k of WARD_SYSTEM_KEYS)delete copy[k];
+  Object.assign(ward,copy);
 }
 
 // Resets the fields that must be blank/empty for a fresh, unsigned filing
@@ -363,6 +371,11 @@ export async function switchWardYear(wardId,targetKey){
 export async function startNewWardYear(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
+  // Milestone 76F item 1 (decision 76F-1): a new year follows the latest
+  // year, whichever is open. Started with an earlier year open (to fix a
+  // typo, say), it repeated a period that already existed and started from
+  // that earlier year's ending balance and holdings.
+  if(isOlderYearOpen(ward))await switchWardYear(wardId,latestYearKey(ward));
   await flushPendingSave();
   // Milestone 71E: the one carry (starting-balance-carry.js), read from the
   // year being closed before it is archived -- rounded to cents by the
@@ -408,9 +421,23 @@ export async function startNewWardYear(wardId){
 // instead of leaving them orphaned. Mirrors scheduleDocPeriodKey(), but
 // against an arbitrary snapshot rather than the live active ward.
 export function periodKeyForYearData(ward,yearEntry){
-  if(ward.inventoryType==='guardian')return yearEntry.key;
+  if(ward.inventoryType==='guardian')return inventoryDocKey(yearEntry.key);
   const d=yearEntry.data||{};
   return `${d.periodFrom||''}__${d.periodTo||''}`;
+}
+
+/**
+ * Milestone 76F item 4 (decision 76F-3): another year of the filing whose
+ * documents are kept in the same folder as `yearKey`'s -- two years with the
+ * same reporting period (both blank, say) share one -- or null.
+ */
+export function yearSharingDocuments(ward,yearKey){
+  const entry=(ward.years||[]).find(y=>y.key===yearKey);
+  if(!entry)return null;
+  const key=periodKeyForYearData(ward,entry);
+  if(resolveActiveDocPeriod(ward)===key)return {key:ward.activeYearKey,label:describeYearLabel(ward,ward)};
+  const other=(ward.years||[]).find(y=>y.key!==yearKey&&periodKeyForYearData(ward,y)===key);
+  return other?{key:other.key,label:other.label}:null;
 }
 
 export async function deleteWardYear(wardId,yearKey){
@@ -419,7 +446,9 @@ export async function deleteWardYear(wardId,yearKey){
   const idx=ward.years.findIndex(y=>y.key===yearKey);
   if(idx===-1)return;
   const periodKey=periodKeyForYearData(ward,ward.years[idx]);
-  if(ward.scheduleDocs){
+  // Decision 76F-3: a folder another year still uses is kept (deleting either
+  // year deleted both years' documents).
+  if(ward.scheduleDocs&&!yearSharingDocuments(ward,yearKey)){
     for(const scheduleKey of Object.keys(ward.scheduleDocs)){
       delete ward.scheduleDocs[scheduleKey][periodKey];
     }

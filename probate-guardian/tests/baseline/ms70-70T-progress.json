@@ -210,6 +210,7 @@
   "tests/e2e/verified-inventory-workflow.spec.ts",
   "tests/e2e/ward-lock.spec.ts",
   "tests/e2e/year-rollover.characterization.spec.ts",
+  "tests/e2e/years-and-links.spec.ts",
   "tests/historical/pre-merge-output.characterization.spec.ts"
  ],
  "exempt": [

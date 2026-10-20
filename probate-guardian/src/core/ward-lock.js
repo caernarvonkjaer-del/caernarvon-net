@@ -12,6 +12,24 @@ export function getCurrentLockedWardId() {
   return currentHeldWardId;
 }
 
+/**
+ * Milestone 76F item 5: whether this tab could take a filing's lock now --
+ * true when it holds it, or no other tab does -- without taking it, so the
+ * lock this tab holds is not moved. (Delete Year went ahead while another tab
+ * had the filing open.) True where the browser has no locks, as acquiring is.
+ * @param {string} wardId
+ */
+export async function canLockWard(wardId) {
+  if (currentHeldWardId === wardId && currentHeldRelease) return true;
+  if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') return true;
+  if (typeof navigator === 'undefined' || !navigator.locks || typeof navigator.locks.request !== 'function') return true;
+  try {
+    return await navigator.locks.request(`pg-ward-${wardId}`, { mode: 'exclusive', ifAvailable: true }, (lock) => !!lock);
+  } catch (e) {
+    return true;
+  }
+}
+
 export function __test_reset() {
   currentHeldRelease = null;
   currentHeldWardId = null;

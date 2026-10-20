@@ -17,6 +17,7 @@ import { getCaseFile } from '../../core/state.js';
 import { getRecentlyOpenedWards } from '../../core/filing/recent-filings.js';
 import { showPriorYearsModal, showStartNewYearModal } from '../../core/modals/year-dialogs.js';
 import { describeYearLabel } from '../../core/filing/filing-years.js';
+import { latestYearView } from '../../core/filing/year-links.js';
 import { confirmDeleteWard, showAddWardModal } from '../../core/modals/filing-dialogs.js';
 import { showPickCaseModal } from '../../core/modals/pick-record-dialogs.js';
 import { filingLifecycle } from '../../core/navigation/filing-lifecycle.js';
@@ -219,7 +220,10 @@ function deadlineDisplay(row) {
 // Milestone 74K (decision 74K-1): what the Start New Year dialog says when the
 // year being closed isn't marked filed -- the filer can go ahead; the year
 // stays in view. '' when the year is filed, approved or the filing closed.
-function unfiledYearNote(ward) {
+function unfiledYearNote(filing) {
+  // Milestone 76F item 1: the year a new year follows is the latest, whichever
+  // is open.
+  const ward = latestYearView(filing);
   const row = projectWard(ward);
   if (!row.isDeadlineActionable) return '';
   const label = describeYearLabel(ward, ward);

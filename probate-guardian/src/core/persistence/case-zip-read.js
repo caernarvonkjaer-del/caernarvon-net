@@ -5,6 +5,7 @@
 // reads the file through here too, to see what another tab or window saved
 // since (case-file.js), without disturbing the case that is open.
 import { decryptJSONWithKey } from './crypto.js';
+import { migrateFilingYears } from '../filing/year-links.js';
 import { blankCaseFile } from '../state.js';
 
 /**
@@ -48,7 +49,10 @@ export async function readCaseFileZip(zip, manifest, key) {
     try {
       // Kept as saved (Milestone 76B): text is escaped where it is shown.
       const ward = await decryptJSONWithKey(await f.async('string'), key);
-      if (ward && ward.wardId) caseFile.wards.push(ward);
+      // Milestone 76F: a filing saved before it read as 76F keeps it -- here,
+      // where every read of the file passes, so the save's check against
+      // what is on disk (case-merge.js) reads it the same way.
+      if (ward && ward.wardId) caseFile.wards.push(migrateFilingYears(ward));
       else unreadable.push(filing);
     } catch (e) { console.warn('Skipping unreadable ward in .sav file', entry.file, e); unreadable.push(filing); }
   }

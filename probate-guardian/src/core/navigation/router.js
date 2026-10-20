@@ -35,6 +35,7 @@ import { DRAW, isDrawReason } from './draw-reason.js';
 import { isTypingIn, rememberPlace, settlePlace } from './keep-place.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { pagePartyManagement, renderClosedFilingSyncNotice, renderPartyManagementBody } from '../parties/party-management.js';
+import { isFilingClosed } from '../party-resolver.js';
 import { updateHelpContext } from '../help/help-panel.js';
 import { pageInventorySelector } from '../shell/start-new-form.js';
 import { loadAndRenderActivityLog, pageActivityLog } from '../activity/activity-log-view.js';
@@ -328,7 +329,8 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
     // A newer navigation, or another filing opened meanwhile, owns the page.
     if (signal.aborted || getActiveWard() !== activeWard) return;
   }
-  if (page === '/' && activeWard && activeWard.archived) {
+  // Milestone 76F (decision 76F-4): an earlier year open for correction too.
+  if (page === '/' && activeWard && isFilingClosed(activeWard)) {
     renderClosedFilingSyncNotice(el, activeWard);
   }
   linkLabelsToInputs();

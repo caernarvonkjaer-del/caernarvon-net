@@ -22,6 +22,7 @@ import { auditLog, auditLogLength, loadAuditLogEntries, truncateAuditLog } from 
 // the modules that import it from here.
 export { getLastExportAt, isDirtySinceExport, setDirtySinceExport, setLastExportAt };
 import { migratePlanTriState } from '../filing/plan-tristate.js';
+import { migrateFilingYears } from '../filing/year-links.js';
 import { IMPORT_SIZE_LIMITS } from '../security/input-hardening.js';
 import { alertModal, confirmModal, showModal } from '../ui/dialogs.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
@@ -1083,7 +1084,7 @@ export function setupFallbackSaveReminder() {
 // -- the caller wraps it to re-throw a specific per-ward message.
 export async function decodeWardRecord(encoded, key) {
   // Kept as saved (Milestone 76B): text is escaped where it is shown.
-  return migratePlanTriState(await decryptJSONWithKey(encoded, key));
+  return migrateFilingYears(migratePlanTriState(await decryptJSONWithKey(encoded, key)));
 }
 
 // Milestone 52B: the four-field encrypt fan-out shared by

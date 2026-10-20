@@ -10,6 +10,7 @@ import { joinUndatedDocuments } from './doc-dates.js';
 import { normalizeAmountFields } from './amount-fields.js';
 import { canonicalFloridaCounty } from '../pdf/circuit-lookup.js';
 import { normalizeRecipientShape } from './recipient-shape.js';
+import { migrateFilingYears } from './year-links.js';
 
 export function normalizeWardData(d){
   if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;
@@ -18,6 +19,9 @@ export function normalizeWardData(d){
   // read as "already acknowledged", since that would silently retire a prompt
   // the filer never saw.
   try{ normalizeScheduleDocsAck(d); }catch(e){}
+  // Milestone 76F: the case and ward links on the filing, and the
+  // Inventory's first-year documents in one folder (year-links.js).
+  try{ migrateFilingYears(d); }catch(e){}
   // Milestone 75A: an older file's documents attached before the reporting
   // dates were set join the dates (doc-dates.js); idempotent.
   try{ joinUndatedDocuments(d); }catch(e){}

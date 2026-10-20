@@ -7,7 +7,7 @@ import { esc } from '../filing/escape-html.js';
 import { displayLocalDate } from '../form/date-parser.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 import { wardCountyMergeConflict } from '../navigation/ward-county.js';
-import { closedFilingDrift, dismissPartyPair, filingDriftFromParties, findDuplicateCandidates, LINK_FIELD_LABELS, mergeFilingChanges, mergeParties, referenceCountForParty, resolveParty, slotsReferencing, subPartiesOf, syncFilingSlotWithParty, unmergeParty } from '../party-resolver.js';
+import { closedFilingDrift, dismissPartyPair, filingDriftFromParties, findDuplicateCandidates, isFilingClosed, LINK_FIELD_LABELS, mergeFilingChanges, mergeParties, referenceCountForParty, resolveParty, slotsReferencing, subPartiesOf, syncFilingSlotWithParty, unmergeParty } from '../party-resolver.js';
 import { getCaseFile, getD } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
 import { auditLog } from '../activity/audit-log.js';
@@ -200,11 +200,14 @@ export async function doPartySyncClosedAll(partyId){
 // The Cover of a closed filing: which linked records have moved on since it
 // was closed, with a Sync with Current button per slot. Rendered by the
 // router after the feature mounts its Cover, only for closed filings.
+// Milestone 76F (decision 76F-4): an earlier year opened for correction gets
+// the notice too, and always -- its edits stay in that year.
 export function renderClosedFilingSyncNotice(container,filing){
-  if(!container||!filing||!filing.archived)return;
+  if(!container||!filing||!isFilingClosed(filing))return;
   container.querySelector('[data-closed-filing-sync]')?.remove();
   const drift=filingDriftFromParties(filing);
-  if(!drift.length)return;
+  const olderYear=!filing.archived;
+  if(!drift.length&&!olderYear)return;
   const rows=drift.map(d=>`<li class="d-flex justify-content-between align-items-center gap-2 mb-1">
     <span><b>${esc(slotLabel(d.role,d.index))}</b> "${esc(d.party.name||'(unnamed)')}": ${esc(d.differences.map(x=>SLOT_FIELD_LABELS[x.key]||x.key).join(', '))}</span>
     <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" data-form-action="filing-sync-closed" data-role="${esc(d.role)}" data-index="${d.index}">Sync with Current</button>
@@ -212,8 +215,11 @@ export function renderClosedFilingSyncNotice(container,filing){
   const notice=document.createElement('div');
   notice.className='alert alert-warning mb-3';
   notice.setAttribute('data-closed-filing-sync','');
-  notice.innerHTML=`<div class="mb-1"><b>This filing is closed.</b> Its shared records have changed since it was closed; it keeps what was filed until you sync it.</div>
-    <ul class="list-unstyled mb-0">${rows}</ul>
+  const lead=olderYear
+    ?`<b>This is an earlier year, open for correction.</b> Edits here stay in this year: they don't change the ward's, guardians' or attorney's shared records, or the latest year.${drift.length?' Its shared records have changed since; it keeps what it has until you sync it.':''}`
+    :'<b>This filing is closed.</b> Its shared records have changed since it was closed; it keeps what was filed until you sync it.';
+  notice.innerHTML=`<div class="mb-1">${lead}</div>
+    ${drift.length?`<ul class="list-unstyled mb-0">${rows}</ul>`:''}
     ${drift.length>1?`<button type="button" class="btn btn-sm btn-primary mt-2" data-form-action="filing-sync-closed-all">Sync All (${drift.length})</button>`:''}`;
   const h1=container.querySelector('.schedule-page > h1, .schedule-page h1');
   if(h1)h1.insertAdjacentElement('afterend',notice);else container.prepend(notice);

@@ -14,6 +14,7 @@ import { commitModelChange, onModelChange } from '../model-change.js';
 import { getSecurityMode } from '../persistence/crypto.js';
 import { changeTouches, defineLivePart, livePartHtml } from '../ui/live-parts.js';
 import { documentsUnderOtherDates, joinUndatedDocuments, moveDocumentsToCurrentDates } from './doc-dates.js';
+import { inventoryDocKey } from './doc-period.js';
 
 // Every schedule (across all three inventory types) can carry uploaded
 // supporting documents and a free-text comment. Guardianships are re-filed
@@ -39,7 +40,9 @@ export function scheduleDocPeriodKey(){
   // distinguished by activeYearKey instead (falls back to 'initial' for
   // wards saved before multi-year support existed, preserving their
   // existing uploads under the same bucket they were already using).
-  if(getActiveInventoryType()==='guardian')return (getD()&&getD().activeYearKey)||'initial';
+  // Milestone 76F item 3: its first year, "Year 1" once it has others, is
+  // still 'initial' (doc-period.js).
+  if(getActiveInventoryType()==='guardian')return inventoryDocKey(getD()&&getD().activeYearKey);
   const from=(getD()&&getD().periodFrom)||'';
   const to=(getD()&&getD().periodTo)||'';
   return `${from}__${to}`;

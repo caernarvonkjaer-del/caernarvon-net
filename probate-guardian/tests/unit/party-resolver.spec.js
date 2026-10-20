@@ -628,7 +628,8 @@ describe('party merge undo & near-match detection', () => {
     expect(result.afterMerge.listedUnderPrimary).toEqual([result.subId]);
     expect(result.afterMerge.record.adoptedFields).toEqual(['email']);
     expect(result.afterMerge.record.adoptedRoles).toEqual(['attorney']);
-    expect(result.afterMerge.record.repointedSlots).toEqual([{ wardId: 'a', role: 'guardian', index: 0 }]);
+    // Milestone 76F: each repoint names its year (null: a filing with no years).
+    expect(result.afterMerge.record.repointedSlots).toEqual([{ wardId: 'a', yearKey: null, role: 'guardian', index: 0 }]);
     expect(result.afterMerge.record.repointedCases).toEqual([result.caseId]);
     expect(result.afterMerge.record.mergedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(result.afterMerge.wardAPhone).toBe('555-0100');
