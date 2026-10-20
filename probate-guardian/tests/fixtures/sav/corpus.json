@@ -10630,6 +10630,388 @@
     "errors": []
    },
    "pageErrorsWhileWriting": []
+  },
+  {
+   "file": "29-ms76k-encrypted.sav",
+   "label": "29-ms76k",
+   "sha": "c0dd1d8851cbd579609896ee54e71dabaaac5b89",
+   "committed": "2026-10-20T13:34:06-04:00",
+   "why": "Milestone 76K: password keys at 600,000 rounds, recorded in the file (format 2)",
+   "case": "encrypted",
+   "password": "MS70-corpus-test-password",
+   "bytes": 9652,
+   "sha256": "22087c55c26106b3ddc6199de728fd7ff3d2d693b41cf778683e5cba5f288b5b",
+   "wrote": {
+    "securityMode": "encrypted",
+    "formatVersion": 2,
+    "kdfIterations": 600000,
+    "filings": [
+     {
+      "wardName": "Corpus Ward One",
+      "inventoryType": "guardian",
+      "keys": 68
+     },
+     {
+      "wardName": "Corpus Ward One",
+      "inventoryType": "annual",
+      "keys": 94
+     }
+    ],
+    "parties": 2,
+    "cases": 2,
+    "dismissedPartyPairs": 0,
+    "auditEntries": 2
+   },
+   "filings": [
+    {
+     "inventoryType": "guardian",
+     "wardName": "Corpus Ward One",
+     "stored": {
+      "caseNumber": "2026-CP-000101",
+      "county": "Pinellas",
+      "guardianName": "Corpus Guardian",
+      "guardians.0.name": "Corpus Guardian",
+      "guardians.0.streetAddress": "1 Corpus Way",
+      "guardians.0.cityStateZip": "Clearwater, FL 33755",
+      "guardians.0.email": "guardian@example.invalid",
+      "scheduleA1.0.propertyDescription": "Family Home",
+      "scheduleA1.0.streetAddress": "1 Corpus Way",
+      "scheduleA1.0.cityStateZip": "Clearwater, FL 33755",
+      "scheduleA1.0.fullAssetValue": 250000,
+      "scheduleA1.0.wardPercent": 50
+     },
+     "sharedRecordSteps": [
+      "the ward record",
+      "the case record",
+      "new guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "annual",
+     "wardName": "Corpus Ward One",
+     "stored": {
+      "caseNumber": "2026-CP-000101",
+      "county": "Pinellas",
+      "periodFrom": "2025-01-01",
+      "periodTo": "2025-12-31",
+      "startingBalance": "5000",
+      "guardians.0.name": "Corpus Guardian",
+      "guardians.0.mailingStreet": "1 Corpus Way",
+      "guardians.0.mailingCityStateZip": "Clearwater, FL 33755",
+      "guardians.0.email": "guardian@example.invalid",
+      "schA.0.payer": "Social Security",
+      "schA.0.description": "Benefits",
+      "schA.0.bank": "First Corpus Bank",
+      "schA.0.accountNo": "1001",
+      "schA.0.amount": 1200,
+      "schD1.0.description": "Checking",
+      "schD1.0.accountNo": "1001",
+      "schD1.0.type": "Checking",
+      "schD1.0.fullAmount": 5000,
+      "schD1.0.wardPct": "100"
+     },
+     "sharedRecordSteps": [
+      "attach the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    }
+   ],
+   "finish": {
+    "dismissed": null,
+    "audited": true,
+    "errors": []
+   },
+   "pageErrorsWhileWriting": []
+  },
+  {
+   "file": "29-ms76k-plain.sav",
+   "label": "29-ms76k",
+   "sha": "c0dd1d8851cbd579609896ee54e71dabaaac5b89",
+   "committed": "2026-10-20T13:34:06-04:00",
+   "why": "Milestone 76K: password keys at 600,000 rounds, recorded in the file (format 2)",
+   "case": "plain",
+   "password": null,
+   "bytes": 14667,
+   "sha256": "49e108a14e1e21c8ebc6c8568e6445956e0dd7331f2f117e3b93c8e00d015902",
+   "wrote": {
+    "securityMode": "none",
+    "formatVersion": 1,
+    "kdfIterations": null,
+    "filings": [
+     {
+      "wardName": "Corpus Ward One",
+      "inventoryType": "guardian",
+      "keys": 68
+     },
+     {
+      "wardName": "Corpus Ward One",
+      "inventoryType": "annual",
+      "keys": 94
+     },
+     {
+      "wardName": "Corpus Ward One",
+      "inventoryType": "planAnnual",
+      "keys": 193
+     },
+     {
+      "wardName": "Corpus Ward One",
+      "inventoryType": "planInitial",
+      "keys": 167
+     },
+     {
+      "wardName": "Corpus Ward Two",
+      "inventoryType": "simplified",
+      "keys": 73
+     },
+     {
+      "wardName": "Corpus Ward Two",
+      "inventoryType": "planSimplified",
+      "keys": 76
+     },
+     {
+      "wardName": "Corpus Ward Three",
+      "inventoryType": "finalAccounting",
+      "keys": 94
+     },
+     {
+      "wardName": "Corpus Ward Four",
+      "inventoryType": "trustAccounting",
+      "keys": 94
+     },
+     {
+      "wardName": "Corpus Ward Five",
+      "inventoryType": "planMinor",
+      "keys": 102
+     }
+    ],
+    "parties": 6,
+    "cases": 9,
+    "dismissedPartyPairs": 1,
+    "auditEntries": 1
+   },
+   "filings": [
+    {
+     "inventoryType": "guardian",
+     "wardName": "Corpus Ward One",
+     "stored": {
+      "caseNumber": "2026-CP-000101",
+      "county": "Pinellas",
+      "guardianName": "Corpus Guardian",
+      "guardians.0.name": "Corpus Guardian",
+      "guardians.0.streetAddress": "1 Corpus Way",
+      "guardians.0.cityStateZip": "Clearwater, FL 33755",
+      "guardians.0.email": "guardian@example.invalid",
+      "scheduleA1.0.propertyDescription": "Family Home",
+      "scheduleA1.0.streetAddress": "1 Corpus Way",
+      "scheduleA1.0.cityStateZip": "Clearwater, FL 33755",
+      "scheduleA1.0.fullAssetValue": 250000,
+      "scheduleA1.0.wardPercent": 50
+     },
+     "sharedRecordSteps": [
+      "the ward record",
+      "the case record",
+      "new guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "annual",
+     "wardName": "Corpus Ward One",
+     "stored": {
+      "caseNumber": "2026-CP-000101",
+      "county": "Pinellas",
+      "periodFrom": "2025-01-01",
+      "periodTo": "2025-12-31",
+      "startingBalance": "5000",
+      "guardians.0.name": "Corpus Guardian",
+      "guardians.0.mailingStreet": "1 Corpus Way",
+      "guardians.0.mailingCityStateZip": "Clearwater, FL 33755",
+      "guardians.0.email": "guardian@example.invalid",
+      "schA.0.payer": "Social Security",
+      "schA.0.description": "Benefits",
+      "schA.0.bank": "First Corpus Bank",
+      "schA.0.accountNo": "1001",
+      "schA.0.amount": 1200,
+      "schD1.0.description": "Checking",
+      "schD1.0.accountNo": "1001",
+      "schD1.0.type": "Checking",
+      "schD1.0.fullAmount": 5000,
+      "schD1.0.wardPct": "100"
+     },
+     "sharedRecordSteps": [
+      "attach the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "planAnnual",
+     "wardName": "Corpus Ward One",
+     "stored": {
+      "caseNumber": "2026-CP-000101",
+      "county": "Pinellas",
+      "planGuardians.0.name": "Corpus Guardian",
+      "planGuardians.0.mailingStreet": "1 Corpus Way",
+      "planGuardians.0.mailingCityStateZip": "Clearwater, FL 33755",
+      "planGuardians.0.email": "guardian@example.invalid"
+     },
+     "sharedRecordSteps": [
+      "attach the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "planInitial",
+     "wardName": "Corpus Ward One",
+     "stored": {
+      "caseNumber": "2026-CP-000101",
+      "county": "Pinellas",
+      "guardianNames": "Corpus Guardian",
+      "mailingAddress": "1 Corpus Way",
+      "mailingCityStateZip": "Clearwater, FL 33755"
+     },
+     "sharedRecordSteps": [
+      "attach the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "simplified",
+     "wardName": "Corpus Ward Two",
+     "stored": {
+      "caseNumber": "2026-CP-000102",
+      "county": "Pinellas",
+      "periodFrom": "2025-01-01",
+      "periodTo": "2025-12-31",
+      "startingBalance": "1000",
+      "interestIncome": "12.50",
+      "guardians.0.name": "Corpus Guardian",
+      "guardians.0.mailingStreet": "1 Corpus Way",
+      "guardians.0.mailingCityStateZip": "Clearwater, FL 33755",
+      "guardians.0.email": "guardian@example.invalid"
+     },
+     "sharedRecordSteps": [
+      "the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "planSimplified",
+     "wardName": "Corpus Ward Two",
+     "stored": {
+      "caseNumber": "2026-CP-000102",
+      "county": "Pinellas",
+      "q1Residences": "At home with family",
+      "planGuardians.0.name": "Corpus Guardian",
+      "planGuardians.0.email": "guardian@example.invalid"
+     },
+     "sharedRecordSteps": [
+      "attach the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "finalAccounting",
+     "wardName": "Corpus Ward Three",
+     "stored": {
+      "caseNumber": "2026-CP-000103",
+      "county": "Pinellas",
+      "periodFrom": "2025-01-01",
+      "periodTo": "2025-12-31",
+      "startingBalance": "5000",
+      "guardians.0.name": "Corpus Guardian",
+      "guardians.0.mailingStreet": "1 Corpus Way",
+      "guardians.0.mailingCityStateZip": "Clearwater, FL 33755",
+      "guardians.0.email": "guardian@example.invalid",
+      "schA.0.payer": "Social Security",
+      "schA.0.description": "Benefits",
+      "schA.0.bank": "First Corpus Bank",
+      "schA.0.accountNo": "1001",
+      "schA.0.amount": 1200,
+      "schD1.0.description": "Checking",
+      "schD1.0.accountNo": "1001",
+      "schD1.0.type": "Checking",
+      "schD1.0.fullAmount": 5000,
+      "schD1.0.wardPct": "100"
+     },
+     "sharedRecordSteps": [
+      "the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "trustAccounting",
+     "wardName": "Corpus Ward Four",
+     "stored": {
+      "caseNumber": "2026-CP-000104",
+      "county": "Pinellas",
+      "periodFrom": "2025-01-01",
+      "periodTo": "2025-12-31",
+      "startingBalance": "5000",
+      "guardians.0.name": "Corpus Guardian",
+      "guardians.0.mailingStreet": "1 Corpus Way",
+      "guardians.0.mailingCityStateZip": "Clearwater, FL 33755",
+      "guardians.0.email": "guardian@example.invalid",
+      "schA.0.payer": "Social Security",
+      "schA.0.description": "Benefits",
+      "schA.0.bank": "First Corpus Bank",
+      "schA.0.accountNo": "1001",
+      "schA.0.amount": 1200,
+      "schD1.0.description": "Checking",
+      "schD1.0.accountNo": "1001",
+      "schD1.0.type": "Checking",
+      "schD1.0.fullAmount": 5000,
+      "schD1.0.wardPct": "100"
+     },
+     "sharedRecordSteps": [
+      "the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    },
+    {
+     "inventoryType": "planMinor",
+     "wardName": "Corpus Ward Five",
+     "stored": {
+      "county": "Pinellas",
+      "guardianName": "Corpus Guardian",
+      "planGuardians.0.name": "Corpus Guardian",
+      "planGuardians.0.mailingStreet": "1 Corpus Way",
+      "planGuardians.0.mailingCityStateZip": "Clearwater, FL 33755",
+      "planGuardians.0.email": "guardian@example.invalid"
+     },
+     "sharedRecordSteps": [
+      "the ward record",
+      "the case record",
+      "attach the guardian record"
+     ],
+     "sharedRecordErrors": []
+    }
+   ],
+   "finish": {
+    "dismissed": [
+     "Corpus Ward Three",
+     "Corpus Ward Four"
+    ],
+    "audited": true,
+    "errors": []
+   },
+   "pageErrorsWhileWriting": []
   }
  ]
 }

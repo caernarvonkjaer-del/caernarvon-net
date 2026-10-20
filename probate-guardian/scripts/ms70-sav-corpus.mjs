@@ -93,6 +93,10 @@ export const CHECKPOINTS = [
   ['26-zip-0924', '2178d4b', 'The 9/24 morning zip (probate-forms-portable-2026-09-24.zip)'],
   ['27-branch-point', 'a9c9930', 'The milestone-70 branch point: the last code before Milestone 70'],
   ['28-zip-0924b', 'b28bf25', 'The 9/24 evening zip (probate-forms-portable-2026-09-24b.zip), on master after the branch point'],
+  // Milestone 76K item 2 (decision 76K-1): the first build that keys a
+  // password at 600,000 rounds and records it (format 2, kdfIterations), so
+  // the corpus holds a file every later version must still open.
+  ['29-ms76k', 'c0dd1d88', 'Milestone 76K: password keys at 600,000 rounds, recorded in the file (format 2)'],
 ];
 
 const PERSON = { name: 'Corpus Guardian', streetAddress: '1 Corpus Way', cityStateZip: 'Clearwater, FL 33755', mailingStreet: '1 Corpus Way', mailingCityStateZip: 'Clearwater, FL 33755', email: 'guardian@example.invalid' };
@@ -296,6 +300,89 @@ async function saveInPage() {
   };
 }
 
+// Milestone 76K: a build after Milestone 70 has none of the page globals the
+// steps above use (70I-70K moved them into modules); it is driven through its
+// own GuardianForms.testing instead -- the same steps, through the hooks the
+// browser specs use. Filings are created, filled where the key exists, given
+// their shared records (the ward record, the case record, the guardian record
+// shared across filings, one dismissed pair), an audit entry, and saved by the
+// version's own buildCaseFileBlob().
+async function writeModernInPage({ spec, fill, dismiss }) {
+  const t = window.GuardianForms.testing;
+  const get = (o, p) => p.split('.').reduce((v, k) => (v == null ? v : v[k]), o);
+  const filings = [];
+  const wardParties = {};
+  let guardianPartyId = null;
+  for (const [type, ward, caseNumber] of spec.filings) {
+    await t.createFiling.add(ward, type);
+    const f = t.snapshot().filing;
+    const sp = fill[type];
+    const patch = {};
+    const paths = [];
+    const put = (obj, key, value, at) => { if (obj && typeof obj === 'object' && key in obj) { patch[at] = value; paths.push(at); } };
+    put(f, 'caseNumber', caseNumber, 'caseNumber');
+    for (const [k, v] of Object.entries(sp.fields)) put(f, k, v, k);
+    for (const [arr, vals] of Object.entries(sp.firstOf)) {
+      const first = Array.isArray(f[arr]) ? f[arr][0] : null;
+      for (const [k, v] of Object.entries(vals)) put(first, k, v, `${arr}.0.${k}`);
+    }
+    for (const [arr, row] of Object.entries(sp.rows)) {
+      if (!Array.isArray(f[arr])) continue;
+      const seed = f[arr][0] && typeof f[arr][0] === 'object' ? f[arr][0] : null;
+      const keys = seed ? Object.keys(seed) : Object.keys(row);
+      patch[arr] = [Object.fromEntries(keys.map((k) => [k, k in row ? row[k] : seed[k]]))];
+      for (const k of keys) if (k in row) paths.push(`${arr}.0.${k}`);
+    }
+    t.patchFiling(patch);
+    const did = [];
+    const errors = [];
+    const step = (label, fn) => { try { fn(); did.push(label); } catch (e) { errors.push(`${label}: ${e.message}`); } };
+    const id = f.wardId;
+    if (wardParties[ward]) step('attach the ward record', () => t.patchFiling({ wardPartyId: wardParties[ward] }));
+    else step('the ward record', () => { const p = t.updateSharedRecords.ensureWardPartyForFiling(id); if (p && p.id) wardParties[ward] = p.id; });
+    step('the case record', () => t.updateSharedRecords.getOrCreateCaseForWard(id));
+    if (!guardianPartyId) {
+      step('new guardian record', () => { const p = t.updateSharedRecords.createParty('guardian', { name: 'Corpus Guardian' }); guardianPartyId = p.id; t.patchFiling({ guardianPartyIds: [p.id] }); });
+    } else {
+      step('attach the guardian record', () => t.patchFiling({ guardianPartyIds: [guardianPartyId] }));
+    }
+    await t.save.flush();
+    const now = t.snapshot().filing;
+    filings.push({ inventoryType: type, wardName: ward, stored: Object.fromEntries(paths.map((p) => [p, get(now, p)])), sharedRecordSteps: did, sharedRecordErrors: errors });
+  }
+  const finish = { dismissed: null, audited: false, errors: [] };
+  if (dismiss) {
+    try {
+      const cf = t.snapshot().caseFile;
+      const ids = dismiss.map((name) => t.sharedRecords.wardPartyForFiling(cf.wards.find((x) => x.wardName === name).wardId)?.id);
+      if (ids.every(Boolean)) { t.updateSharedRecords.dismissPartyPair(ids[0], ids[1]); finish.dismissed = dismiss; }
+    } catch (e) { finish.errors.push(`dismiss: ${e.message}`); }
+  }
+  try { await t.recordActivity('ms70-corpus', 'Milestone 70 synthetic corpus fixture', true, null); finish.audited = true; } catch (e) { finish.errors.push(`audit: ${e.message}`); }
+  await t.save.flush();
+  const blob = await t.exportArchive.caseFile();
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const archived = JSON.parse(await (await window.JSZip.loadAsync(blob)).file('manifest.json').async('string'));
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const cf = t.snapshot().caseFile;
+  return {
+    base64: btoa(bin),
+    wrote: {
+      securityMode: archived.securityMode ?? null,
+      formatVersion: archived.version ?? null,
+      kdfIterations: archived.kdfIterations ?? null,
+      filings: (cf.wards || []).map((x) => ({ wardName: x.wardName, inventoryType: x.inventoryType, keys: Object.keys(x).length })),
+      parties: (cf.parties || []).length,
+      cases: (cf.cases || []).length,
+      dismissedPartyPairs: (cf.dismissedPartyPairs || []).length,
+      auditEntries: (await t.persistenceState.auditEntries()).length,
+    },
+    filings,
+    finish,
+  };
+}
+
 async function writeCase(browser, url, caseName) {
   const spec = CASES[caseName];
   const context = await browser.newContext();
@@ -303,6 +390,8 @@ async function writeCase(browser, url, caseName) {
   const pageErrors = [];
   page.on('pageerror', (e) => pageErrors.push(e.message));
   await page.addInitScript(() => {
+    // A build after Milestone 70 offers GuardianForms.testing only in test mode.
+    window.__GUARDIAN_FORMS_TEST_MODE__ = true;
     delete window.showSaveFilePicker;
     delete window.showOpenFilePicker;
     localStorage.setItem('pg.termsAccepted', '2026-09-15');
@@ -310,6 +399,10 @@ async function writeCase(browser, url, caseName) {
   try {
     await page.goto(url, { waitUntil: 'networkidle' });
     await startCase(page, spec.password);
+    if (await page.evaluate(() => !!(window.GuardianForms && window.GuardianForms.testing))) {
+      const r = await page.evaluate(writeModernInPage, { spec, fill: FILL, dismiss: spec.dismiss });
+      return { ...r, pageErrors };
+    }
     const filings = [];
     const wardParties = {};
     let guardianPartyId = null;

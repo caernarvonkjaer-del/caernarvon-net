@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characterization.spec.ts. Regenerate only for a deliberate, recorded change. Regenerated 2026-10-20 for Milestone 76K item 6: every open now converts an older Plan's Yes/No answers, so the three plain fixtures holding Plans at schema version 1 (01, 02, 03) read with planTriStateSchemaVersion 2 -- only their digests changed (no true/false answer to convert); the password fixtures hold no Plans.",
+ "note": "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characterization.spec.ts. Regenerate only for a deliberate, recorded change. Regenerated 2026-10-20 for Milestone 76K item 6: every open now converts an older Plan's Yes/No answers, so the three plain fixtures holding Plans at schema version 1 (01, 02, 03) read with planTriStateSchemaVersion 2 -- only their digests changed (no true/false answer to convert); the password fixtures hold no Plans. Extended 2026-10-20 for Milestone 76K: the two 29-ms76k fixtures (written by c0dd1d88, the first build keying passwords at 600,000 rounds -- format 2) recorded; nothing else changed.",
  "fixtures": {
   "01-ms34-2-encrypted.sav": {
    "parties": 3,
@@ -756,6 +756,33 @@
     100
    ],
    "digest": "2b49232a37e19834c81ff8a8a0c452c621c11e68758a6401a873451e03ba2d67"
+  },
+  "29-ms76k-encrypted.sav": {
+   "parties": 2,
+   "cases": 2,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    68,
+    94
+   ],
+   "digest": "096dbf2220090aebf4a8825491daa31b4ca78dc2952e6fe36238fda6107d71a5"
+  },
+  "29-ms76k-plain.sav": {
+   "parties": 6,
+   "cases": 9,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    68,
+    94,
+    193,
+    167,
+    73,
+    76,
+    94,
+    94,
+    102
+   ],
+   "digest": "5869e78994b190d928929961bc9aeeb362acb6cb69aa55f504853358af232623"
   }
  },
  "wrongPassword": {
