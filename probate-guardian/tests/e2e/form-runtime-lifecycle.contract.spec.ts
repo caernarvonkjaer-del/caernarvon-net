@@ -7,8 +7,8 @@ import { freshStartNoPassword, createWard, createSimplifiedWard } from './suppor
 // once and cannot write its data into the newly active filing."
 //
 // Observed from outside the app by an init script in the page's own world:
-// every save writes the recovery snapshot while the case has changes since its
-// last export, so its writes are counted and read back; event listeners on the
+// every save is written to a case file the page holds in memory
+// (armSaveFile()), so its writes are counted and read back; event listeners on the
 // window, the document and connected elements, and the observers and intervals
 // still live, are counted as the page adds and removes them. (The test
 // runner's own listeners live in its isolated world and are not seen.) The app
@@ -16,13 +16,8 @@ import { freshStartNoPassword, createWard, createSimplifiedWard } from './suppor
 
 async function instrument(page: Page) {
   await page.addInitScript(() => {
-    const probe: any = { writes: [] as string[], listeners: [] as any[], observers: new Set(), intervals: new Set() };
+    const probe: any = { files: [] as Blob[], listeners: [] as any[], observers: new Set(), intervals: new Set() };
     (globalThis as any).__formRuntimeProbe = probe;
-    const put = IDBObjectStore.prototype.put;
-    IDBObjectStore.prototype.put = function (value: any, key?: any) {
-      if (this.name === 'snapshot' && key === 'current') probe.writes.push(JSON.stringify(value));
-      return put.apply(this, arguments as any);
-    };
     const add = EventTarget.prototype.addEventListener;
     const remove = EventTarget.prototype.removeEventListener;
     const capture = (o: any) => (typeof o === 'boolean' ? o : !!(o && o.capture));
@@ -55,11 +50,42 @@ async function instrument(page: Page) {
   });
 }
 
-/** Every save since the page loaded: each filing's data by id. */
-const saves = (page: Page) => page.evaluate(() => ((globalThis as any).__formRuntimeProbe.writes as string[]).map((s) => {
-  const v = JSON.parse(s);
-  return Object.fromEntries(v.wards.map((w: any) => [w.wardId, JSON.parse(String(w.enc).slice('PLAIN:'.length))]));
-}));
+/**
+ * The case file saves land in, held in memory, every completed write kept.
+ * (Until Milestone 76K item 4 a save also copied the case into browser
+ * storage, and that copy was what these tests counted; with no file, a save
+ * now writes nothing at all.) Armed after a test's filings exist.
+ */
+async function armSaveFile(page: Page) {
+  await page.evaluate(async () => {
+    const probe = (globalThis as any).__formRuntimeProbe;
+    await (window as any).GuardianForms.testing.launchState.rememberHandle({
+      name: 'form-runtime.sav',
+      queryPermission: async () => 'granted',
+      requestPermission: async () => 'granted',
+      getFile: async () => new File([probe.files.length ? probe.files[probe.files.length - 1] : new Blob()], 'form-runtime.sav'),
+      createWritable: async () => {
+        const parts: any[] = [];
+        return { write: async (b: any) => { parts.push(b); }, close: async () => { probe.files.push(new Blob(parts)); } };
+      },
+    });
+  });
+}
+
+/** Every save to the file: each filing's data by id. */
+const saves = (page: Page) => page.evaluate(async () => {
+  const out: any[] = [];
+  for (const file of (globalThis as any).__formRuntimeProbe.files as Blob[]) {
+    const zip = await (window as any).JSZip.loadAsync(file);
+    const filings: any = {};
+    for (const part of zip.file(/^wards\/[^/]+\.enc$/)) {
+      const v = JSON.parse(String(await part.async('string')).slice('PLAIN:'.length));
+      filings[v.wardId] = v;
+    }
+    out.push(filings);
+  }
+  return out;
+});
 /** What is live on the page: listeners on the window, the document and connected elements, observers, intervals. */
 const live = (page: Page) => page.evaluate(() => {
   const p = (globalThis as any).__formRuntimeProbe;
@@ -111,6 +137,7 @@ test.describe('the shared form runtime across mounts, navigation and filing swit
       const baseline = await cycle();
       for (let i = 0; i < 3; i++) expect(await cycle(), `${type}, cycle ${i + 2} against cycle 1`).toEqual(baseline);
 
+      await armSaveFile(page);
       await settle(page);
       const before = (await saves(page)).length;
       const field = page.locator(FIELD).first();
@@ -124,16 +151,18 @@ test.describe('the shared form runtime across mounts, navigation and filing swit
   }
 
   for (const type of ['planAnnual', 'annual', 'simplified']) {
-    test(`${type}: an edit, then switching filings at once, saves the old filing with the edit, adds no save of its own, and never writes into the new one`, async ({ page }) => {
+    test(`${type}: an edit, then switching filings at once, saves the old filing with the edit, adds only the save that writes it, and never writes into the new one`, async ({ page }) => {
       await instrument(page);
       await freshStartNoPassword(page);
       const a = await create(page, 'Filing A', type);
       const b = await create(page, 'Filing B', type);
+      await armSaveFile(page);
       await openFiling(page, a);
       await settle(page);
 
-      // What a switch saves on its own: the flush, and the recent-filings
-      // list the opened filing joins (it is saved with the case).
+      // What a switch saves on its own: the recent-filings list the opened
+      // filing joins (it is saved with the case). Its flush writes nothing:
+      // the file already holds the case.
       let n = (await saves(page)).length;
       await openFiling(page, b);
       await settle(page);
@@ -156,7 +185,11 @@ test.describe('the shared form runtime across mounts, navigation and filing swit
       expect(String(aAfter)).toMatch(/Edited$/);
       expect((await filingById(page, b))[path!], 'the new filing keeps its own value').toBe(bBefore);
       const written = (await saves(page)).slice(n);
-      expect(written.length, 'the edit adds no save to the switch').toBe(plainSwitch);
+      // The edit adds one save, the flush that writes it before the switch.
+      // (Counted on browser storage until Milestone 76K, where a case never
+      // saved to a file stayed unsaved and every flush wrote, the edit added
+      // none.)
+      expect(written.length, 'the edit adds only its own save to the switch').toBe(plainSwitch + 1);
       for (const save of written) {
         expect(save[a][path!], 'every save carries the edit in the old filing').toBe(aAfter);
         expect(save[b][path!], 'and the new filing as it was').toBe(bBefore);
@@ -184,6 +217,7 @@ test.describe('the shared form runtime across mounts, navigation and filing swit
     await instrument(page);
     await freshStartNoPassword(page);
     const a = await create(page, 'Filing A', 'planAnnual');
+    await armSaveFile(page);
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await settle(page);
     const field = page.locator(FIELD).first();
