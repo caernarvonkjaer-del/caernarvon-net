@@ -1,6 +1,8 @@
-// Milestone 73A: when a year's data moves to signature policy 2 (guardians
-// sign by hand or with a stamp; src/core/validation/signature-state.js), and
-// what New Year clears.
+// Milestone 73A: when a year's data moves to signature policy 2 (a
+// guardian's choice is read only as stored; src/core/validation/
+// signature-state.js), and what New Year clears. 73A also withheld "/s/" from
+// guardians under policy 2; Milestone 77E (2026-10-20) restored it, so the
+// upgrade below no longer changes how anything prints.
 //
 //   - New filings and New Year write 2 (filing-registry.js's
 //     initializeEmptyData(); filing-years.js's startNewWardYear()).
@@ -9,12 +11,13 @@
 //     policy: an archived year switched back in is marked 1 instead
 //     (keepYearSignaturePolicy()), so a reprint of a filed year matches the
 //     filed copy.
-//   - A closed filing keeps its policy; Mark Open upgrades it (asked again).
+//   - A closed filing keeps its policy; Mark Open upgrades it.
 //   - An Excel import never touches the policy.
 //
 // Upgrading makes a legacy guardian block's implied "/s/" explicit -- a blank
-// choice with a date printed "/s/ Name" under the old rule -- so exactly the
-// blocks that signed with "/s/" are asked again; nothing typed is deleted.
+// choice with a date printed "/s/ Name" under the old rule -- so it stays
+// "/s/" under policy 2 (73A asked it again; since 77E it is simply kept, as
+// decision 77E-2 chose); nothing typed is deleted.
 import { SIGNATURE_POLICIES, SIGNATURE_STATES } from '../validation/signature-state.js';
 import { resolveCertSigner, planCertAttorneyName } from '../filing/plan-certificate-of-service.js';
 

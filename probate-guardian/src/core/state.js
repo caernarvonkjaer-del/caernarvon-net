@@ -98,8 +98,8 @@ export function setActiveFiling(ward) {
   if (ward) {
     normalizeWardData(ward);
     // Milestone 73A: a filing being prepared moves to signature policy 2
-    // when opened (guardians sign by hand or stamp; a saved guardian "/s/"
-    // is asked again); a closed filing keeps what it was filed with.
+    // when opened (a guardian's implied "/s/" is made explicit, and kept --
+    // 77E); a closed filing keeps what it was filed with.
     applySignaturePolicyOnOpen(ward);
   }
   caseFile.activeWardId = ward ? ward.wardId : null;

@@ -10,6 +10,15 @@
 // data carries a signature policy: 2 for new filings, New Year and filings
 // being prepared; a closed filing and an archived year keep what they were
 // filed with (1, a guardian's "/s/" honoured).
+//
+// Milestone 77E (the requester, 2026-10-20): "/s/ Name" is allowed for every
+// filer again -- 73A rested on an impression that the local judge didn't want
+// it from non-attorneys. A guardian is offered all three choices on every
+// filing, whatever its policy, and a "/s/" 73A asked again is her choice
+// again (77E-1 option 2, 77E-2 option 1). What stays from 73A: under policy 2
+// a guardian's blank choice is Unsigned, date or no date. A guardian's "/s/"
+// prints "Electronic signature (/s/)" under it, with no rule citation
+// (77E-3 option 2).
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/core/navigation/router.js', () => ({ navigate: () => {}, renderPage: () => {} }));
@@ -31,12 +40,13 @@ const json = (x) => JSON.parse(JSON.stringify(x));
 
 describe('73A: how a block prints, and whether it is complete, by role, choice and policy', () => {
   // [choice, date, image] -> [guardian policy 1, guardian policy 2, attorney/preparer (either policy)]
+  // Milestone 77E: a guardian's "/s/" prints and passes as anyone's.
   const CASES = [
     ['blank, no date', '', '', '', ['blank', 'blank', 'blank'], [true, true, true]],
     ['blank with a date', '', '2026-01-05', '', ['typed', 'blank', 'typed'], [true, true, true]],
     ['Unsigned', 'none', '2026-01-05', '', ['blank', 'blank', 'blank'], [true, true, true]],
-    ['"/s/" with a date', 'typed', '2026-01-05', '', ['typed', 'blank', 'typed'], [true, false, true]],
-    ['"/s/" without a date', 'typed', '', '', ['typed', 'blank', 'typed'], [false, false, false]],
+    ['"/s/" with a date', 'typed', '2026-01-05', '', ['typed', 'typed', 'typed'], [true, true, true]],
+    ['"/s/" without a date', 'typed', '', '', ['typed', 'typed', 'typed'], [false, false, false]],
     ['a stamp applied', 'stamp', '', STAMP, ['stamp', 'stamp', 'stamp'], [true, true, true]],
     ['a stamp never applied', 'stamp', '', '', ['blank', 'blank', 'blank'], [false, false, false]],
   ];
@@ -54,10 +64,12 @@ describe('73A: how a block prints, and whether it is complete, by role, choice a
     expect(sig.signaturePrintMode({ state: 'stamp', image: STAMP, name: '  ', role: 'guardian', policy: 2 })).toBe('blank');
   });
 
-  it("a guardian's \"/s/\" under policy 2 is listed as missing, naming the two choices", () => {
-    const errs = sig.checkSignatureState({ state: 'typed', date: '2026-01-05', sectionLabel: 'Part III', roleLabel: 'Guardian #1', filingType: 'annual', statePath: 'guardians.0.signatureState', role: 'guardian', policy: 2 });
-    expect(errs.map((e) => e.message)).toEqual(['Part III — Guardian #1 signature: choose Unsigned (to sign by hand) or Signature Stamp; a guardian no longer signs with "/s/"']);
-    expect(errs[0].path).toBe('guardians.0.signatureState');
+  it("77E: a guardian's \"/s/\" under policy 2 passes with a date, and asks for the date without one", () => {
+    const at = (date) => sig.checkSignatureState({ state: 'typed', date, sectionLabel: 'Part III', roleLabel: 'Guardian #1', filingType: 'annual', statePath: 'guardians.0.signatureState', datePath: 'guardians.0.signatureDate', role: 'guardian', policy: 2 });
+    expect(at('2026-01-05')).toEqual([]);
+    const errs = at('');
+    expect(errs.map((e) => e.message)).toEqual(['Part III — Guardian #1 date signed is required to apply "/s/" Signed']);
+    expect(errs[0].path).toBe('guardians.0.signatureDate');
   });
 });
 
@@ -130,23 +142,24 @@ describe('73A: the signature policy', () => {
 describe('73A: the signature control', () => {
   const radios = (html) => [...html.matchAll(/value="(\w+)"( checked)?/g)].map((m) => `${m[1]}${m[2] ? '*' : ''}`);
 
-  it('a guardian under policy 2 chooses Unsigned or Signature Stamp; a blank choice with a date is Unsigned', () => {
+  it('77E: a guardian under policy 2 is offered all three; a blank choice with a date is still Unsigned', () => {
     const html = renderSignatureStateControl({ path: 'guardians.0', state: '', date: '2026-01-05', route: '/p3', policy: 2 });
-    expect(radios(html)).toEqual(['none*', 'stamp']);
+    expect(radios(html)).toEqual(['none*', 'typed', 'stamp']);
   });
 
-  it('a saved guardian "/s/" under policy 2 is asked again: nothing chosen, and why', () => {
+  it('77E: a saved guardian "/s/" under policy 2 -- one 73A asked again -- shows as chosen, with no note', () => {
     const html = renderSignatureStateControl({ path: 'planGuardians.1', state: 'typed', date: '2026-01-05', route: '/p11', policy: 2 });
-    expect(radios(html)).toEqual(['none', 'stamp']);
-    expect(html).toContain('A guardian no longer signs with "/s/"');
+    expect(radios(html)).toEqual(['none', 'typed*', 'stamp']);
+    expect(html).not.toContain('no longer signs');
+    expect(html).not.toContain('signature-ask-again');
   });
 
-  it('under policy 1 a guardian\'s saved "/s/" shows as chosen but is never offered anew; attorneys and preparers keep all three', () => {
+  it('77E: every signer, under either policy, is offered all three', () => {
     expect(radios(renderSignatureStateControl({ path: 'certGuardian', state: 'typed', date: '2026-01-05', route: '/p10', policy: 1 }))).toEqual(['none', 'typed*', 'stamp']);
-    expect(radios(renderSignatureStateControl({ path: 'serviceGuardian', state: 'none', route: '/d5', policy: 1 }))).toEqual(['none*', 'stamp']);
+    expect(radios(renderSignatureStateControl({ path: 'serviceGuardian', state: 'none', route: '/d5', policy: 1 }))).toEqual(['none*', 'typed', 'stamp']);
     expect(radios(renderSignatureStateControl({ path: 'attorney', state: '', date: '2026-01-05', route: '/p5', policy: 2 }))).toEqual(['none', 'typed*', 'stamp']);
     expect(radios(renderSignatureStateControl({ path: 'preparer', state: '', route: '/p4', policy: 2 }))).toEqual(['none*', 'typed', 'stamp']);
-    expect(radios(renderSignatureStateControl({ path: 'cert', role: 'guardian', state: '', route: '/p12', policy: 2 }))).toEqual(['none*', 'stamp']);
+    expect(radios(renderSignatureStateControl({ path: 'cert', role: 'guardian', state: '', route: '/p12', policy: 2 }))).toEqual(['none*', 'typed', 'stamp']);
   });
 
   it('every card path in use names its signer; an unknown one fails loudly', () => {
@@ -173,7 +186,7 @@ describe('73A: every form\'s PDF prints each signer by the rule', () => {
   const GUARDIAN_LIST = { guardian: 'guardians', annual: 'guardians', simplified: 'guardians', planInitial: 'planGuardians', planAnnual: 'planGuardians', planMinor: 'planGuardians', planSimplified: 'planGuardians' };
 
   for (const type of ['guardian', 'annual', 'simplified', 'planInitial', 'planAnnual', 'planMinor', 'planSimplified']) {
-    it(`${type}: a guardian's "/s/" prints "/s/" only under policy 1; an Unsigned guardian prints the blank line`, () => {
+    it(`${type}: a guardian's "/s/" prints "/s/" under either policy (77E); an Unsigned guardian prints the blank line`, () => {
       const make = (p, state) => {
         const d = { ...json(initializeEmptyData(type)), inventoryType: type, wardName: 'Ward', signaturePolicy: p };
         const list = GUARDIAN_LIST[type];
@@ -184,7 +197,7 @@ describe('73A: every form\'s PDF prints each signer by the rule', () => {
         return all.find((b) => b.signerRole === 'guardian' && b.signerName === 'Ann Guardian');
       };
       expect(make(1, 'typed').signatureMode).toBe('typed');
-      expect(make(2, 'typed').signatureMode).toBe('blank');
+      expect(make(2, 'typed').signatureMode).toBe('typed');
       expect(make(2, 'none').signatureMode).toBe('blank');
       expect(make(1, 'none').signatureMode).toBe('blank');
     });
@@ -195,8 +208,11 @@ describe('73A: every form\'s PDF prints each signer by the rule', () => {
   });
 });
 
-describe('73A: every form\'s checks list a guardian\'s "/s/" under policy 2, and only then', () => {
-  const MESSAGE = /signature: choose Unsigned \(to sign by hand\) or Signature Stamp/;
+describe('77E: no form\'s checks list a guardian\'s dated "/s/", under either policy', () => {
+  // Anything about a signature choice, its date or its stamp (73A listed a
+  // dated guardian "/s/" under policy 2 as missing, by its choice) -- not the
+  // Plans' "Signatures" section's other fields.
+  const MESSAGE = /signature: |signature selection|date signed|stamp image/i;
   const SETUPS = {
     // The certificate a guardian signs, too, where the form has one.
     guardian: (d) => { d.guardians[0] = { ...d.guardians[0], name: 'Ann', signatureState: 'typed', signatureDate: '2026-01-05' }; d.serviceGuardian = { ...d.serviceGuardian, signatureState: 'typed', signatureDate: '2026-01-05' }; },
@@ -215,20 +231,17 @@ describe('73A: every form\'s checks list a guardian\'s "/s/" under policy 2, and
         setup(d);
         return withFilingInView(d, () => engineChecks(ENGINE[type])(d)).filter((e) => MESSAGE.test(e.message));
       };
-      const asked = run(2);
-      expect(asked.length, `${type}: policy 2`).toBeGreaterThan(0);
-      // Its jump link lands on the guardian's signature choice, not the date.
-      expect(asked.map((e) => e.path), `${type}: each asked block names its choice`).toContain(type.startsWith('plan') ? 'planGuardians.0.signatureState' : 'guardians.0.signatureState');
-      for (const e of asked) expect(e.path, e.message).toMatch(/[sS]ignatureState$/);
+      expect(run(2), `${type}: policy 2`).toEqual([]);
       expect(run(1), `${type}: policy 1`).toEqual([]);
     });
   }
 
-  it("a Plan's started co-guardian is checked too (no Plan checked a co-guardian before)", () => {
+  it("a Plan's started co-guardian is checked too (no Plan checked a co-guardian before): an undated \"/s/\" asks for the date", () => {
     const d = { ...json(initializeEmptyData('planAnnual')), inventoryType: 'planAnnual', signaturePolicy: 2 };
-    d.planGuardians = [{ ...d.planGuardians[0], name: 'Ann', signatureState: 'none' }, { name: 'Bo', signatureState: 'typed', signatureDate: '2026-01-05' }];
+    d.planGuardians = [{ ...d.planGuardians[0], name: 'Ann', signatureState: 'none' }, { name: 'Bo', signatureState: 'typed', signatureDate: '' }];
     const messages = engineChecks('planAnnual')(d).map((e) => e.message);
-    expect(messages).toContain('Signatures — Co-Guardian 2 signature: choose Unsigned (to sign by hand) or Signature Stamp; a guardian no longer signs with "/s/"');
+    expect(messages).toContain('Signatures — Co-Guardian 2 date signed is required to apply "/s/" Signed');
+    expect(messages.join('\n')).not.toContain('no longer signs');
   });
 
   it('the sidebar: a guardian who signs by hand, undated, reaches the mark (it needed a date)', () => {

@@ -381,22 +381,22 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await page.evaluate(() => {
       const w = window as any;
       w.GuardianForms.testing.patchFiling({ 'guardians.0': { name: 'Guardian One', signatureDate: '01/01/2024', ssnEin: '123-45-6789', phone: '555-111-2222', streetAddress: '1 Main St', cityStateZip: 'Tampa, FL 33601' } });
-      // Milestone 73A: a guardian's saved "/s/" is asked again (a guardian
-      // signs by hand or by stamp), which gives Guardian #2 a real, findable
-      // signature issue for this test to target.
+      // Guardian #2's "/s/" with no date gives it a real, findable signature
+      // issue for this test to target (Milestone 77E: the date, as for any
+      // signer; 73A had asked the choice again).
       w.GuardianForms.testing.patchFiling({ guardians: [...w.GuardianForms.testing.field('guardians'), { name: 'Guardian Two', signatureDate: '', signatureState: 'typed', ssnEin: '987-65-4321', phone: '555-333-4444', streetAddress: '2 Oak St', cityStateZip: 'Tampa, FL 33602' }] });
     });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
 
     const targetPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();
-      return structured.find((e: any) => e.section === 'D-1 Guardian #2' && e.label.includes('choose Unsigned'))?.path;
+      return structured.find((e: any) => e.section === 'D-1 Guardian #2' && e.label.includes('date signed is required'))?.path;
     });
-    expect(targetPath).toBe('guardians.1.signatureState');
+    expect(targetPath).toBe('guardians.1.signatureDate');
 
     await followJumpLink(page, '/d1', targetPath);
-    // The first of Guardian #2's own choices (Unsigned), not Guardian #1's.
-    await expect(page.locator('#sigstate_guardians_1_none')).toBeFocused();
+    // Guardian #2's own Date Signed, not Guardian #1's.
+    await expect(page.locator('[data-form-path="guardians.1.signatureDate"], [data-annual-path="guardians.1.signatureDate"], [data-field-path="guardians.1.signatureDate"]').first()).toBeFocused();
   });
 
   test('D-2 Preparer and Attorney fields resolve to distinct targets despite sharing bare labels', async ({ page }) => {
@@ -545,9 +545,9 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
   test('Part III co-guardian #2 signature targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Co-Guardian Ward', 'annual');
-    // Milestone 73A: a guardian's saved "/s/" is asked again (a guardian
-    // signs by hand or by stamp), which gives Guardian #2 a real, findable
-    // signature issue for this test to target.
+    // Guardian #2's "/s/" with no date gives it a real, findable signature
+    // issue for this test to target (Milestone 77E: the date, as for any
+    // signer; 73A had asked the choice again).
     await page.evaluate(() => {
       const w = window as any;
       w.GuardianForms.testing.patchFiling({ 'guardians': [
@@ -559,13 +559,13 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
 
     const targetPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();
-      return structured.find((e: any) => e.section === 'Part III' && e.label.includes('Guardian #2') && e.label.includes('choose Unsigned'))?.path;
+      return structured.find((e: any) => e.section === 'Part III' && e.label.includes('Guardian #2') && e.label.includes('date signed is required'))?.path;
     });
-    expect(targetPath).toBe('guardians.1.signatureState');
+    expect(targetPath).toBe('guardians.1.signatureDate');
 
     await followJumpLink(page, '/p3', targetPath);
-    // The first of Guardian #2's own choices (Unsigned), not Guardian #1's.
-    await expect(page.locator('#sigstate_guardians_1_none')).toBeFocused();
+    // Guardian #2's own Signature Date, not Guardian #1's.
+    await expect(page.locator('[data-form-path="guardians.1.signatureDate"], [data-annual-path="guardians.1.signatureDate"], [data-field-path="guardians.1.signatureDate"]').first()).toBeFocused();
   });
 
   test('Schedule B-1 row resolves via the detail-side "Line N" ordinal, not the section', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'the focus race this test documents (4 of 10 WebKit runs before dismissScheduleDocPrompt)' } }, async ({ page }) => {

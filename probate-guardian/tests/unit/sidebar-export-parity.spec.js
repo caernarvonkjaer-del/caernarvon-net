@@ -115,15 +115,18 @@ describe('73F part 2: the sidebar reads the export checks', () => {
     expect(judged.pageIssues('/schb4').blockers.filter((issue) => excelOnly.includes(issue))).toEqual([]);
   });
 
-  test('a filing saved before the guardian signature rule is judged as opening it will leave it', () => {
+  test('a filing saved before the guardian signature rule: its implied "/s/" is signed, opened or closed (77E)', () => {
+    // 73A judged it as opening would leave it -- its implied "/s/" made
+    // explicit and asked again. Since 77E that "/s/" is the guardian's
+    // choice, signed with its date, so nothing is owed for it either way.
+    const SIGNATURE = /signature: |signature selection|date signed|stamp image/;
     const d = { ...json(m.registry.initializeEmptyData('annual')), inventoryType: 'annual' };
     delete d.signaturePolicy;
     d.guardians[0] = { ...d.guardians[0], name: 'Ann', signatureState: '', signatureDate: '2026-01-05' };
     const owed = m.marks.judgeFiling(d, 'annual').pageIssues('/p3').blockers.map((issue) => issue.message);
-    expect(owed.some((msg) => /choose Unsigned/.test(msg)), owed.join(' | ')).toBe(true);
+    expect(owed.filter((msg) => SIGNATURE.test(msg)), owed.join(' | ')).toEqual([]);
     expect(d.signaturePolicy, 'the filing itself is untouched').toBeUndefined();
-    // A closed filing keeps the rule it was filed under.
     const closed = { ...d, archived: true };
-    expect(m.marks.judgeFiling(closed, 'annual').pageIssues('/p3').blockers.some((issue) => /choose Unsigned/.test(issue.message))).toBe(false);
+    expect(m.marks.judgeFiling(closed, 'annual').pageIssues('/p3').blockers.filter((issue) => SIGNATURE.test(issue.message))).toEqual([]);
   });
 });

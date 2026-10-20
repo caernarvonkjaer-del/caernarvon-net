@@ -219,7 +219,8 @@ const CONFIGS: WcagConfig[] = [
         { name: 'Casey Nguyen', signatureDate: '2026-03-01', email: 'casey@example.com', phone: '727-555-0400', mailingAddress: '7 Bay Dr, Largo, FL 33770' },
       ],
     },
-    expectedText: ['Do Not Resuscitate', 'Signature (Electronic /s/', 'Casey Nguyen'],
+    // Milestone 77E: the guardian's "/s/" carries "Electronic signature (/s/)".
+    expectedText: ['Do Not Resuscitate', '/s/ Casey Nguyen', 'Electronic signature (/s/)'],
   },
 ];
 

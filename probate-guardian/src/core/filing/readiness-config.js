@@ -91,7 +91,7 @@ function planSimplifiedAutomatic(d) {
   return [
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.wardCaseCounty', label: 'Ward name, case number, and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && isFloridaCounty(d.county) },
-    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
@@ -150,7 +150,7 @@ function planAnnualAutomatic(d) {
     { id: 'cover.wardCaseGid', label: 'Ward name, case number and inception date are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.gid) },
     { id: 'cover.county', label: 'County is on the plan', ok: isFloridaCounty(d.county) },
     { id: 'cover.guardianName', label: 'Guardian Name(s) is on the plan', ok: has(d.guardian) },
-    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
@@ -214,7 +214,7 @@ function planInitialAutomatic(d) {
     // Milestone 68B: required now, as on the other Plans; there was no item.
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.guardianNames', label: "Guardian name(s) are on the plan", ok: has(d.guardianNames) },
-    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
@@ -279,7 +279,7 @@ function planMinorAutomatic(d) {
     { id: 'cover.caseNumber', label: 'Case # is on the plan', ok: has(d.ref) },
     { id: 'cover.guardianName', label: 'Guardian Name is on the plan', ok: has(d.guardianName) },
     { id: 'cover.residence', label: 'Current residence and address stated', ok: has(d.q1ResidenceName) && has(d.q1Street) },
-    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,

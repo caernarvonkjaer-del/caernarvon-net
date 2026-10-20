@@ -1962,7 +1962,12 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
-          doc.text('Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)', margin + 2, curY + 46);
+          // Milestone 77E-3 (the requester, 2026-10-20): a guardian's "/s/"
+          // carries no rule citation; an attorney's or preparer's keeps Rule
+          // 2.515's.
+          doc.text(block.signerRole === 'guardian'
+            ? 'Electronic signature (/s/)'
+            : 'Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)', margin + 2, curY + 46);
           writeMarkedContentEnd(doc);
         }
 

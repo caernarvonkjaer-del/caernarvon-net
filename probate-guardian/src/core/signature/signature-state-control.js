@@ -3,7 +3,7 @@
 // capture widget that only appears in the Stamp state. Written once here so
 // 39-C's rollout to every other role/filing type reuses this exact markup
 // and JS wiring instead of each card hand-rolling its own copy.
-import { SIGNATURE_STATES, SIGNATURE_POLICIES, SIGNER_ROLES, inferLegacySignatureState, signaturePolicyOf } from '../validation/signature-state.js';
+import { SIGNATURE_STATES, SIGNER_ROLES, inferLegacySignatureState, signaturePolicyOf } from '../validation/signature-state.js';
 import { mountSignaturePad } from './signature-pad.js';
 // Milestone 46B: reusable per-party stamps. See mountSavedStampAffordance()
 // below for why applying one copies bytes rather than storing a reference.
@@ -31,17 +31,13 @@ export function signerRoleForPath(path) {
 
 /**
  * Milestone 73F part 3: whether a signature block's date is required -- the
- * asterisk on its label. Only under "/s/" Signed (checkSignatureState()); a
- * guardian's "/s/" saved before the guardian rule is asked again, and what it
- * asks for is the choice, not the date. Choosing redraws the page (the
+ * asterisk on its label. Only under "/s/" Signed (checkSignatureState()), for
+ * every signer (77E: a guardian's "/s/" too). Choosing redraws the page (the
  * control's `route`), so a label reading this follows the choice.
  * @param {{ path: string, state?: string, role?: string, policy?: number }} block
  */
-export function signatureDateRequired({ path, state, role: givenRole, policy: givenPolicy }) {
-  if (state !== SIGNATURE_STATES.TYPED) return false;
-  const role = givenRole || signerRoleForPath(path);
-  const policy = givenPolicy ?? signaturePolicyOf(getD());
-  return !(role === SIGNER_ROLES.GUARDIAN && policy === SIGNATURE_POLICIES.BY_HAND_OR_STAMP);
+export function signatureDateRequired({ state }) {
+  return state === SIGNATURE_STATES.TYPED;
 }
 
 function esc(s) {
@@ -72,35 +68,24 @@ export function renderSignatureStateControl({ path, state, date, route, signatur
   const resolvedStatePath = statePath || `${path}.signatureState`;
   const resolvedImagePath = imagePath || `${path}.signatureImage`;
   const groupName = `sigstate_${path.replace(/[^A-Za-z0-9]/g, '_')}`;
-  // Milestone 73A: who signs this block decides its choices -- a guardian
-  // signs by hand (Unsigned) or with a stamp, never "/s/", under the year's
-  // signature policy 2. `state` is the stored choice and `date` the stored
-  // date; the control reads them itself (a guardian's blank choice is
-  // Unsigned, date or no date). The role comes from the card's path, except
+  // Milestone 73A: `state` is the stored choice and `date` the stored date;
+  // the control reads them itself, by who signs (under policy 2 a guardian's
+  // blank choice is Unsigned, date or no date). Since 77E every signer is
+  // offered all three choices. The role comes from the card's path, except
   // where the signer varies (the Plans' certificate passes it).
   const role = givenRole || signerRoleForPath(path);
   if (!role) throw new Error(`No signer role for the signature control "${path}"`);
   const policy = givenPolicy ?? signaturePolicyOf(getD());
   const current = inferLegacySignatureState(state, date, { role, policy });
-  const guardian = role === SIGNER_ROLES.GUARDIAN;
-  // A guardian's "/s/" under policy 2 -- one saved before the guardian rule --
-  // is shown as not chosen and asked again; under policy 1 (a closed filing,
-  // a filed year) it still shows as chosen, but is never offered anew.
-  const askedAgain = guardian && policy === SIGNATURE_POLICIES.BY_HAND_OR_STAMP && current === SIGNATURE_STATES.TYPED;
-  const offerTyped = !guardian || (policy === SIGNATURE_POLICIES.LEGACY && current === SIGNATURE_STATES.TYPED);
   const options = [
     { value: SIGNATURE_STATES.NONE, label: 'Unsigned' },
-    ...(offerTyped ? [{ value: SIGNATURE_STATES.TYPED, label: '"/s/" Signed' }] : []),
+    { value: SIGNATURE_STATES.TYPED, label: '"/s/" Signed' },
     { value: SIGNATURE_STATES.STAMP, label: 'Signature Stamp' },
   ];
   const radios = options.map((opt) => `<div class="form-check form-check-inline">
-    <input class="form-check-input" type="radio" name="${groupName}" id="${groupName}_${opt.value}" value="${opt.value}" ${!askedAgain && current === opt.value ? 'checked' : ''} data-form-path="${esc(resolvedStatePath)}" data-field-path="${esc(resolvedStatePath)}" data-form-route="${esc(route)}">
+    <input class="form-check-input" type="radio" name="${groupName}" id="${groupName}_${opt.value}" value="${opt.value}" ${current === opt.value ? 'checked' : ''} data-form-path="${esc(resolvedStatePath)}" data-field-path="${esc(resolvedStatePath)}" data-form-route="${esc(route)}">
     <label class="form-check-label" for="${groupName}_${opt.value}">${opt.label}</label>
   </div>`).join('');
-  const askNote = askedAgain
-    ? `<div class="form-text signature-ask-again" role="note">Choose how this guardian signs: Unsigned (signed by hand) or Signature Stamp. A guardian no longer signs with "/s/".</div>`
-    : '';
-
   const preview = current === SIGNATURE_STATES.STAMP && signatureImage
     ? `<div class="signature-stamp-preview"><img src="${esc(signatureImage)}" alt="Applied signature stamp" style="max-width:248pt;max-height:80px;"></div>`
     : '';
@@ -112,7 +97,6 @@ export function renderSignatureStateControl({ path, state, date, route, signatur
   return `<fieldset class="signature-state-control mb-2" data-signature-state-group="${esc(path)}">
     <legend class="form-label mb-1">Signature</legend>
     <div class="plan-radio-row">${radios}</div>
-    ${askNote}
     ${preview}
     <div data-signature-pad-mount="${esc(path)}" data-signature-image-path="${esc(resolvedImagePath)}"></div>
   </fieldset>`;

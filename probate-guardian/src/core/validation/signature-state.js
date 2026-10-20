@@ -12,22 +12,25 @@ export const SIGNATURE_STATES = Object.freeze({ NONE: 'none', TYPED: 'typed', ST
 const has = (v) => v !== '' && v !== null && v !== undefined;
 
 // Milestone 73A: who signs a block, and the signature policy of the year's
-// data it sits in. Guardians no longer sign with "/s/" (the requester,
-// 2026-10-04, as Pinellas Clerk practice resting on the court workbook's "Only
-// the guardian's signature must be original" -- flagged for a qualified
-// person): they sign by hand (Unsigned prints a blank line) or with a stamp.
-// Attorneys and outside preparers keep all three choices.
+// data it sits in. 73A stopped guardians signing with "/s/" (the requester,
+// 2026-10-04); Milestone 77E restored it (the requester, 2026-10-20: "/s/
+// Name" is allowed for every filer -- 73A rested on an impression that the
+// local judge didn't want it from non-attorneys). Every signer has all three
+// choices on every filing, whatever its policy; a guardian's "/s/" prints its
+// own caption (signaturePrintMode() below, pdf-engine.js).
 export const SIGNER_ROLES = Object.freeze({ GUARDIAN: 'guardian', ATTORNEY: 'attorney', PREPARER: 'preparer' });
 // Each year's data carries `signaturePolicy`: absent or 1 is the legacy rule
-// (a guardian's "/s/" honoured, as filed); 2 means guardians sign by hand or
-// stamp. New filings and New Year write 2; an open filing prepared before is
-// upgraded when opened (src/core/signature/signature-policy.js).
+// (a guardian's blank choice with a date reads as "/s/", as filed); 2 means a
+// guardian's choice is read only as stored -- a blank choice is Unsigned, date
+// or no date. New filings and New Year write 2; an open filing prepared before
+// is upgraded when opened (src/core/signature/signature-policy.js). The name
+// BY_HAND_OR_STAMP is 73A's; since 77E policy 2 no longer withholds "/s/".
 export const SIGNATURE_POLICIES = Object.freeze({ LEGACY: 1, BY_HAND_OR_STAMP: 2 });
 /** @param {Record<string, any>|null|undefined} data */
 export const signaturePolicyOf = (data) => (data && data.signaturePolicy === SIGNATURE_POLICIES.BY_HAND_OR_STAMP
   ? SIGNATURE_POLICIES.BY_HAND_OR_STAMP : SIGNATURE_POLICIES.LEGACY);
-/** A guardian's block under policy 2: "/s/" is not a choice it has. */
-const byHandOrStamp = (ctx) => !!ctx && ctx.role === SIGNER_ROLES.GUARDIAN && ctx.policy === SIGNATURE_POLICIES.BY_HAND_OR_STAMP;
+/** A guardian's block under policy 2: its blank choice is Unsigned, date or no date. */
+const blankChoiceIsUnsigned = (ctx) => !!ctx && ctx.role === SIGNER_ROLES.GUARDIAN && ctx.policy === SIGNATURE_POLICIES.BY_HAND_OR_STAMP;
 
 /**
  * Milestone 39-B's validation decision: all three states pass, for every
@@ -62,16 +65,12 @@ export function checkSignatureState({ state, name, date, image, sectionLabel, ro
   // stray double space in the message.
   const rolePrefix = roleLabel ? `${roleLabel} ` : '';
   // Milestone 73A: a guardian's block (role 'guardian') under policy 2 reads
-  // its stored choice itself -- a blank choice is Unsigned whatever the date,
-  // and a "/s/" (one saved before the guardian rule, asked again) is not a
-  // choice it has. Every other block keeps the caller's reading.
+  // its stored choice itself -- a blank choice is Unsigned whatever the date.
+  // (Its "/s/" is checked as anyone's since 77E.) Every other block keeps the
+  // caller's reading.
   const ctx = { role, policy };
   const normalized = role ? inferLegacySignatureState(state, date, ctx) : (has(state) ? state : SIGNATURE_STATES.NONE);
   if (normalized === SIGNATURE_STATES.NONE) return errs;
-  if (byHandOrStamp(ctx) && normalized === SIGNATURE_STATES.TYPED) {
-    errs.push(issue(`${sectionLabel} — ${rolePrefix}signature: choose Unsigned (to sign by hand) or Signature Stamp; a guardian no longer signs with "/s/"`, statePath || datePath));
-    return errs;
-  }
   if (normalized === SIGNATURE_STATES.TYPED) {
     if (name !== undefined && !has(name)) errs.push(issue(`${sectionLabel} — ${rolePrefix}printed name is required to apply "/s/" Signed`, namePath));
     if (!has(date)) errs.push(issue(`${sectionLabel} — ${rolePrefix}date signed is required to apply "/s/" Signed`, datePath));
@@ -100,9 +99,9 @@ export function inferLegacySignatureState(state, date, ctx) {
   // or no date -- typing the date no longer turns it into "/s/" (the QA
   // finding: it pre-selected "/s/" on screen). A legacy filing's blank choice
   // with a date, which meant "/s/", is made explicit when the filing is
-  // upgraded to policy 2, so that block is asked again
-  // (src/core/signature/signature-policy.js).
-  if (byHandOrStamp(ctx)) return SIGNATURE_STATES.NONE;
+  // upgraded to policy 2 (src/core/signature/signature-policy.js), so it
+  // stays "/s/".
+  if (blankChoiceIsUnsigned(ctx)) return SIGNATURE_STATES.NONE;
   return has(date) ? SIGNATURE_STATES.TYPED : SIGNATURE_STATES.NONE;
 }
 
@@ -159,9 +158,11 @@ export function isSignatureComplete({ state, name, date, image, role, policy } =
  * role and the year's policy -- the PDF engine draws exactly this and infers
  * nothing:
  *   'blank' -- a blank line with "Signature of <name>" beneath, for signing by
- *              hand (Unsigned; a Stamp chosen but never applied; a guardian's
- *              "/s/" under policy 2; any block with no name);
- *   'typed' -- "/s/ Name" with the Rule 2.515 electronic-signature caption;
+ *              hand (Unsigned; a Stamp chosen but never applied; any block
+ *              with no name);
+ *   'typed' -- "/s/ Name" with the electronic-signature caption (Rule 2.515's
+ *              for an attorney or preparer; "Electronic signature (/s/)" for a
+ *              guardian, 77E-3);
  *   'stamp' -- the applied stamp image.
  * Attorneys and preparers keep today's reading: a blank choice with a date is
  * "/s/".
@@ -173,6 +174,6 @@ export function signaturePrintMode({ state, date, image, name, role, policy } = 
   const ctx = { role, policy };
   const effective = inferLegacySignatureState(state, date, ctx);
   if (effective === SIGNATURE_STATES.STAMP) return has(image) ? 'stamp' : 'blank';
-  if (effective === SIGNATURE_STATES.TYPED) return byHandOrStamp(ctx) ? 'blank' : 'typed';
+  if (effective === SIGNATURE_STATES.TYPED) return 'typed';
   return 'blank';
 }

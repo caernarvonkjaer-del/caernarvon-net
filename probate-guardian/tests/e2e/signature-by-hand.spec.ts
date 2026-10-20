@@ -22,11 +22,20 @@ import path from 'node:path';
 // asked again; a closed filing and an archived year keep what they were filed
 // with; Mark Open asks again; New Year clears every choice and stamp; an Excel
 // import never changes the rule.
+//
+// Milestone 77E (the requester, 2026-10-20): "/s/ Name" is allowed for every
+// filer again (73A rested on an impression that the local judge didn't want
+// it from non-attorneys). Every signer is offered all three choices on every
+// filing; a guardian's "/s/" 73A asked again is kept as her choice; a
+// guardian's "/s/" prints "Electronic signature (/s/)" beneath it, an
+// attorney's Rule 2.515's caption. What stays from 73A: a guardian's blank
+// choice is Unsigned, date or no date, and New Year clears every choice.
 
 const t = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing);
 const patch = (page: Page, shape: Record<string, unknown>) => page.evaluate((s) => (window as any).GuardianForms.testing.patchFiling(s), shape);
 const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 const issues = (page: Page): Promise<string[]> => page.evaluate(async () => (await (window as any).GuardianForms.testing.validate.open()).map((m: any) => String(m.message)));
+/** 73A's ask-again issue, which no filing raises since 77E. */
 const ASKED = 'Part III — Guardian #1 signature: choose Unsigned (to sign by hand) or Signature Stamp; a guardian no longer signs with "/s/"';
 
 function watchErrors(page: Page) {
@@ -55,21 +64,25 @@ async function pdfText(page: Page, selector: string): Promise<string> {
 const choices = (page: Page, group: string) => page.locator(`#main-content [data-signature-state-group="${group}"] input[type="radio"]`)
   .evaluateAll((radios) => radios.map((r) => `${(r as HTMLInputElement).value}${(r as HTMLInputElement).checked ? '*' : ''}`));
 
-test('the Annual: an Unsigned guardian prints a blank line to sign by hand; the attorney\'s "/s/" still prints', async ({ page }) => {
+test('the Annual: a guardian\'s "/s/" prints with "Electronic signature (/s/)"; the attorney\'s keeps Rule 2.515\'s caption', async ({ page }) => {
   test.setTimeout(240_000);
   const errors = watchErrors(page);
   await freshStartNoPassword(page);
-  await createWard(page, 'By Hand Annual', 'annual');
+  await createWard(page, 'Typed Annual', 'annual');
   await fillMinimalValidAnnualWard(page);
   await patch(page, { 'attorney_signatureState': 'typed' });
   await go(page, '/p3');
-  expect(await choices(page, 'guardians.0'), 'a guardian: Unsigned or Signature Stamp, Unsigned chosen though a date is typed').toEqual(['none*', 'stamp']);
+  expect(await choices(page, 'guardians.0'), 'a guardian: all three, Unsigned chosen though a date is typed').toEqual(['none*', 'typed', 'stamp']);
+  // The guardian chooses "/s/" Signed, by a real click.
+  await page.locator('label[for="sigstate_guardians_0_typed"]').click();
+  await expect.poll(() => t(page).then((f) => f.guardians[0].signatureState)).toBe('typed');
   await go(page, '/p5');
   expect(await choices(page, 'attorney')).toEqual(['none', 'typed*', 'stamp']);
   const text = await pdfText(page, '[data-annual-action="save-pdf"]');
-  expect(text).toContain('Signature of Sample Guardian');
-  expect(text).not.toContain('/s/ Sample Guardian');
+  expect(text).toContain('/s/ Sample Guardian');
+  expect(text).toContain('Electronic signature (/s/)');
   expect(text).toContain('/s/ Sample Attorney');
+  expect(text).toContain('Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)');
   expect(errors).toEqual([]);
 });
 
@@ -78,7 +91,7 @@ test('the Annual: an Unsigned guardian prints a blank line to sign by hand; the 
 // tests/unit/signature-by-hand.spec.js pins the Plans' pdf-model line, and
 // the Annual's case above proves the shared print path on a real download.
 
-test('every form: a guardian\'s signature offers Unsigned and Signature Stamp, never "/s/"', async ({ page }) => {
+test('every form: a guardian\'s signature offers Unsigned, "/s/" Signed and Signature Stamp', async ({ page }) => {
   test.setTimeout(300_000);
   const errors = watchErrors(page);
   await freshStartNoPassword(page);
@@ -91,33 +104,32 @@ test('every form: a guardian\'s signature offers Unsigned and Signature Stamp, n
     if (type === 'simplified') await createSimplifiedWard(page, `Choices ${type}`);
     else await createWard(page, `Choices ${type}`, type);
     await go(page, route);
-    expect(await choices(page, group), type).toEqual(['none*', 'stamp']);
+    expect(await choices(page, group), type).toEqual(['none*', 'typed', 'stamp']);
   }
   expect(errors).toEqual([]);
 });
 
-test('a filing being prepared, opened, asks again for a guardian\'s saved "/s/"', async ({ page }) => {
+test('a filing being prepared, opened, keeps a guardian\'s saved "/s/" (73A asked it again)', async ({ page }) => {
   test.setTimeout(240_000);
   const errors = watchErrors(page);
   await freshStartNoPassword(page);
-  await createWard(page, 'Asked Again', 'annual');
+  await createWard(page, 'Kept Typed', 'annual');
   await fillMinimalValidAnnualWard(page);
   // As a filing saved before the guardian rule: no policy, the guardian's
   // blank choice with a date (which printed "/s/").
   const reopened = await reopenFilingWithStoredShape(page, { signaturePolicy: null, 'guardians.0.signatureState': '' });
   expect(reopened.signaturePolicy).toBe(2);
   expect(reopened.guardians[0].signatureState, 'the implied "/s/" made explicit').toBe('typed');
-  expect(await issues(page)).toContain(ASKED);
+  expect(await issues(page)).not.toContain(ASKED);
   await go(page, '/p3');
-  expect(await choices(page, 'guardians.0'), 'nothing chosen').toEqual(['none', 'stamp']);
-  await expect(page.locator('#main-content .signature-ask-again')).toContainText('A guardian no longer signs with "/s/"');
-  // Choosing Unsigned answers it.
-  await page.locator('label[for="sigstate_guardians_0_none"]').click();
-  await expect.poll(() => issues(page)).not.toContain(ASKED);
+  expect(await choices(page, 'guardians.0'), 'her "/s/", chosen').toEqual(['none', 'typed*', 'stamp']);
+  await expect(page.locator('#main-content .signature-ask-again')).toHaveCount(0);
+  const text = await pdfText(page, '[data-annual-action="save-pdf"]');
+  expect(text).toContain('/s/ Sample Guardian');
   expect(errors).toEqual([]);
 });
 
-test('a closed filing keeps and reprints its "/s/"; Mark Open asks again', async ({ page }) => {
+test('a closed filing keeps and reprints its "/s/"; Mark Open keeps it too', async ({ page }) => {
   test.setTimeout(300_000);
   const errors = watchErrors(page);
   await freshStartNoPassword(page);
@@ -139,7 +151,8 @@ test('a closed filing keeps and reprints its "/s/"; Mark Open asks again', async
   const reopened = await t(page);
   expect(reopened.archived).toBeFalsy();
   expect(reopened.signaturePolicy).toBe(2);
-  expect(await issues(page)).toContain(ASKED);
+  expect(reopened.guardians[0].signatureState, 'its "/s/", made explicit and kept').toBe('typed');
+  expect(await issues(page)).not.toContain(ASKED);
   expect(errors).toEqual([]);
 });
 

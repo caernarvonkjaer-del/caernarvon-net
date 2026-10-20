@@ -2,9 +2,12 @@
 
 ## Status
 
-**Draft (2026-10-20). Authorizes no change.** Building any delivery, or any
+**Draft (2026-10-20).** 77E approved to build (the requester, 2026-10-20:
+"Yes, the /s/ Name is supposed to be allowed for all filers … Let's just put
+it back in. If someone doesn't like it they can let us know.") -- built
+2026-10-20, its three decisions settled. Building any other delivery, or any
 part of one, needs the requester's named approval of that delivery
-(AGENTS.md §3). The decisions in Appendix A are open.
+(AGENTS.md §3). The other decisions in Appendix A are open.
 
 ## Where these came from
 
@@ -417,7 +420,11 @@ hand) or Signature Stamp.
 ### Earlier work this touches
 
 - **Reverses 73A** (the requester, 2026-10-04) by the requester's answer of
-  2026-10-20: "/s/ Name", as attorneys have.
+  2026-10-20: "/s/ Name", as attorneys have. *Why 73A was made, as the
+  requester now records it:* "I think I had the impression that our local
+  judge didn't want it, that is why I removed the option for non attorneys."
+  "/s/ Name" is meant to be allowed for all filers; if the court or anyone
+  objects, they can say so.
 - 55C (`70e2e28`, 2026-09-16) removed a "Type" tab that drew a typed name as
   a stamp; not brought back -- the requester chose "/s/" over a script-font
   stamp.
@@ -449,6 +456,8 @@ hand) or Signature Stamp.
    policy). Simpler code, but a closed filing signed by hand under 73A could
    reprint differently from the copy filed.
 
+**Settled 2026-10-20 by the requester: option 2** ("Change everywhere").
+
 **77E-2 — A guardian's "/s/" that 73A asked again.** Under policy 2 such a
 block still holds the old "/s/" choice, shown unchosen with "A guardian no
 longer signs with "/s/"", and prints a blank line until the guardian picks
@@ -459,11 +468,15 @@ again.
 2. **Stays unchosen** until she picks "/s/" herself; the note changes to say
    "/s/" is offered again.
 
+**Settled 2026-10-20 by the requester: option 1.**
+
 **77E-3 — The caption under a guardian's "/s/".**
 1. **(Recommended)** **The same as an attorney's**, as it was before 73A:
    "Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin.
    2.515)".
 2. **Without the rule citation**: "Electronic signature (/s/)".
+
+**Settled 2026-10-20 by the requester: option 2.**
 
 *For a qualified person:* whether a non-attorney guardian may sign a
 verified report with "/s/", given the workbook's "Only the guardian's
@@ -485,6 +498,62 @@ change rests on the requester's decision, as 73A did.
 | 7 UI | The existing three-choice signature control, as attorneys have it. |
 | 8 Legal | Flagged above. |
 | 9 Cross-form | One policy, one control and one print rule serve all nine forms' guardian blocks, the certificates' guardian signer included. |
+
+### Build record — BUILT 2026-10-20
+
+Approved by name (above), decisions 77E-1 option 2, 77E-2 option 1 and
+77E-3 option 2. What a filer now sees:
+
+- **Every signer has three choices** -- Unsigned, "/s/" Signed, Signature
+  Stamp -- on every guardian block of all nine forms, the certificates'
+  guardian signer included, on every filing whatever its year's policy (no
+  policy 3: decision 77E-1 option 2 retires the guardian rule outright).
+- **A guardian's "/s/" prints "/s/ Name"** with "Electronic signature (/s/)"
+  beneath it; an attorney's or preparer's keeps "Signature (Electronic /s/
+  pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)". A guardian's "/s/"
+  needs its date, as anyone's ("date signed is required to apply "/s/"
+  Signed"); the date's star follows the choice.
+- **A "/s/" 73A asked again is her choice again**: it shows as chosen, with
+  no note, and prints; a closed filing and Mark Open keep it.
+- **Kept from 73A**: under policy 2 a guardian's blank choice is Unsigned,
+  date or no date (typing the date doesn't pick "/s/"); the upgrade on open,
+  New Year's clearing of every choice and stamp, and an Excel import leaving
+  the policy alone are unchanged. The policy values and their data-model
+  domain are unchanged (`signaturePolicy` 1 or 2).
+- The readiness card's guardian rows read "Guardian's signature block
+  complete"; the Plans' certificate no longer advises a guardian's "/s/";
+  the user guide's Signatures section describes three choices for everyone
+  and both captions.
+
+Code: `signature-state.js` (the refusal and the blank print for a guardian's
+"/s/" removed; `blankChoiceIsUnsigned()` keeps policy 2's reading of a blank
+choice), `signature-state-control.js` (all three choices; the ask-again note
+removed; `signatureDateRequired()` by the choice alone), `pdf-engine.js` (the
+guardian's caption), `plan-certificate-of-service.js`, `readiness-config.js`,
+`signature-policy.js`, `filing-registry.js` and `state.js` (comments),
+`help/index.html`; the data model's notes on the ten guardian signature rows
+and `signaturePolicy` (`verify:data-model`, 1,088 rows).
+
+Tests: `tests/unit/signature-by-hand.spec.js` (36; red first -- with
+`signature-state.js` and `signature-state-control.js` at HEAD, 21 fail: the
+guardian refused "/s/", not offered it, or printed a blank line);
+`tests/e2e/signature-by-hand.spec.ts` and
+`signature-capture.contract.spec.ts` (red first -- with the source at HEAD,
+7 fail: the four changed by-hand cases and the three capture cases; New
+Year's and the accessibility case pass on both); updated for the rule:
+`sidebar-export-parity.spec.js`, `pdf-accessibility-and-signatures.spec.ts`
+(comment), `print-preview-signature-jump.spec.ts` and
+`navigation-status.contract.spec.ts` (their guardian signature issue is now
+the undated "/s/"'s date), the four Plans' `*-mount.spec.ts` snapshots (one
+more choice), `plan-pdf-wcag-compliance.spec.ts` (the Plan Simplified's
+guardian caption); `tests/baseline/ms73-validator-golden.json` regenerated
+(8 of 4,936 outcomes -- the undated guardian "/s/" variants ask for the date
+in place of 73A's choice; nothing else changed). Unit: the whole suite
+(3,487; four slow-file timeouts under a concurrent browser run, passing
+alone); `check:types`; the index, skip-classification and assertion-count
+guards. Browser (C: copy, chromium): the three changed specs (37) and every
+spec that touches a signature, the readiness card or a Plan's certificate
+(125, then the nine updated cases' files, 59). Full regression not run.
 
 ---
 
@@ -540,9 +609,9 @@ practice (2026-10-20), not as statute (AGENTS.md §5).
 | 77C-1 | A reminder when a certificate date is blank | A reminder, never a block | Open |
 | 77D-1 | How tall a signature prints | Up to about half an inch | Open |
 | 77D-2 | Signatures already saved | Trimmed when the filing is opened | Open |
-| 77E-1 | How the guardian rule changes | A new policy, 3 | Open |
-| 77E-2 | A guardian's "/s/" that 73A asked again | Shown as chosen again | Open |
-| 77E-3 | The caption under a guardian's "/s/" | The same as an attorney's | Open |
+| 77E-1 | How the guardian rule changes | A new policy, 3 | Settled: retire it outright (option 2) |
+| 77E-2 | A guardian's "/s/" that 73A asked again | Shown as chosen again | Settled: as recommended |
+| 77E-3 | The caption under a guardian's "/s/" | The same as an attorney's | Settled: no rule citation (option 2) |
 | 77F-1 | Where the bond line goes | The Inventory only, Pinellas and Pasco | Open |
 
 Settled 2026-10-20 by the requester, before this proposal: the answers in

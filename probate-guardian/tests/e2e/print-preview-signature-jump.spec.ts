@@ -17,9 +17,9 @@ test.describe('Milestone 39-E: Print Preview missing-signature navigation', () =
     await freshStartNoPassword(page);
     await createWard(page, 'PS Jump Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    // Milestone 73A: a guardian's saved "/s/" is asked again (a guardian
-    // signs by hand or by stamp) -- a real, findable signature issue; a
-    // blank choice is Unsigned and produces none.
+    // A guardian's "/s/" with no date -- a real, findable signature issue
+    // (Milestone 77E: the date, as for any signer; 73A had asked the choice
+    // again); a blank choice is Unsigned and produces none.
     await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.planGuardians[0].signatureState = 'typed';
@@ -33,14 +33,14 @@ test.describe('Milestone 39-E: Print Preview missing-signature navigation', () =
     // The panel's "Show what is missing" list is collapsed by default.
     await blockedPanel.locator('.pdf-preview-blocked-details summary').click();
 
-    const jumpLink = blockedPanel.locator('[data-form-action="jump-to-field"]', { hasText: 'choose Unsigned' });
+    const jumpLink = blockedPanel.locator('[data-form-action="jump-to-field"]', { hasText: 'date signed is required' });
     await expect(jumpLink).toBeVisible();
     await jumpLink.click();
 
     // Print Preview is its own route (/print) -- clicking must navigate
     // away to the Signatures page and focus the real field (the guardian's
-    // first choice, Unsigned), not just look for it in the (wrong) current DOM.
-    await expect(page.locator('#sigstate_planGuardians_0_none')).toBeFocused();
+    // Date Signed), not just look for it in the (wrong) current DOM.
+    await expect(page.locator('#plan_guardians_0_sigDate')).toBeFocused();
   });
 
   test('a blocked Guardian Inventory Preparer card resolves through its own section-embedded convention', async ({ page }) => {
