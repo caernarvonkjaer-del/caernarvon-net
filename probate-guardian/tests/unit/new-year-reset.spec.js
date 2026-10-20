@@ -97,6 +97,7 @@ describe('the Start New Year dialog says what each form keeps', () => {
     expect(note('planAnnual')).toBe("The new year keeps the ward's and the guardians' details, where the ward lives, and the answers to Questions 3, 9 and 10 (the care plan, disabilities and advance directives) for you to review. The plan's other answers, signatures and dates are cleared for the new filing: each describes one year.");
     expect(note('planSimplified')).toBe("The new year keeps the ward's and the guardians' details and the answers to Questions 2 and 4 (why this is the best placement, and the ward's diagnosis and conditions) for you to review. The plan's other answers, signatures and dates are cleared for the new filing: each describes one year.");
     expect(note('planMinor')).toBe("The new year keeps the minor's and the guardians' details, the minor's current residence, and Question 4's proposed medical services for you to review. The plan's other answers, signatures and dates are cleared for the new filing: each describes one year.");
-    expect(note('planInitial')).toBe("The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.");
+    // Milestone 76L item 5 (decision 76L-1): the Initial Plan keeps the ward's details and the guardianship's facts.
+    expect(note('planInitial')).toBe("The new year keeps the ward's and the guardians' details, where the ward lives and the mailing address, and the guardianship's inception date, Letters date and successor answer for you to review. The plan's other answers, signatures and dates are cleared for the new filing: each describes one year.");
   });
 });

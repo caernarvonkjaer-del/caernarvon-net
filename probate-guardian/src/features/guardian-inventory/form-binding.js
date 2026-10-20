@@ -19,6 +19,9 @@ import { getD } from '../../core/state.js';
 import { calc } from './totals.js';
 import { JOINT_OWNER_SOURCES, offersJointOwner, paymentsPerYear, yearlyTotal } from '../../core/form/entry-helpers.js';
 
+// Milestone 76L item 2: the boxes formatted when the filer leaves them.
+const FORMAT_ON_LEAVE=Object.freeze({ phone:formatPhone, ssn:formatSSN, accountNumber:formatAccountNumber, checkNumber:formatCheckNumber });
+
 // Milestone 74P: a share on A-1 to B-4 decides whether "Add a joint owner for
 // this asset" shows; C-1's Frequency decides whether the yearly-total helper
 // shows and what it multiplies by. Neither writes anything.
@@ -145,26 +148,18 @@ export function bindForms(){
           setPath(getD(),path,live===''?0:live);
           afterChange(path);
           return;
-        }else if(inputType==='phone'){
-          val=formatPhone(val);
-          e.target.value=val;
-        }else if(inputType==='ssn'){
-          val=formatSSN(val);
-          e.target.value=val;
-        }else if(inputType==='caseNumber'){
-          val=formatCaseNumber(val);
-          e.target.value=val;
+        }else if(FORMAT_ON_LEAVE[inputType]||inputType==='caseNumber'){
+          // Milestone 76L item 2: kept as typed until the filer leaves the box
+          // (the listener below formats it then), like every other form's --
+          // Milestone 24: a formatter "must not re-run on every input event
+          // while typing". Reformatting each keystroke moved the cursor:
+          // fixing 555 to 556 in (727) 555-1234 gave (727) 551-2346, and an
+          // account or check number lost a typed space at once.
         }else if(inputType==='barNumber'){
           // Padding while a person is still typing would turn the first digit
           // into 0000000N and make the next digit land in the wrong place.
           // Keep only digits live; apply the fixed-width representation on blur.
           val=String(val??'').replace(/\D/g,'').slice(0,8);
-          e.target.value=val;
-        }else if(inputType==='accountNumber'){
-          val=formatAccountNumber(val);
-          e.target.value=val;
-        }else if(inputType==='checkNumber'){
-          val=formatCheckNumber(val);
           e.target.value=val;
         }else if(inputType==='zip'){
           // Digit-count limiting stays live (same as maxlength), but title
@@ -213,8 +208,20 @@ export function bindForms(){
           // ward has moved on costs nothing since re-mounting it re-binds
           // this field fresh from its own (already-correct) stored value.
           if(getD()!==boundD)return;
-          el.value=finalizeCaseNumber(el.value);
+          // Milestone 76L item 2: formatted here, not while typing.
+          el.value=finalizeCaseNumber(formatCaseNumber(el.value));
           setPath(getD(),path,el.value);afterChange(path);
+        });
+      }
+      // Milestone 76L item 2: phone, SSN/EIN, account and check numbers
+      // format when the filer leaves the box (see the input listener above).
+      const formatOnLeave=FORMAT_ON_LEAVE[inputType];
+      if(formatOnLeave){
+        el.addEventListener('blur',()=>{
+          if(getD()!==boundD)return;
+          const next=formatOnLeave(el.value);
+          if(next!==el.value)el.value=next;
+          setPath(getD(),path,next);afterChange(path);
         });
       }
       if(inputType==='barNumber'){

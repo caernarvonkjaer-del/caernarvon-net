@@ -176,6 +176,7 @@
   "tests/e2e/simplified-part1-identity-cells.spec.ts",
   "tests/e2e/simplified-part2-totals.spec.ts",
   "tests/e2e/simplified-remuneration.spec.ts",
+  "tests/e2e/small-fixes-76l.spec.ts",
   "tests/e2e/small-fixes.spec.ts",
   "tests/e2e/stamped-co-guardian.spec.ts",
   "tests/e2e/startup.spec.ts",

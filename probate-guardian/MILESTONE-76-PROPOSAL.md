@@ -2515,6 +2515,43 @@ further option: no New Year on the Initial Plan.*
 | 8 Legal | None. |
 | 9 Cross-form | 76L-1 follows the other Plans' rule. |
 
+### Build record — BUILT 2026-10-20
+
+Approved by name (the requester, 2026-10-20: "Both, 76K then 76L"). What a
+filer now sees:
+
+- **Item 1:** arrow keys on the dashboard's closed status menu only browse;
+  the choice is saved -- and logged -- once, on Enter or when the filer
+  leaves the menu, and a choice that ends where it started saves nothing. A
+  pick from the open list saves at once, as before. After a save the filer
+  keeps their place: the control that had focus has it again in the redrawn
+  dashboard (the Judge box too).
+- **Item 2:** the Initial Inventory's phone, SSN/EIN, case, account and check
+  boxes keep what is typed and format when the filer leaves them, like every
+  other form's: fixing 555 to 556 in (727) 555-1234 gives (727) 556-1234.
+- **Item 3:** Escape closes an open suggestion list first (Add Form's name
+  list, the New Filing from Existing picker); a second Escape closes the
+  dialog. What was typed stays.
+- **Item 4:** the C-1 yearly-total helper rounds by the app's one rule
+  (`roundCents()`): $1.005 a year proposes $1.01.
+- **Item 5 (decision 76L-1):** the Initial Plan's new year keeps where the
+  ward lives, the residence and its phone, the mailing address and "mailing
+  same as residence", and the inception date, Letters date and successor
+  answer; its note says so.
+- **Item 6:** the Simplified Plan's new year clears the attorney's signature
+  date.
+- **Item 7:** the data model matches the forms: the Simplified's
+  remuneration starts empty (`initial_item_count` 0); the rows say where a
+  default leaves a key out (the Simplified Plan's first guardian's signature
+  fields, the Inventory's preparer email and service attorney date); the
+  filing's attorney, preparer and guardian shared-record links have rows.
+
+Tests: `small-fixes-76l.spec.js` (new; items 4-6 -- all three red first);
+`new-year-reset.spec.js` (the Initial Plan's note); `small-fixes-76l.spec.ts`
+(new, browser, real keys: the status menu browsed and committed once with
+focus kept, a round trip saving nothing; Escape on a list then the dialog;
+one phone digit corrected); `verify:data-model`.
+
 ---
 
 ## Appendix A — Every decision

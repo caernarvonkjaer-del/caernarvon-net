@@ -72,10 +72,21 @@ export function comboboxAssignOptionIds(dropdownEl){
 // already has full keyboard nav (Milestone 50H), so there is no
 // capability gap to close there, only a code-shape win not worth that
 // risk. See MILESTONE-52-PROPOSAL.md's 52J section.
+// Milestone 76L item 3: an Escape that closed an open suggestion list, so the
+// dialog's own Escape (modal-events.js) leaves the dialog open -- a second
+// Escape closes it. It closed both, and what was typed went with it.
+const listClosingEscapes=new WeakSet();
+function markListClosed(event){listClosingEscapes.add(event);}
+/** Whether this Escape already closed a suggestion list. */
+export function escapeClosedList(event){return listClosingEscapes.has(event);}
+
 export function bindComboboxKeyboardNav(input,dropdown,{onEnterWithNoSelection,hide=comboboxHide}={}){
   return function comboboxKeydownHandler(e){
     const options=[...dropdown.querySelectorAll('[role="option"]')];
     if(e.key==='Escape'){
+      // Milestone 76L item 3: an open list is what this Escape closes; the
+      // dialog around it stays (modal-events.js reads the mark).
+      if(dropdown.style.display==='block')markListClosed(e);
       hide(dropdown);
       input.dataset.comboIndex='';
       input.removeAttribute('aria-activedescendant');

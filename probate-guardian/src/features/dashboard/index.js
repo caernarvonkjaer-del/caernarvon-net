@@ -474,6 +474,9 @@ async function updateDashboardWorkflow(wardId, field, value) {
   const ward = wards.find(item => item.wardId === wardId);
   if (!ward) return;
   const workflow = normalizeDashboardWorkflow(ward.dashboardWorkflow);
+  // Milestone 76L item 1: a status that ends where it started is no change --
+  // nothing saved, nothing logged.
+  if (field === 'workflow-status' && (workflow.status || 'auto') === value) return;
   if (field === 'workflow-status') {
     if (value === 'auto') delete workflow.status;
     else if (Object.prototype.hasOwnProperty.call(WORKFLOW_LABELS, value) && value !== 'closed') workflow.status = value;
@@ -536,7 +539,48 @@ async function updateDashboardWorkflow(wardId, field, value) {
 
   markDirtySinceExport();
   updateLastSavedIndicator();
+  // Milestone 76L item 1: the filer keeps their place -- the redraw used to
+  // drop keyboard focus, as the circuit select's once did.
+  const focusKey = dashboardFocusKey(document.activeElement);
   renderDashboardPage();
+  restoreDashboardFocus(focusKey);
+}
+
+// Milestone 76L item 1: which dashboard control had focus, by what it is (its
+// id, or its action or field and its filing), so the same control in the
+// redrawn page can take it back.
+function dashboardFocusKey(element) {
+  if (!(element instanceof HTMLElement) || !_dashboardContainer || !_dashboardContainer.contains(element)) return null;
+  if (element.id) return `#${CSS.escape(element.id)}`;
+  const ward = element.dataset.wardId ? `[data-ward-id="${CSS.escape(element.dataset.wardId)}"]` : '';
+  if (element.dataset.dashboardChange) return `[data-dashboard-change="${CSS.escape(element.dataset.dashboardChange)}"]${ward}`;
+  if (element.dataset.dashboardAction) return `[data-dashboard-action="${CSS.escape(element.dataset.dashboardAction)}"]${ward}`;
+  return null;
+}
+
+function restoreDashboardFocus(key) {
+  if (!key || !_dashboardContainer) return;
+  const target = _dashboardContainer.querySelector(key);
+  if (target instanceof HTMLElement) target.focus();
+}
+
+// Milestone 76L item 1: a closed status menu fires 'change' on every arrow
+// key, and each one saved the filing, wrote an Activity Log entry and redrew
+// the dashboard. Browsing with the keys now waits: the choice is committed
+// once, on Enter or when the filer leaves the menu. A pick from the open list
+// commits at once, as before.
+const browsingWithKeys = new WeakSet();
+const BROWSE_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown']);
+
+function commitBrowsedStatus(select) {
+  if (!browsingWithKeys.has(select)) return;
+  browsingWithKeys.delete(select);
+  void updateDashboardWorkflow(select.dataset.wardId, select.dataset.dashboardChange, select.value);
+}
+
+function handleDashboardFocusOut(event) {
+  const target = event.target;
+  if (target instanceof HTMLSelectElement && target.dataset.dashboardChange) commitBrowsedStatus(target);
 }
 
 function dashboardActionElement(target) {
@@ -601,12 +645,20 @@ function handleDashboardInput(event) {
 function handleDashboardChange(event) {
   const target = event.target;
   if (!(target instanceof HTMLSelectElement || target instanceof HTMLInputElement)) return;
+  // Milestone 76L item 1: browsing with the keys commits on Enter or leaving.
+  if (target instanceof HTMLSelectElement && browsingWithKeys.has(target)) return;
   if (target.dataset.dashboardChange) {
     void updateDashboardWorkflow(target.dataset.wardId, target.dataset.dashboardChange, target.value);
   }
 }
 
 function handleDashboardKeydown(event) {
+  const target = event.target;
+  if (target instanceof HTMLSelectElement && target.dataset.dashboardChange) {
+    if (BROWSE_KEYS.has(event.key)) browsingWithKeys.add(target);
+    else if (event.key === 'Enter') commitBrowsedStatus(target);
+    return;
+  }
   const actionElement = dashboardActionElement(event.target);
   if (actionElement?.dataset.dashboardAction !== 'select-existing') return;
   if (event.key === 'Enter' || event.key === ' ') {
@@ -622,6 +674,7 @@ function bindDashboardEvents(container) {
   container.addEventListener('input', handleDashboardInput);
   container.addEventListener('change', handleDashboardChange);
   container.addEventListener('keydown', handleDashboardKeydown);
+  container.addEventListener('focusout', handleDashboardFocusOut);
   container.dataset.dashboardBound = 'true';
 }
 
@@ -630,6 +683,7 @@ function unbindDashboardEvents(container) {
   container.removeEventListener('input', handleDashboardInput);
   container.removeEventListener('change', handleDashboardChange);
   container.removeEventListener('keydown', handleDashboardKeydown);
+  container.removeEventListener('focusout', handleDashboardFocusOut);
   delete container.dataset.dashboardBound;
   if (_dashboardContainer === container) _dashboardContainer = null;
 }

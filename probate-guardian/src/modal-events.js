@@ -7,6 +7,7 @@ import { confirmStartNewYear, doDeleteWardYear } from './core/modals/year-dialog
 import { doConvertWard, onConvertSourceFocus, onConvertSourceInput, onConvertSourceKeydown } from './core/modals/convert-ward-modal.js';
 import { onCarrySourceChange, updateCarrySourcePicker } from './core/filing/carry-over.js';
 import { closeModal } from './core/ui/dialogs.js';
+import { comboboxHide, escapeClosedList } from './core/ui/combobox.js';
 import { doGuardianSetup } from './core/modals/guardian-setup.js';
 import { closeWardLockedModal } from './core/ward-lock.js';
 // Milestone 70, 70H: this module's document listeners are collected here and
@@ -89,6 +90,16 @@ function handleModalFocus(event) {
 // password-choice screens closed the same way, onto nothing.
 const ESCAPE_PROOF = new Set(['unlock-overlay', 'startup-choice-overlay', 'security-choice-overlay', 'pg-terms-overlay']);
 
+function closeOpenLists(modal) {
+  const open = [...modal.querySelectorAll('.ward-combobox-dropdown')].filter((list) => list.style.display === 'block');
+  for (const list of open) {
+    comboboxHide(list);
+    const input = list.id && modal.querySelector(`[aria-controls="${CSS.escape(list.id)}"]`);
+    if (input) input.setAttribute('aria-expanded', 'false');
+  }
+  return open.length > 0;
+}
+
 function handleModalKeydown(event) {
   const openModals = [...document.querySelectorAll('.modal-overlay.show')];
   const activeModal = openModals[openModals.length - 1];
@@ -97,6 +108,11 @@ function handleModalKeydown(event) {
     if (event.key === 'Escape') {
       event.preventDefault();
       if (ESCAPE_PROOF.has(activeModal.id)) return;
+      // Milestone 76L item 3: Escape closes an open suggestion list first --
+      // one the list's own handler already closed, or one still open (the
+      // Convert source picker's handler runs after this one); a second Escape
+      // closes the dialog. Both closed at once, losing what was typed.
+      if (escapeClosedList(event) || closeOpenLists(activeModal)) return;
       if (activeModal.id === 'ward-locked-overlay') closeWardLockedModal();
       else closeModal?.(activeModal.id);
       return;

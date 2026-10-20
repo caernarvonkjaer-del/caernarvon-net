@@ -16,6 +16,7 @@
 // Pure: the Inventory's page draws and wires them (guardian-inventory/
 // index.js, form-binding.js).
 import { amountForStore } from './amount-codec.js';
+import { roundCents } from '../format/money.js';
 import { vehicleDescription } from '../filing/models/guardian.js';
 
 /** Payments in a year, by the C-1 Frequency the page offers; Other has none. */
@@ -39,7 +40,10 @@ export function yearlyTotal(paymentText, frequency) {
   if (!times) return null;
   const amount = amountForStore(String(paymentText ?? ''));
   if (typeof amount !== 'number' || !Number.isFinite(amount)) return null;
-  return Math.round(amount * times * 100) / 100;
+  // Milestone 76L item 4: the app's one rounding (Milestone 71's rule,
+  // money.js's roundCents()), as every figure it prints; Math.round(x*100)/100
+  // differed on sub-cent payments (1,147 of 800,004 three-decimal amounts).
+  return roundCents(amount * times);
 }
 
 /** The A-1 to B-4 schedules a joint owner can be added from: the workbook label, the description and the full value. */

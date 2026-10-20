@@ -92,6 +92,8 @@ export function newYearNote(type){
   if(formEngine(type)==='annual')return "The new year opens with Starting Balance pre-filled from this year's ending total and Schedule D's holdings carried forward. The income, disbursement, capital-change and transfer schedules, Part XI's remuneration, signatures, and the accounting period are cleared for the new filing, and their \"I verify there are no items\" answers are asked again.";
   const cleared="The plan's other answers, signatures and dates are cleared for the new filing: each describes one year.";
   if(type==='planAnnual')return "The new year keeps the ward's and the guardians' details, where the ward lives, and the answers to Questions 3, 9 and 10 (the care plan, disabilities and advance directives) for you to review. "+cleared;
+  // Milestone 76L item 5 (decision 76L-1).
+  if(type==='planInitial')return "The new year keeps the ward's and the guardians' details, where the ward lives and the mailing address, and the guardianship's inception date, Letters date and successor answer for you to review. "+cleared;
   if(type==='planSimplified')return "The new year keeps the ward's and the guardians' details and the answers to Questions 2 and 4 (why this is the best placement, and the ward's diagnosis and conditions) for you to review. "+cleared;
   if(type==='planMinor')return "The new year keeps the minor's and the guardians' details, the minor's current residence, and Question 4's proposed medical services for you to review. "+cleared;
   return "The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.";
@@ -177,7 +179,9 @@ function resetYearlyFields(data,type){
     // conditions.
     data.periodFrom='';data.periodTo='';
     data.q1Residences='';data.q3MedicalTreatment='';
-    data.preparer_signatureDate='';
+    // Milestone 76L item 6: the attorney's signature date too, as every other
+    // form clears it (it was kept, unprinted, into the new year).
+    data.preparer_signatureDate='';data.attorney_signatureDate='';
     data.q5SocialServices='';data.q6Interaction='';
     data.q7RestoreRights='';data.q7RestoreExplain='';
     data.q8DNR=false;data.q8LivingWill=false;data.q8Surrogate=false;data.q8POA=false;
@@ -219,12 +223,14 @@ function resetYearlyFields(data,type){
   }else if(type==='planInitial'){
     // The Initial Plan is normally a one-time filing, but if a guardian
     // needs to amend or refile it, every answer describes conditions as of
-    // filing — nothing here is a carried balance. Only ward identity and
-    // guardian contact details survive.
+    // filing — nothing here is a carried balance.
+    // Milestone 76L item 5 (decision 76L-1, the requester's): the ward's
+    // details -- where the ward lives, the residence and its phone, the
+    // mailing address and "mailing same as residence" -- and the
+    // guardianship's facts (inception date, Letters date, the successor
+    // answer) are kept, as the other Plans keep theirs; they were cleared.
     data.periodFrom='';data.periodTo='';
-    data.inceptionDate='';data.lettersSignedDate='';data.successorGuardianship='';
-    data.wardLiving='';data.residenceAddress='';data.residenceCityStateZip='';data.residencePhone='';
-    data.mailingAddress='';data.mailingCityStateZip='';data.mailingSameAsResidence=false;data.q1PreexistingDirectives='';
+    data.q1PreexistingDirectives='';
     data.q2ALF=false;data.q2GroupHome=false;data.q2Intermediate=false;data.q2PrivateResidence=false;data.q2SkilledNursing=false;data.q2Specialized=false;data.q2StateHospital=false;data.q2Other=false;data.q2Explain='';
     data.q3MedPrimary=false;data.q3MedDentist=false;data.q3MedOphthalmologist=false;
     data.q3MedSpecialist=false;data.q3MedSpecialistArea='';data.q3MedPT=false;
