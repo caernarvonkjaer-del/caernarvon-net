@@ -1,3 +1,4 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively since Milestone 76I part 2 (the export checks reach it through excel/workbook-blocks.js); never written with JSDoc types.
 // Milestone 73T part 1: the Annual, Final and Trust Accounting's workbook
 // contract (templates/annual-template.js) -- every field written to the
 // Clerk's workbook and read back. Since 73T part 3 the Annual family's

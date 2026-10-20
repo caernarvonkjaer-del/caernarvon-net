@@ -1,3 +1,4 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively since Milestone 76I part 2 (the export checks reach it through excel/workbook-blocks.js); never written with JSDoc types.
 // Milestone 74P (decision 74P-3): "Same as" for an address typed twice (QA
 // report UX-24). Two pairs:
 //

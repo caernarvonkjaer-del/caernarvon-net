@@ -1,3 +1,4 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively since Milestone 76I part 2 (the export checks reach it through excel/workbook-blocks.js); never written with JSDoc types.
 // Milestone 73T part 1: the Simplified Accounting's workbook contract
 // (templates/simplified-template.js) -- every field written to the Clerk's
 // workbook and read back. Since 73T part 4 the Simplified's exporter and

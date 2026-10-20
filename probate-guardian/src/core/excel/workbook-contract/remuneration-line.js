@@ -1,3 +1,4 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively since Milestone 76I part 2 (the export checks reach it through excel/workbook-blocks.js); never written with JSDoc types.
 // Milestone 73T part 3 (decision 73T-2): one remuneration entry on one line of
 // the court's workbook -- the Simplified's PART VII and, since part 3, the
 // Annual family's PART XI (A6:A32, 27 blank unlocked lines under the
