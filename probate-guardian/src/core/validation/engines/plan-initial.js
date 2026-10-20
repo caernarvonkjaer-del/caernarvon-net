@@ -96,7 +96,8 @@ export function collectPlanInitialIssues(d){
   if(d.usesOther)req(d.usesExplain,'10B–D. Disabilities & Devices — Explanation for "Other" device currently used is required','usesExplain');
 
   if(!!d.q11NoDirectives===!!d.q11Executed)errs.push(issue('11. Advance Directives — Select exactly one: no pre-existing directives, or directives were executed','q11NoDirectives'));
-  if(d.q11ExecOther)req(d.q11ExecOtherText,'11. Advance Directives — Description of "Other" advance directive is required','q11ExecOtherText');
+  // Milestone 76J item 2: only while the directives are ticked as executed.
+  if(d.q11Executed&&d.q11ExecOther)req(d.q11ExecOtherText,'11. Advance Directives — Description of "Other" advance directive is required','q11ExecOtherText');
   const anyNeeds=d.needsDentures||d.needsHearingAid||d.needsWheelchair||d.needsWalker||d.needsCrutches||d.needsProsthetics||d.needsGlasses||d.needsNone||d.needsOther;
   if(!anyNeeds)errs.push(issue('11. Advance Directives — Assistive devices needed is required (or select None)','needsDentures'));
   if(d.needsOther)req(d.needsExplain,'11. Advance Directives — Explanation for "Other" device needed is required','needsExplain');

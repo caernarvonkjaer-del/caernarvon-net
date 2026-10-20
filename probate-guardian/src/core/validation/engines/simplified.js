@@ -164,6 +164,14 @@ export function collectSimplifiedIssues(d){
     sectionLabel: 'Part VI', roleLabel: 'Attorney',
     filingType:T, datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
+  // Milestone 76J item 6: the certificate attorney's signature date follows
+  // Milestone 34-1A's rule for every other signature and certificate date --
+  // on or after the accounting period ends (an error the filer can override;
+  // the app's own consistency rule, not a court rule). It was never checked.
+  errs.push(...checkDateOrder(d.periodTo,d.certAttySignDate,{
+    sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Attorney Certificate Signature Date',allowSameDay:true,
+    filingType:T,laterPath:'certAttySignDate',
+  }));
   }else{
     // Milestone 71B: with no attorney the guardian who served the copies
     // signs; with co-guardians the filer says which one, never defaulted.

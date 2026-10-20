@@ -108,8 +108,16 @@ describe('attestationRelevant() — Milestone 63B, D3', () => {
     expect(rel([{ name: '' }], 'Yes')).toBe(true);
   });
 
-  test('a started Recipient 2 does not hide it — only Recipient 1 answers the question', () => {
-    expect(rel([{ name: '' }, { name: 'Second' }], '')).toBe(true);
+  // Milestone 76J item 5 (decision 76J-5, the requester's, reversing D17 and
+  // 63B D3): any listed recipient answers the question. Only Recipient 1 did,
+  // so a recipient listed on card 2 under a blank card 1 was asked "no one
+  // needs to be served?".
+  test('a started Recipient 2 hides it too -- any listed recipient answers the question', () => {
+    expect(rel([{ name: '' }, { name: 'Second' }], '')).toBe(false);
+    const result = run([{ name: '' }, { name: 'Second' }], '');
+    expect(result.needsAttestation).toBe(false);
+    expect(result.firstRowMissing).toEqual([]);
+    expect(run([{ name: '' }, { name: '' }], 'No').firstRowMissing.length).toBeGreaterThan(0);
   });
 
   test('it agrees with serviceRecipientIssues() everywhere the validator would ask', () => {

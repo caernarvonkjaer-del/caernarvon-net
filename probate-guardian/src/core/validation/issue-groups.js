@@ -45,7 +45,9 @@ export function groupIssuesByPage(issues, type) {
     // An issue no page holds keeps its own section as its group.
     const key = onPage ? route : `section:${parts.section || 'Other'}`;
     if (!groups.has(key)) groups.set(key, { route: onPage ? route : '', name: onPage ? names.get(route) : (parts.section || 'Other'), items: [] });
-    groups.get(key).items.push({ text: issueItemText(parts.section, parts.label), route, path: parts.path, label: parts.label });
+    // Milestone 76J item 1: which outputs the issue stops, for the lists that say so.
+    const outputs = issue && typeof issue === 'object' && Array.isArray(issue.capabilities) ? issue.capabilities : null;
+    groups.get(key).items.push({ text: issueItemText(parts.section, parts.label), route, path: parts.path, label: parts.label, outputs });
   }
   const rank = (group) => (order.has(group.route) ? order.get(group.route) : Number.MAX_SAFE_INTEGER);
   return [...groups.values()].sort((a, b) => rank(a) - rank(b));

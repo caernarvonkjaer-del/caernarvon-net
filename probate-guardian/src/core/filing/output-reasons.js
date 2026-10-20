@@ -54,7 +54,10 @@ export function exportReasonHtml({ pdf, excel } = {}) {
     const same = groups.find((g) => g.text === text);
     if (same) same.labels.push(label); else groups.push({ labels: [label], kind, text });
   }
-  const parts = groups.map((g) => `<span data-export-reason="${g.kind}">${esc(g.labels.join(' and '))}: ${esc(g.text)}.</span>`).join(' ');
+  // Milestone 76J item 1: each reason names its outputs, so the Preview can
+  // give Save as Excel its own Continue when only the PDF is blocked.
+  const outputKey = { 'Save as PDF': 'pdf', 'Save as Excel': 'excel' };
+  const parts = groups.map((g) => `<span data-export-reason="${g.kind}" data-export-outputs="${g.labels.map((l) => outputKey[l]).join(' ')}">${esc(g.labels.join(' and '))}: ${esc(g.text)}.</span>`).join(' ');
   return `<span id="${EXPORT_REASON_ID}" class="export-reason" style="font-size:.8rem;color:var(--ink-2);">${parts}</span>`;
 }
 

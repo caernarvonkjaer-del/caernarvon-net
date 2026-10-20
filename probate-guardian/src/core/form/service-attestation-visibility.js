@@ -1,6 +1,7 @@
 // Milestone 63B. The Certificate of Service asks "No recipients are required for
 // this certificate (filer attestation ...)" only when it applies -- when
-// Recipient 1 is blank, or when 'Yes' is selected. attestationRelevant()
+// no recipient is listed on any card (Milestone 76J, decision 76J-5; it was
+// Recipient 1 only), or when 'Yes' is selected. attestationRelevant()
 // (core/validation/service-recipients.js) decides; this module is the page half,
 // shared by the three certificate pages -- Initial Inventory D-5, Annual Part X,
 // Simplified Part VI -- so they cannot diverge.

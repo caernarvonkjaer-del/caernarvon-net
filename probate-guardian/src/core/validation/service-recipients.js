@@ -94,15 +94,22 @@ export function serviceRecipientIssues({ rows, attestation, startedFields, missi
     return { needsAttestation: false, firstRowMissing: [], extraRows: [] };
   }
 
-  // Nothing entered at all, and the question unanswered: this is the only case
-  // that asks it. A filer who has listed someone never reaches here.
-  if (!started(list[0]) && attestation !== 'No') {
+  // Nothing entered on any card, and the question unanswered: this is the only
+  // case that asks it. Milestone 76J item 5 (decision 76J-5, the requester's,
+  // reversing D17 and 63B D3 in D16's own words -- "a filer who lists at least
+  // one recipient never sees the question"): a recipient on any card answers
+  // it. Only card 1 was looked at, so a recipient listed on card 2 under a
+  // blank card 1 was asked "no one needs to be served?" -- and answering Yes
+  // hid the cards and filed "No service recipients are required".
+  const anyStarted = list.some(started);
+  if (!anyStarted && attestation !== 'No') {
     return { needsAttestation: true, firstRowMissing: [], extraRows: [] };
   }
 
-  // Otherwise Recipient 1 is owed in full -- either because it was started, or
-  // because the filer answered 'No' and must therefore list someone.
-  const firstRowMissing = missingFields(list[0] || {});
+  // Recipient 1 is owed in full when it was started, or when nothing is listed
+  // and the filer answered 'No' and must therefore list someone; a blank card 1
+  // above a listed recipient is left alone.
+  const firstRowMissing = started(list[0]) || !anyStarted ? missingFields(list[0] || {}) : [];
 
   // Cards 2+ are optional. An untouched one is ignored; a started one must be
   // finished or cleared, which is what stopped a half-addressed recipient from
@@ -139,5 +146,6 @@ export function serviceRecipientIssues({ rows, attestation, startedFields, missi
 export function attestationRelevant({ rows, attestation, startedFields }) {
   if (attestation === 'Yes') return true;
   const list = Array.isArray(rows) ? rows : [];
-  return !recipientRowStarted(list[0], startedFields);
+  // Milestone 76J item 5 (decision 76J-5): any listed recipient, not card 1 only.
+  return !list.some((row) => recipientRowStarted(row, startedFields));
 }

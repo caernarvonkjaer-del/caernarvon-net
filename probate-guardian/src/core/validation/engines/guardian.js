@@ -17,6 +17,7 @@ import { issueFactory } from '../validation-issue.js';
 import { percentProblem } from '../percent-range.js';
 import { RECIPIENT_FIELDS } from '../../filing/recipient-shape.js';
 import { INVENTORY_SHARE_FIELDS } from '../../filing/ward-share-advisories.js';
+import { inferBondDepositoryState, revealsBond } from '../../filing/bond-depository.js';
 
 // Moved to ward-share-advisories.js by Milestone 73G part 2, which reads it too.
 export { INVENTORY_SHARE_FIELDS };
@@ -175,7 +176,12 @@ export function collectGuardianIssues(d){
   // the sole thing touching it, and it "handled" a reversed range by silently
   // rewriting an endpoint rather than reporting it, so the filer never knew
   // either way. checkDateOrder() is now the one reporter here too.
-  errors.push(...checkDateOrder(d.bondPeriodFrom,d.bondPeriodTo,{
+  // Milestone 76J item 2 (design 1): only while the bond period is in use --
+  // shown under a bond, or printed while the question is unanswered. Under a
+  // waived bond or a restricted depository alone it is hidden and filed
+  // nowhere, yet a reversed range blocked.
+  const bondState=inferBondDepositoryState(d);
+  if(revealsBond(bondState)||!bondState)errors.push(...checkDateOrder(d.bondPeriodFrom,d.bondPeriodTo,{
     sectionLabel:'D-4',
     earlierLabel:'Bond Period From',
     laterLabel:'Bond Period To',

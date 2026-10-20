@@ -7,6 +7,7 @@
 // module loads to inspect a new upload.
 import { createIssue } from '../validation/issue-registry.js';
 import { resolveActiveDocPeriod } from '../filing/doc-period.js';
+import { supportingDocRoute } from './document-sections.js';
 
 export const SUPPLEMENTAL_PDF_LIMITS = Object.freeze({
   maxFileBytes: 15 * 1024 * 1024,
@@ -154,19 +155,24 @@ export function summarizeSupplementTotals(files, limits = SUPPLEMENTAL_PDF_LIMIT
 // Milestone 70's 70C (re-exported here for this module's importers).
 export { resolveActiveDocPeriod };
 
-export function collectActiveSupplementalFiles(sourceData) {
+// Each active supporting document with the screen it is attached on.
+function collectActiveSupplementalEntries(sourceData) {
   const scheduleDocs = sourceData?.scheduleDocs;
   if (!scheduleDocs || typeof scheduleDocs !== 'object') return [];
   const activePeriod = resolveActiveDocPeriod(sourceData);
-  const files = [];
-  for (const value of Object.values(scheduleDocs)) {
+  const entries = [];
+  for (const [key, value] of Object.entries(scheduleDocs)) {
     if (!value || typeof value !== 'object') continue;
     const slot = Array.isArray(value.files) || value.comment
       ? value
       : value[activePeriod] || value.initial || null;
-    if (Array.isArray(slot?.files)) files.push(...slot.files.filter(file => file?.dataUrl));
+    if (Array.isArray(slot?.files)) entries.push(...slot.files.filter(file => file?.dataUrl).map((file) => ({ file, key })));
   }
-  return files;
+  return entries;
+}
+
+export function collectActiveSupplementalFiles(sourceData) {
+  return collectActiveSupplementalEntries(sourceData).map(({ file }) => file);
 }
 
 export function hasActiveSupplementalFiles(sourceData) {
@@ -180,17 +186,21 @@ export function getSupplementalAccessibilityWarning(sourceData) {
 }
 
 export function getSupplementalFilingIssues(sourceData, limits = SUPPLEMENTAL_PDF_LIMITS) {
-  const files = collectActiveSupplementalFiles(sourceData);
+  const entries = collectActiveSupplementalEntries(sourceData);
+  const files = entries.map(({ file }) => file);
   const issues = [];
-  for (const file of files) {
+  for (const { file, key } of entries) {
     const result = isFilingEligibleSupplementFacts(file, limits);
     if (!result.eligible) {
       const codeSuffix = result.code && result.code !== 'ineligible' ? result.code : 'blocked';
+      // Milestone 76J item 3: on the page the document is attached on.
+      const route = supportingDocRoute(sourceData?.inventoryType, key);
       const issue = createIssue(`supplemental.${codeSuffix}`, {
         message: result.message,
         label: file?.name || 'Supporting document',
-        path: 'scheduleDocs',
+        path: `scheduleDocs.${key}`,
         section: 'Supporting documents',
+        ...(route ? { route } : {}),
       });
       Object.defineProperty(issue, 'toString', { value() { return this.message; }, enumerable: false });
       issues.push(issue);

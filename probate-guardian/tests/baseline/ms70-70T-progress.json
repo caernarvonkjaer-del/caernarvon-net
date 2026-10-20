@@ -48,6 +48,7 @@
   "tests/e2e/escaped-text.spec.ts",
   "tests/e2e/excel-b4-multi-account.spec.ts",
   "tests/e2e/excel-blank-page-pruning.spec.ts",
+  "tests/e2e/excel-continue-pdf-only.spec.ts",
   "tests/e2e/excel-date-cells.spec.ts",
   "tests/e2e/excel-defined-names.spec.ts",
   "tests/e2e/excel-form-field-placement.spec.ts",

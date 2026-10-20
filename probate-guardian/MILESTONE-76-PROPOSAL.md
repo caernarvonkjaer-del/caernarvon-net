@@ -8,7 +8,7 @@ order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
 approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
 76E, 76G item 1 and 76H items 1, 2, 4 and 5 built 2026-10-20. 76F and 76J
 approved to build, in that order (the requester, 2026-10-20: "76F, then
-76J") -- 76F built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
+76J") -- both built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
@@ -1976,6 +1976,44 @@ steering the filer to answer "no one needs to be served".
 | 7 UI | Save as Excel's own Continue; issues route like every other. |
 | 8 Legal | Item 6 extends the app's own rule; no new legal reading. |
 | 9 Cross-form | Items 2, 4 and 5 checked on every form that has the field. |
+
+### Build record — BUILT 2026-10-20
+
+Approved by name (the requester, 2026-10-20: "76F, then 76J"). What a filer
+now sees:
+
+- **Item 1:** a supporting document that can't be used (a damaged or
+  password-protected PDF) stops only the PDF. The Preview's list says "PDF
+  only" beside it, and when the workbook only waits for an acknowledgement,
+  Save as Excel's reason line gets its own "Continue despite outstanding
+  requirements"; after it, Save as Excel saves. An acknowledgement now covers
+  every output it can (`acknowledgeOutstandingRequirements()`); each output
+  is still blocked by its own unoverridable problems.
+- **Item 2 (design 1):** a check runs only while its box is in use -- Part
+  VIII's Ward's % only under Yes; the Inventory's bond-period order under a
+  bond or while the question is unanswered (it prints then), not under a
+  waived bond or a depository alone; the Plans' "Other" directive
+  description only while directives are ticked as executed.
+- **Item 3:** a supporting-document problem is named on the page the
+  document is attached on (its route): that page's sidebar mark and
+  Preview's Go-to. The Part I safety net stays for the packet-wide limits.
+- **Item 4:** the Annual Plan's residences and providers are named by their
+  own row number (Part VIII's trusts were, with 76H item 2).
+- **Item 5 (decision 76J-5):** any listed recipient answers the "no one
+  needs to be served?" question, on every certificate (the accountings, the
+  Inventory and the four Plans); a blank card 1 above a listed recipient is
+  left alone.
+- **Item 6:** the certificate attorney's signature date before the
+  accounting period ends is named (an error the filer can override), on the
+  Annual family and the Simplified, as every other signature date is.
+
+Tests: `export-checks-76j.spec.js` (new: items 2, 3, 4, 6) and
+`output-authorization.spec.js`'s and `service-recipients.spec.js`'s 76J cases
+(items 1 and 5; the latter's card-1 test reversed deliberately) -- all red
+first. `excel-continue-pdf-only.spec.ts` (new, the real Preview and Save as
+Excel) -- red first. `output-reasons.spec.js` reads the reason line's outputs;
+the validator golden regenerated with its note -- 890 of 5,738 outcomes each
+lost one issue (item 2's hidden boxes), nothing added.
 
 ---
 

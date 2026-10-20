@@ -39,6 +39,41 @@ export const SUPPORTING_DOC_SECTIONS = Object.freeze({
   simplified: Object.freeze({ p2: 'part2', p3: 'part3', p4: 'part4', p5: 'part5', p6: 'part6', p7: 'part7' }),
 });
 
+// Milestone 76J item 3: the page each screen's documents are attached on, so
+// a problem with one (a damaged or password-protected statement) is named on
+// that page, marks it in the sidebar and is reached by Preview's Go-to -- it
+// had no page, and landed on Part I or the Cover. The accountings' and the
+// Inventory's keys are their pages' own routes (schA is /scha, a1 is /a1, the
+// Simplified's p2 is /p2); the Plans' are named for their screens.
+const PLAN_DOC_ROUTES = Object.freeze({
+  planAnnual: Object.freeze({
+    planACover: '/', planAResidences: '/p2', planACarePlan: '/p3', planABenefits: '/p4', planAProviders: '/p5',
+    planARights: '/p6', planAADLs: '/p7', planADisabilities: '/p8', planADirectives: '/p9', planARemuneration: '/p10',
+    planASignatures: '/p11',
+  }),
+  planInitial: Object.freeze({
+    planICover: '/', planISettingMedical: '/p2', planIMentalPersonal: '/p3', planISocialBenefits: '/p4',
+    planIProviders: '/p5', planIADLs: '/p6', planIDisabilities: '/p7', planIDirectives: '/p8', planISignatures: '/p9',
+    planIAttorney: '/p10',
+  }),
+  planMinor: Object.freeze({
+    planMCover: '/', planMResidences: '/p2', planMProviders: '/p3', planMMedical: '/p4', planMEducation: '/p5',
+    planMSignatures: '/p6', planMPreparerAttorney: '/p7',
+  }),
+  planSimplified: Object.freeze({ planCover: '/', planQuestions: '/p2', planSignatures: '/p3' }),
+});
+
+/**
+ * The route of the page a screen's supporting documents are attached on.
+ * @param {string} inventoryType
+ * @param {string} key the screen's documents key (scheduleDocs[key])
+ */
+export function supportingDocRoute(inventoryType, key) {
+  const table = PLAN_DOC_ROUTES[inventoryType];
+  if (table) return table[key] || '';
+  return key ? `/${String(key).toLowerCase()}` : '';
+}
+
 /**
  * The table for the document being drawn: by the filing type its title names
  * (every model's formName is its descriptor's documentTitle), else the

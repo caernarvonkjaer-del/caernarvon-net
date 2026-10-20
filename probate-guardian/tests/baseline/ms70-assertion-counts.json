@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 10087,
-  "tests": 2990
+  "expects": 10122,
+  "tests": 2999
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -193,6 +193,10 @@
   "tests/e2e/excel-blank-page-pruning.spec.ts": {
    "tests": 4,
    "expects": 16
+  },
+  "tests/e2e/excel-continue-pdf-only.spec.ts": {
+   "tests": 1,
+   "expects": 7
   },
   "tests/e2e/excel-date-cells.spec.ts": {
    "tests": 3,
@@ -1026,6 +1030,10 @@
    "tests": 3,
    "expects": 3
   },
+  "tests/unit/export-checks-76j.spec.js": {
+   "tests": 6,
+   "expects": 20
+  },
   "tests/unit/export-guard.spec.js": {
    "tests": 3,
    "expects": 5
@@ -1275,8 +1283,8 @@
    "expects": 19
   },
   "tests/unit/output-authorization.spec.js": {
-   "tests": 10,
-   "expects": 25
+   "tests": 12,
+   "expects": 30
   },
   "tests/unit/output-gate-inventory.spec.js": {
    "tests": 4,
@@ -1520,7 +1528,7 @@
   },
   "tests/unit/service-recipients.spec.js": {
    "tests": 18,
-   "expects": 31
+   "expects": 34
   },
   "tests/unit/share-zero-paths.spec.js": {
    "tests": 9,

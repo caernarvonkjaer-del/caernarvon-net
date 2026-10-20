@@ -47,7 +47,10 @@ export function collectPlanAnnualIssues(d){
   // no error, and nothing on the filed plan either.
   const res=startedRows(d.q1Residences);
   if(!res.length)errs.push(issue('1. Residences — at least one residence must be listed','q1Residences.0.name'));
-  res.forEach((r,i)=>{if(!r.name)errs.push(issue(`1. Residences — row ${i+1} needs a facility or owner name`,`q1Residences.${i}.name`));});
+  // Milestone 76J item 4: each row by its own number on the page, and its own
+  // path -- numbered among the started rows, a blank row 1 and a filled row 2
+  // were reported as "row 1", pointing at the blank one.
+  (d.q1Residences||[]).forEach((r,i)=>{if(rowStarted(r)&&!r.name)errs.push(issue(`1. Residences — row ${i+1} needs a facility or owner name`,`q1Residences.${i}.name`));});
   // Milestone 74G (decision 74G-2): each residence's own dates run forward
   // -- an ordinary error the filer can override. Rows that overlap or are in
   // no date order are a warning (date-advisories.js).
@@ -72,7 +75,7 @@ export function collectPlanAnnualIssues(d){
   // Milestone 61B: see the Q1 note above.
   const provs=startedRows(d.q4Providers);
   if(!provs.length)errs.push(issue('4. Medical Treatment — at least one provider must be listed','q4Providers.0.name'));
-  provs.forEach((r,i)=>{if(!r.name)errs.push(issue(`4. Medical Treatment — row ${i+1} needs a provider name`,`q4Providers.${i}.name`));});
+  (d.q4Providers||[]).forEach((r,i)=>{if(rowStarted(r)&&!r.name)errs.push(issue(`4. Medical Treatment — row ${i+1} needs a provider name`,`q4Providers.${i}.name`));});
 
   req(d.q5SocialSkills,'5–7. Skills & Rights — question 5 (social skills) is required','q5SocialSkills');
   req(d.q5Activities,'5–7. Skills & Rights — question 5 (capacity-building activities) is required','q5Activities');
@@ -105,7 +108,10 @@ export function collectPlanAnnualIssues(d){
   if(d.q10NoDirectives&&d.q10Executed){
     errs.push(issue('10. Advance Directives — cannot both have no directives and list executed directives','q10NoDirectives'));
   }
-  if(d.q10ExecOther)req(d.q10ExecOtherText,'10. Advance Directives — describe the "Other" directive','q10ExecOtherText');
+  // Milestone 76J item 2: only while the directives are ticked as executed
+  // (the "Other" box and its description are hidden, and printed nowhere,
+  // otherwise).
+  if(d.q10Executed&&d.q10ExecOther)req(d.q10ExecOtherText,'10. Advance Directives — describe the "Other" directive','q10ExecOtherText');
 
   if(d.q11NoRemuneration)req(d.q11NoRemunerationName,"11. Remuneration — declaring guardian's name is required",'q11NoRemunerationName');
   else if(!(d.q11ReceivedName||d.q11Amount||d.q11From)){

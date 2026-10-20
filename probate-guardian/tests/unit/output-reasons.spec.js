@@ -38,7 +38,8 @@ describe('what stops an output', () => {
 });
 
 describe('the reason line beside the buttons', () => {
-  const reasons = (html) => [...html.matchAll(/data-export-reason="([a-z]+)">([^<]*)</g)].map((m) => [m[1], m[2].replace(/&#39;/g, "'")]);
+  // Milestone 76J item 1: each reason also names its outputs (data-export-outputs).
+  const reasons = (html) => [...html.matchAll(/data-export-reason="([a-z]+)" data-export-outputs="[a-z ]*">([^<]*)</g)].map((m) => [m[1], m[2].replace(/&#39;/g, "'")]);
 
   test('is always there for the buttons to point at, and empty when every output can go', () => {
     const html = exportReasonHtml({ pdf: allowed, excel: { authorization: allowed } });

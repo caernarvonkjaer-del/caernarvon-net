@@ -113,20 +113,22 @@ for (const form of FORMS) {
       // the page's own way on to Preview & Export.
       await expect(page.locator('#page-next-btn'), 'blank: Preview & Export is one click away').toBeEnabled();
 
-      // The question is asked only while Recipient 1 is blank (the
-      // accountings' D16 rule), so the data that must survive it lives in a
-      // second card.
+      // Milestone 76J item 5 (decision 76J-5, the requester's, reversing D17):
+      // any listed recipient answers the question. A recipient named on card 2
+      // under a blank card 1 satisfies the sidebar and hides the question --
+      // it was asked "no one needs to be served?", and Yes filed exactly that.
       await page.locator('#main-content [data-form-action="add-plan-row"][data-collection="certRecipients"]').click();
       await nameInput(page, 1).fill('Kept Recipient');
       await nameInput(page, 1).blur();
-      expect(await navKey(page, form.navKey), 'started, Recipient 1 blank: the sidebar asks on every Plan').toBe(false);
-      // Marked unfinished on every Plan now, and the button still works. The
-      // real click is its own test below: leaving the page cleans up the
-      // untouched first card, which the rest of this test still needs.
-      // (Split in master's b28bf25, carried in Milestone 70's 70C.)
-      await expect(page.locator('#page-next-btn'), 'marked: the button stays enabled').toBeEnabled();
-      await expect(page.locator('#yesno_certNoRecipients_yes'), 'Recipient 1 blank: the question is visible').toBeVisible();
-      await page.locator('#yesno_certNoRecipients_yes').check();
+      expect(await navKey(page, form.navKey), 'a recipient on card 2: the sidebar is satisfied').toBe(true);
+      await expect(page.locator('[data-service-attestation]'), 'a recipient on card 2: the question hides').toHaveClass(/d-none/);
+      await expect(page.locator('#page-next-btn')).toBeEnabled();
+
+      // The attestation hides the cards without deleting them: answered Yes
+      // (as a file holding both can be), the cards hide and keep what was
+      // typed; No brings them back.
+      await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ certNoRecipients: 'Yes' })); // setup (D9)
+      await go(page, form.route);
       await expect(nameInput(page, 1), 'Yes hides the cards').toHaveCount(0);
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients.1.name')), 'hidden, not deleted').toBe('Kept Recipient');
       expect(await navKey(page, form.navKey), 'attested: the sidebar is satisfied').toBe(true);
@@ -146,9 +148,12 @@ for (const form of FORMS) {
       await form.fill(page);
       await go(page, form.route);
       await page.locator('#main-content [data-form-action="add-plan-row"][data-collection="certRecipients"]').click();
-      await nameInput(page, 1).fill('Kept Recipient');
-      await nameInput(page, 1).blur();
-      expect(await navKey(page, form.navKey), 'Recipient 1 blank: the page is marked').toBe(false);
+      // Milestone 76J item 5: a named recipient on card 2 no longer marks the
+      // page, so the mark comes from card 2 started without its name.
+      const line2 = page.locator('#main-content input[data-form-path="certRecipients.1.line2"]');
+      await line2.fill('1 Main St');
+      await line2.blur();
+      expect(await navKey(page, form.navKey), 'card 2 started without a name: the page is marked').toBe(false);
       // The "Save Your First Backup" reminder pops up on its own timer and can
       // sit over the button; a filer closes it, and so does this test
       // (user-guide-wiring.spec.ts's pattern).
@@ -156,8 +161,8 @@ for (const form of FORMS) {
       if (await reminder.isVisible().catch(() => false)) await reminder.click();
       await page.locator('#page-next-btn').click();
       await expect(page.locator(form.pdfButton), 'the click reaches Preview & Export').toBeVisible({ timeout: 20_000 });
-      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients').map((r: any) => r.name)), 'the untouched first card is cleaned up; the named one is kept')
-        .toEqual(['Kept Recipient']);
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients').map((r: any) => r.line2)), 'the untouched first card is cleaned up; the started one is kept')
+        .toEqual(['1 Main St']);
     });
 
     if (form.type === 'planAnnual') test('the PDF prints the certificate with its recipients, date, method and the "Certified by" signer', async ({ page }) => {

@@ -214,6 +214,14 @@ export function collectAnnualIssues(d){
     sectionLabel: 'Part X', roleLabel: 'Attorney',
     filingType:T, datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
+  // Milestone 76J item 6: the certificate attorney's signature date follows
+  // Milestone 34-1A's rule for every other signature and certificate date --
+  // on or after the accounting period ends (an error the filer can override;
+  // the app's own consistency rule, not a court rule). It was never checked.
+  errs.push(...checkDateOrder(d.periodTo,d.certAttySignDate,{
+    sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Attorney Certificate Signature Date',allowSameDay:true,
+    filingType:T,laterPath:'certAttySignDate',
+  }));
   }else{
     // Milestone 71B: with no attorney the guardian who served the copies
     // signs (Rules 2.515(a), 2.516(a) and (f)). With co-guardians the filer
@@ -305,7 +313,10 @@ export function collectAnnualIssues(d){
       if(problem)errs.push(issue(`${label} — Line ${i+1} — Ward's % ${problem}`,`${collection}.${i}.wardPct`));
     });
   });
-  (d.trusts||[]).forEach((tr,i)=>{
+  // Milestone 76J item 2 (design 1): only while the trust cards are in use --
+  // under Yes. Answered No, the cards are hidden and kept, and print nothing,
+  // yet a share left on one blocked as out of range.
+  if(d.trusts?.[0]?.hasTrust==='Yes')(d.trusts||[]).forEach((tr,i)=>{
     const problem=percentProblem(tr&&tr.wardPct);
     if(problem)errs.push(issue(`Part VIII — Trust ${i+1} — Ward's % ${problem}`,`trusts.${i}.wardPct`));
   });

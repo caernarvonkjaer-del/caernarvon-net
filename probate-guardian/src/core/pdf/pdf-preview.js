@@ -316,8 +316,18 @@ function refreshPreviewPager() {
 // route entirely, so when it's the only match in the current DOM, it gets
 // mistaken for its own target -- confirmed live: the button received focus
 // instead of navigating anywhere.
+// Milestone 76J item 1: an item that stops only some outputs says which.
+function outputsNote(outputs) {
+  if (!Array.isArray(outputs)) return '';
+  const pdf = outputs.includes('pdf');
+  const excel = outputs.includes('excel');
+  if (pdf && !excel) return ' <span class="text-muted small" data-issue-outputs="pdf">(PDF only; the Excel workbook is not affected)</span>';
+  if (excel && !pdf) return ' <span class="text-muted small" data-issue-outputs="excel">(Excel workbook only)</span>';
+  return '';
+}
+
 function jumpLinkHTML(item) {
-  return `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-start pdf-preview-blocked-jump" data-form-action="jump-to-field" data-route="${escapeHtml(item.route || '')}" data-jump-path="${escapeHtml(item.path || '')}">${escapeHtml(item.text)}</button>`;
+  return `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-start pdf-preview-blocked-jump" data-form-action="jump-to-field" data-route="${escapeHtml(item.route || '')}" data-jump-path="${escapeHtml(item.path || '')}">${escapeHtml(item.text)}</button>${outputsNote(item.outputs)}`;
 }
 
 // A blocked filing can carry fifty-odd messages, so they are grouped, and
@@ -494,6 +504,28 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
     // re-derive it, which silently broke every jump-to-field link in this
     // panel once that fallback was gone.
     container.innerHTML = blockedPanelHTML(authorization.issues, D.inventoryType, { overridable: authorization.status !== 'blocked' });
+    // Milestone 76J item 1: the Preview blocked by something only the PDF
+    // carries (a supporting statement that can't be read) offers no Continue;
+    // Save as Excel's reason line gets its own when the workbook only waits
+    // for an acknowledgement.
+    if (authorization.status === 'blocked' && authorizeFilingOutput(D, baseIssues, { capability: 'excel' }).status === 'acknowledgement-required') {
+      const excelReason = [...document.querySelectorAll('[data-export-reason="outstanding"]')]
+        .find((el) => String(el.getAttribute('data-export-outputs') || '').split(' ').includes('excel'));
+      if (excelReason && !excelReason.querySelector('[data-export-continue]')) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-link btn-sm p-0 ms-1 align-baseline';
+        button.dataset.exportContinue = 'excel';
+        button.textContent = 'Continue despite outstanding requirements';
+        button.addEventListener('click', async () => {
+          if (!(await confirmModal('Requirements remain outstanding. Continue and save the Excel workbook anyway? The PDF stays blocked until its problem is corrected.'))) return;
+          if (!acknowledgeOutstandingRequirements(D, baseIssues)) return;
+          excelReason.remove();
+          announceStatus('Save as Excel can continue; the PDF is still blocked.', { containerId: 'print-preview-status' });
+        });
+        excelReason.append(button);
+      }
+    }
     container.querySelector('[data-preview-action="override"]')
       ?.addEventListener('click', async () => {
         if (authorization.status === 'blocked') return;

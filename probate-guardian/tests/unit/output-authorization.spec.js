@@ -87,6 +87,37 @@ describe('acknowledgeOutstandingRequirements()', () => {
   });
 });
 
+// Milestone 76J item 1: an acknowledgement covers the outputs it can. A
+// damaged supporting statement, which only the PDF includes, made Save as
+// Excel say "choose Continue" while no Continue was offered anywhere: the
+// acknowledgement was refused because any issue couldn't be overridden.
+describe('an acknowledgement covers the outputs it can (76J item 1)', () => {
+  beforeEach(() => {
+    clearOutputAcknowledgement();
+  });
+
+  it('a PDF-only problem leaves the workbook acknowledgeable; the PDF stays blocked', () => {
+    const data = { wardId: 'ward-76j', inventoryType: 'annual' };
+    const baseIssues = () => [
+      createRequiredIssue({ filingType: 'annual', path: 'typeOfGuardianship', message: 'Part I — Type of Guardianship' }),
+      createIssue('supplemental.not-pdf', { message: 'Corrupt supplement' }),
+    ];
+    expect(authorizeFilingOutput(data, baseIssues, { capability: 'excel' }).status).toBe('acknowledgement-required');
+    expect(acknowledgeOutstandingRequirements(data, baseIssues)).toBe(true);
+    expect(authorizeFilingOutput(data, baseIssues, { capability: 'excel' }).status).toBe('allowed');
+    expect(authorizeFilingOutput(data, baseIssues, { capability: 'pdf' }).status).toBe('blocked');
+  });
+
+  it('a problem that stops every output still refuses it', () => {
+    const data = { wardId: 'ward-76j-2', inventoryType: 'annual' };
+    const baseIssues = () => [
+      createRequiredIssue({ filingType: 'annual', path: 'typeOfGuardianship', message: 'Part I — Type of Guardianship' }),
+      createIssue('field.date.invalid', { message: 'Part I — Period From must be a valid date' }),
+    ];
+    expect(acknowledgeOutstandingRequirements(data, baseIssues)).toBe(false);
+  });
+});
+
 describe('authorizeFilingOutput()', () => {
   beforeEach(() => {
     clearOutputAcknowledgement();
