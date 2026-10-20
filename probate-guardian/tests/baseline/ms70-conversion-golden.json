@@ -1395,16 +1395,7 @@
      "schF2": [],
      "serviceNoRecipients": "",
      "signaturePolicy": 2,
-     "startingBalance": 1005,
-     "startingBalanceCarry": {
-      "carriedAt": "<time>",
-      "line20": "",
-      "line30": "",
-      "sourceLabel": "Simplified Annual Accounting 01/01/2026–12/31/2026",
-      "sourceWardId": "<id>",
-      "used": "simplifiedRemaining",
-      "value": 1005
-     },
+     "startingBalance": 1000,
      "trustInfo": {
       "accountNo": "",
       "dateCreated": "",
@@ -1455,7 +1446,7 @@
      "wardPartyId": null
     },
     "finalAccounting": {
-     "amendedForm": "No",
+     "amendedForm": "",
      "attorney": "Sample Attorney",
      "attorney_bar": "123456",
      "attorney_cityStateZip": "Clearwater, FL 33755",
@@ -1519,7 +1510,7 @@
        "name": ""
       }
      ],
-     "certWardStatus": "N/A",
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Final",
@@ -1571,8 +1562,8 @@
      "hasSafeDepositBox": "",
      "inventoryType": "finalAccounting",
      "lastModified": "<time>",
-     "periodFrom": "2026-01-01",
-     "periodTo": "2026-12-31",
+     "periodFrom": "2027-01-01",
+     "periodTo": "",
      "preparer": {
       "cityStateZip": "",
       "name": "",
@@ -2412,16 +2403,7 @@
      "serviceNoRecipients": "",
      "signaturePolicy": 2,
      "ssn": "",
-     "startingBalance": 10500,
-     "startingBalanceCarry": {
-      "carriedAt": "<time>",
-      "line20": 10500,
-      "line30": 0,
-      "sourceLabel": "Annual Accounting 01/01/2026–12/31/2026",
-      "sourceWardId": "<id>",
-      "used": "line20",
-      "value": 10500
-     },
+     "startingBalance": 10000,
      "typeOfGuardianship": "Plenary",
      "ucn": "",
      "wardId": "<id>",
@@ -2981,16 +2963,7 @@
      "serviceNoRecipients": "",
      "signaturePolicy": 2,
      "ssn": "",
-     "startingBalance": 10500,
-     "startingBalanceCarry": {
-      "carriedAt": "<time>",
-      "line20": 10500,
-      "line30": 0,
-      "sourceLabel": "Final Accounting 01/01/2026–12/31/2026",
-      "sourceWardId": "<id>",
-      "used": "line20",
-      "value": 10500
-     },
+     "startingBalance": 10000,
      "typeOfGuardianship": "Plenary",
      "ucn": "",
      "wardId": "<id>",

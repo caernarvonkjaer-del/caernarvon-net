@@ -96,8 +96,12 @@ for (const [source, fill] of SOURCES) {
       const before = new Set(await wardIds(page));
       // convertExistingWard() closes on an alert dialog: started without
       // awaiting here, the dialog accepted, then the promise read back.
+      // Milestone 76G item 1 (decision 76G-1): between an Annual-family
+      // accounting and a Simplified, Convert asks the period; recorded for the
+      // same period, as the conversions always worked (the Starting Balance is
+      // now the source's own -- the deliberate change the record shows).
       await page.evaluate(({ id, t }) => {
-        (window as any).__conversion = (window as any).GuardianForms.testing.convertFiling.convert(id, t);
+        (window as any).__conversion = (window as any).GuardianForms.testing.convertFiling.convert(id, t, { period: 'same' });
       }, { id: sourceId, t: target });
       await acceptDynDialog(page);
       await page.evaluate(() => (window as any).__conversion);

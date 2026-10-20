@@ -180,7 +180,7 @@ describe('the lifecycle: a same-period conversion carries the recipients and the
   test('Annual -> Simplified', () => {
     const src = { ...emptyDataAnnual(), inventoryType: 'annual', ...ANNUAL_CERT };
     const dest = { ...emptyDataSimplified(), inventoryType: 'simplified' };
-    conv.convertToSimplified(src, 'annual', dest);
+    conv.convertToSimplified(src, 'annual', dest, { period: 'same' });
     expect(dest.certRecipients[0].name).toBe('Sam Lee');
     expect(dest.certWardStatus).toBe('N/A');
     for (const k of [...ANSWERS, 'certServiceDate', 'attorney_signatureDate']) expect(dest[k], k).toBe('');
@@ -189,7 +189,7 @@ describe('the lifecycle: a same-period conversion carries the recipients and the
   test('Simplified -> Annual', () => {
     const src = { ...emptyDataSimplified(), inventoryType: 'simplified', ...SIMPLIFIED_CERT };
     const dest = { ...emptyDataAnnual(), inventoryType: 'annual' };
-    conv.convertSimplifiedToAnnual(src, dest);
+    conv.convertSimplifiedToAnnual(src, dest, { period: 'same' });
     expect(dest.certRecipients[0].name).toBe('Sam Lee');
     expect(dest.certWardStatus).toBe('N/A');
     for (const k of [...ANSWERS, 'certDate', 'attorney_signatureDate']) expect(dest[k], k).toBe('');
@@ -200,14 +200,14 @@ describe('the lifecycle: a same-period conversion carries the recipients and the
     delete src.certIndicatorMigrated;
     const before = structuredClone(src);
     const dest = { ...emptyDataSimplified(), inventoryType: 'simplified' };
-    conv.convertToSimplified(src, 'annual', dest);
+    conv.convertToSimplified(src, 'annual', dest, { period: 'same' });
     expect(dest.certWardStatus).toBe('Ward is totally incapacitated');
     expect(dest.certIndicator).toBe('');
     expect(src).toEqual(before);
     // Once opened (the marker set), the old box is the method, never a status.
     const opened = { ...src, certIndicatorMigrated: true };
     const dest2 = { ...emptyDataSimplified(), inventoryType: 'simplified' };
-    conv.convertToSimplified(opened, 'annual', dest2);
+    conv.convertToSimplified(opened, 'annual', dest2, { period: 'same' });
     expect(dest2.certWardStatus).toBe('');
   });
 });

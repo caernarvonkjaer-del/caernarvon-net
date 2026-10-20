@@ -155,11 +155,11 @@ describe('conversion copies a recipient whole (73O part 2)', () => {
     const conv = await import('../../src/core/filing/conversion.js');
     // Annual -> Simplified: the Annual's fourth line used to be folded onto the Simplified's third.
     const simplified = initializeEmptyData('simplified');
-    conv.convertToSimplified({ ...initializeEmptyData('annual'), certRecipients: [{ ...FIVE }] }, 'annual', simplified);
+    conv.convertToSimplified({ ...initializeEmptyData('annual'), certRecipients: [{ ...FIVE }] }, 'annual', simplified, { period: 'same' });
     expect(simplified.certRecipients[0]).toEqual(FIVE);
     // Simplified -> Annual: the fourth line used to be left blank.
     const annual = initializeEmptyData('annual');
-    conv.convertSimplifiedToAnnual({ ...initializeEmptyData('simplified'), certRecipients: [{ ...FIVE }] }, annual);
+    conv.convertSimplifiedToAnnual({ ...initializeEmptyData('simplified'), certRecipients: [{ ...FIVE }] }, annual, { period: 'same' });
     expect(annual.certRecipients[0]).toEqual(FIVE);
     // Inventory -> Annual, from a filing saved before 73O part 2: street and city/state/ZIP as lines 2 and 3.
     const fromInventory = initializeEmptyData('annual');

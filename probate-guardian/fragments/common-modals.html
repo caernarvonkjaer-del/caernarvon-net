@@ -43,6 +43,19 @@
       <select class="form-select" id="convert-trust"></select>
       <div class="form-text">Part VIII's trusts created after the guardianship began. The Clerk's form asks for a separate trust accounting for each.</div>
     </div>
+    <fieldset class="mb-3" id="convert-period-wrap" hidden>
+      <legend class="form-label">Which period the new form covers</legend>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="convert-period" id="convert-period-same" value="same">
+        <label class="form-check-label" for="convert-period-same" id="convert-period-same-label">The same period</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="convert-period" id="convert-period-next" value="next">
+        <label class="form-check-label" for="convert-period-next" id="convert-period-next-label">The next period</label>
+      </div>
+      <div class="form-text">The same period: this filing again, in the other form, from its own Starting Balance. The next period: the one after, from this filing's ending balance.</div>
+      <div class="text-danger small mt-1" id="convert-period-error" role="alert" hidden>Choose the same period or the next.</div>
+    </fieldset>
     <div id="convert-note" class="modal-note-box"></div>
     <div class="d-flex gap-2">
       <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="convertWardModal">Cancel</button>

@@ -6,7 +6,7 @@
 (the requester, 2026-10-19, on Revision 2: "76A–76D, data loss"), in that
 order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
 approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
-76E built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
+76E and 76G item 1 built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
@@ -1258,6 +1258,42 @@ the case number.
 | 7 UI | The Convert dialog gains 76G-1's question; existing notice pattern. |
 | 8 Legal | 76G-1 follows the Clerk's own definition of Line 1; item 2's trust answer decides whether a trust accounting is required, so it is left to the filer. |
 | 9 Cross-form | Every conversion pair checked; 76G-3 follows Start New Year's carry, without the ward's status (72G). |
+
+### Build record — item 1 BUILT 2026-10-20
+
+Approved by name (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5"); the
+other items of 76G are not approved. What a filer now sees: making a
+Simplified from an Annual, Final or Trust Accounting, or an Annual or Trust
+Accounting from a Simplified, asks **Which period the new form covers** --
+"The same period (01/01/2025 – 12/31/2025)" or "The next period (from
+01/01/2026)" -- with nothing chosen; Create Form refuses until one is.
+
+- **The same period** (decision 76G-1): the source's own Starting Balance and
+  its carry record, its period, its amendment answer, the ward's status and
+  any remuneration. The 2025 Annual of $10,000 + $50 - $20 now makes a 2025
+  Simplified starting at $10,000 (it started at $10,030, so the year counted
+  twice).
+- **The next period:** the day after the source's period ends (Period To
+  left for the filer) and its ending balance (decision D6); the amendment
+  answer, the ward's status and remuneration start blank, as Start New Year
+  and Milestone 72G begin a later filing.
+- **Simplified -> Final** is always the next period (Rule 5.680(c), as 74K
+  reads it for an Annual) and its notice names the Final Accounting (it
+  said "the new Annual Accounting" and copied the Simplified's period).
+- Across the trust boundary the Starting Balance stays blank either way
+  (decision D9).
+- The pairs are the Annual family's three types, not the Annual alone: the
+  Final -> Simplified pair carried the ending balance into the same period
+  exactly as the Annual did.
+
+Tests: `carried-balance.spec.js`'s 76G-1 cases (red first: $10,030 where
+$10,000; the old period kept; no question); `convert-ward.spec.ts`'s two
+(the dialog asks, refuses unanswered, carries what each answer says; none
+for Annual -> Final -- red first: no question); the five specs that carry
+the certificate, status, remuneration and attorney convert for the same
+period; `filing-conversion.characterization.spec.ts` records the same
+period, its golden record changed in exactly the Starting Balances above and
+Simplified -> Final's period.
 
 ---
 

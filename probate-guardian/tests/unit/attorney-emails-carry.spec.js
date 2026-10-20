@@ -127,12 +127,12 @@ describe('the conversions keep both emails', () => {
   });
   test('Annual -> Simplified', () => {
     const dest = { ...emptyDataSimplified(), inventoryType: 'simplified' };
-    conv.convertToSimplified(source('annual'), 'annual', dest);
+    conv.convertToSimplified(source('annual'), 'annual', dest, { period: 'same' });
     expect([dest.attorney_email, dest.attorney_secondaryEmail]).toEqual(ATTORNEY.slice(2));
   });
   test('Simplified -> Annual', () => {
     const dest = { ...emptyDataAnnual(), inventoryType: 'annual' };
-    conv.convertSimplifiedToAnnual(source('simplified'), dest);
+    conv.convertSimplifiedToAnnual(source('simplified'), dest, { period: 'same' });
     expect([dest.attorney_email, dest.attorney_secondaryEmail]).toEqual(ATTORNEY.slice(2));
   });
 });

@@ -349,13 +349,14 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
       release: () => call('releaseWardLock'),
     }),
     convertFiling: Object.freeze({
-      convert: (sourceFilingId, targetType) => filingLifecycle.convert(sourceFilingId, targetType),
+      // Milestone 76G item 1: `options.period` ('same' or 'next') where Convert asks it.
+      convert: (sourceFilingId, targetType, options) => filingLifecycle.convert(sourceFilingId, targetType, options),
       /** The Convert dialog (its entry points are the dashboard's; the dialog is what specs test). */
       openDialog: () => showConvertWardModal(),
       /** The target types a filing type may convert to, as the app lists them (a copy). */
       targetsFor: (type) => copy(convertTargetsFor(type)),
       /** The app's own description of a conversion. */
-      describe: (fromType, toType) => copy(describeConversion(fromType, toType)),
+      describe: (fromType, toType, period) => copy(describeConversion(fromType, toType, period)),
     }),
     /**
      * Milestone 73E part 1: the import transaction (src/core/excel/

@@ -19,6 +19,8 @@ import { alertModal } from '../ui/dialogs.js';
 import { recordModelChange } from '../model-change.js';
 import { RECIPIENT_FIELDS, normalizeRecipientShape } from './recipient-shape.js';
 import { isTrustAccountingType, trustInfoFrom } from './trust-identity.js';
+import { nextIsoDay } from '../form/date-parser.js';
+import { isFinalAccountingType } from './final-report.js';
 
 // Milestone 73O part 2: a recipient copied into another filing, in the one
 // shape; a source saved before 73O is read in it first (an Inventory's street
@@ -38,25 +40,94 @@ function copyRecipient(r){
 // dialog says so rather than promising a figure that does not arrive.
 const TRUST_NO_CARRY=' Starting Balance is left blank: a trust accounting does not start from the guardianship\'s net assets (the Clerk compares a first trust accounting with the amount the annual accounting disbursed into the trust), so enter it yourself.';
 
-export function describeConversion(srcType,destType){
+// Milestone 76G item 1 (decision 76G-1, the requester's): a filing made
+// between an Annual-family accounting and a Simplified covers the same
+// period, or the next -- Convert asks. It always copied the period and
+// carried the ending balance, so a Simplified made from a 2025 Annual for
+// 2025 started from the Annual's own ending balance: the year counted twice
+// once its interest and charges were entered, and again on converting back.
+// Same period: the source's own Starting Balance and its carry record (so
+// Milestone 71's notes still name the true prior filing), its period, the
+// ward's status and remuneration. Next period: the day after the source's
+// period ends and its ending balance (decision D6), the rest blank -- as Start
+// New Year and Milestone 72G begin a later filing. A Final Accounting made
+// from a Simplified is always the next (Rule 5.680(c), as Milestone 74K
+// reads it for an Annual), so it is not asked.
+export const CONVERT_PERIODS=Object.freeze(['same','next']);
+export function convertAsksPeriod(srcType,destType){
+  return (formEngine(srcType)==='annual'&&destType==='simplified')
+    ||(srcType==='simplified'&&formEngine(destType)==='annual'&&!isFinalAccountingType(destType));
+}
+function requirePeriod(period){
+  if(!CONVERT_PERIODS.includes(period))throw new Error('This conversion needs its period: the same period, or the next.');
+}
+
+// The parts of an accounting that belong to its period.
+function carryPeriod(src,dest,period){
+  if(period==='same'){
+    dest.periodFrom=src.periodFrom||'';
+    dest.periodTo=src.periodTo||'';
+    dest.amendedForm=src.amendedForm||'';
+    if(crossesTrust(src.inventoryType,dest.inventoryType)){
+      applyCarriedStartingBalance(dest,src,dest.inventoryType);
+    }else{
+      dest.startingBalance=keep(src.startingBalance);
+      if(src.startingBalanceCarry&&typeof src.startingBalanceCarry==='object')dest.startingBalanceCarry=JSON.parse(JSON.stringify(src.startingBalanceCarry));
+      else delete dest.startingBalanceCarry;
+    }
+    // Milestone 72G (decided 2026-10-02): a certificate describes one filing
+    // being served. A same-period conversion carries the recipients and the
+    // ward's status -- for a source not opened since 72G, as its once-only move
+    // would leave it (wardStatusAsMigrated(), read-only) -- and starts the date,
+    // the method, every certificate signature and the attorney's own signature
+    // date blank: the new filing is signed and served on its own date.
+    dest.certWardStatus=wardStatusAsMigrated(src);
+    const rem=(src.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
+    if(rem.length){
+      dest.remuneration=rem.map(r=>({guardian:r.guardian||'',type:r.type||'',
+        amount:keep(r.amount),description:r.description||''}));
+    }
+    return;
+  }
+  // The next period: it starts the day after the source's ends; its end, the
+  // amendment, the ward's status and remuneration are the new period's own.
+  applyCarriedStartingBalance(dest,src,dest.inventoryType);
+  dest.periodFrom=nextIsoDay(src.periodTo);
+  dest.periodTo='';
+  dest.amendedForm='';
+  dest.certWardStatus='';
+}
+
+const SAME_BALANCE='its Starting Balance is this filing\'s own Starting Balance (not its ending balance, which would count the period twice)';
+const PERIOD_BOUND='the reporting period, the ward\'s status and any remuneration';
+
+function describePeriodConversion(srcType,destType,period){
+  const trust=crossesTrust(srcType,destType);
+  const ending=srcType==='simplified'?'the Simplified Annual Accounting\'s Remaining Assets On Hand (Line 8)':'this filing\'s net asset total';
+  const trustBalance=' Its Starting Balance is left blank: a trust accounting\'s balance is not the guardianship\'s, so enter it yourself.';
+  const same=`For the same period, ${PERIOD_BOUND} carry over`+(trust?`.${trustBalance}`:`, and ${SAME_BALANCE}.`);
+  const next='For the next period, it starts the day after this filing\'s period ends (enter its Period To)'
+    +(trust?`.${trustBalance}`:`, and ${ending} becomes its Starting Balance.`)
+    +' The ward\'s status and remuneration start blank: they belong to the period just reported.';
+  const common=destType==='simplified'
+    ?'The attorney block and the certificate-of-service recipients are carried over. The Simplified Annual Accounting has no asset schedules, so none are carried.'
+    :`The attorney block and the certificate-of-service recipients are carried over. The Simplified Annual Accounting doesn't track itemized assets, so the new ${INVENTORY_TYPES[destType].name}'s schedules start blank for you to complete.`;
+  if(period==='same')return `${same} ${common}`;
+  if(period==='next')return `${next} ${common}`;
+  return `Choose which period the new form covers. ${same} ${next} ${common}`;
+}
+
+export function describeConversion(srcType,destType,period=''){
+  if(convertAsksPeriod(srcType,destType))return describePeriodConversion(srcType,destType,period);
+  if(srcType==='simplified'&&isFinalAccountingType(destType)){
+    return 'The Final Accounting starts the day after this filing\'s period ended (Rule 5.680(c): from the date of the previous accounting), and the Simplified Annual Accounting\'s Remaining Assets On Hand (Line 8) becomes its Starting Balance. The attorney block and the certificate-of-service recipients are carried over; the ward\'s status and remuneration start blank, and the Final Accounting\'s schedules start blank for you to complete.';
+  }
   if(srcType==='guardian'&&formEngine(destType)==='annual'){
     return 'Real estate, cash accounts, personal property, intangible assets, debts, income sources, and trusts are carried into the matching schedules, along with the attorney block and the certificate of service\'s recipients. Review each schedule afterward — carrying values and this year\'s actual activity still need to be confirmed.'
       +(crossesTrust(srcType,destType)?TRUST_NO_CARRY:' The Initial Inventory\'s total becomes the Starting Balance, rounded to cents.');
   }
   if(srcType==='guardian'&&destType==='simplified'){
     return 'The Initial Inventory\'s total Ward\'s Value becomes the Starting Balance, and the attorney block and certificate of service recipients are carried over too. Simplified Accounting has no asset schedules, so itemised assets collapse into that single figure rather than transferring line by line.';
-  }
-  if(formEngine(srcType)==='annual'&&destType==='simplified'){
-    return (crossesTrust(srcType,destType)
-      ?'The reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over. Starting Balance is left blank: a trust accounting\'s ending balance is not the guardianship\'s, so enter it yourself.'
-      :'The Annual Accounting\'s net asset total becomes the Starting Balance, and the reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over too.')
-      +' The Simplified Annual Accounting has no asset schedules, so itemised schedule data collapses into that single figure rather than transferring line by line.';
-  }
-  if(srcType==='simplified'&&formEngine(destType)==='annual'){
-    return (crossesTrust(srcType,destType)
-      ?'The reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over.'+TRUST_NO_CARRY
-      :'The Simplified Annual Accounting\'s Remaining Assets On Hand (Line 8) becomes the Starting Balance, and the reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over too.')
-      +' Since the Simplified Annual Accounting doesn\'t track itemized assets, the new Annual Accounting\'s schedules start blank for you to complete.';
   }
   // Milestone 40H-I: same-family accounting-to-accounting (e.g. Annual ->
   // Final/Trust) -- checked ahead of the generic fallback below, which would
@@ -220,7 +291,7 @@ export function convertGuardianExtrasToAnnual(src,dest){
 // themselves collapse into the Starting Balance; what else can move is the
 // attorney block, the certificate of service, the reporting period, and any
 // remuneration disclosure.
-export function convertToSimplified(src,srcType,dest){
+export function convertToSimplified(src,srcType,dest,{period=''}={}){
   // Milestone 57B (D7): the attestation never survives a conversion. It is
   // THIS filer's assertion about THIS filing -- that nobody required service
   // on it -- and a new filing has its own recipients and its own answer. It
@@ -234,11 +305,11 @@ export function convertToSimplified(src,srcType,dest){
   // is the assertion that is dropped, never the data.
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
-  // Milestone 71E: the one carry (starting-balance-carry.js), rounded to cents
-  // by the workbook's rule; nothing across the trust boundary.
-  applyCarriedStartingBalance(dest,src,'simplified');
 
   if(srcType==='guardian'){
+    // Milestone 71E: the one carry (starting-balance-carry.js), rounded to cents
+    // by the workbook's rule; nothing across the trust boundary.
+    applyCarriedStartingBalance(dest,src,'simplified');
     const a=src.attorney||{};
     dest.attorney_barNumber=a.barNumber||'';
     dest.attorney_phone=a.phone||'';
@@ -255,10 +326,10 @@ export function convertToSimplified(src,srcType,dest){
     return;
   }
 
-  // Annual family -> Simplified. Same ward, same period, smaller form.
-  dest.periodFrom=src.periodFrom||'';
-  dest.periodTo=src.periodTo||'';
-  dest.amendedForm=src.amendedForm||'';
+  // Annual family -> Simplified: the same ward in the smaller form, for the
+  // same period or the next (decision 76G-1; carryPeriod() above).
+  requirePeriod(period);
+  carryPeriod(src,dest,period);
   dest.attorney_barNumber=src.attorney_bar||'';
   dest.attorney_phone=src.attorney_phone||'';
   // Milestone 72B: both emails, beside the rest of the attorney's details.
@@ -266,29 +337,17 @@ export function convertToSimplified(src,srcType,dest){
   dest.attorney_secondaryEmail=src.attorney_secondaryEmail||'';
   dest.attorney_street=src.attorney_street||'';
   dest.attorney_cityStateZip=src.attorney_cityStateZip||'';
-  // Milestone 72G (decided 2026-10-02): a certificate describes one filing
-  // being served. A same-period conversion carries the recipients and the
-  // ward's status -- for a source not opened since 72G, as its once-only move
-  // would leave it (wardStatusAsMigrated(), read-only) -- and starts the date,
-  // the method, every certificate signature and the attorney's own Part V
-  // signature date blank: the new filing is signed and served on its own date.
-  dest.certWardStatus=wardStatusAsMigrated(src);
   // Milestone 72H: no certAtty... details (Part V's attorney is the
   // certificate's).
   // Milestone 73O part 2: the Simplified now has the Annual's lines (it folded
   // the Annual's fourth line onto its third), so each recipient copies whole.
   (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{dest.certRecipients[i]=copyRecipient(r);});
-  const rem=(src.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
-  if(rem.length){
-    dest.remuneration=rem.map(r=>({guardian:r.guardian||'',type:r.type||'',
-      amount:keep(r.amount),description:r.description||''}));
-  }
 }
 
 // Simplified -> Annual family: the mirror of convertToSimplified()'s second
 // half. The Simplified form has no schedules to expand, so its ending
 // balance becomes the new Starting Balance and the schedules start blank.
-export function convertSimplifiedToAnnual(src,dest){
+export function convertSimplifiedToAnnual(src,dest,{period=''}={}){
   // Milestone 57B (D7): the attestation never survives a conversion. It is
   // THIS filer's assertion about THIS filing -- that nobody required service
   // on it -- and a new filing has its own recipients and its own answer. It
@@ -302,12 +361,11 @@ export function convertSimplifiedToAnnual(src,dest){
   // is the assertion that is dropped, never the data.
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
-  // Milestone 71E: the one carry (starting-balance-carry.js), rounded to cents
-  // by the workbook's rule; nothing across the trust boundary.
-  applyCarriedStartingBalance(dest,src,dest.inventoryType);
-  dest.periodFrom=src.periodFrom||'';
-  dest.periodTo=src.periodTo||'';
-  dest.amendedForm=src.amendedForm||'';
+  // Decision 76G-1: the same period or the next (carryPeriod() above); a Final
+  // Accounting is always the next (Rule 5.680(c), as Milestone 74K reads it).
+  if(isFinalAccountingType(dest.inventoryType))period='next';
+  requirePeriod(period);
+  carryPeriod(src,dest,period);
   dest.attorney_bar=src.attorney_barNumber||'';
   dest.attorney_phone=src.attorney_phone||'';
   // Milestone 72B: both emails, beside the rest of the attorney's details.
@@ -320,28 +378,18 @@ export function convertSimplifiedToAnnual(src,dest){
   // silently defaulted to Pinellas. It carries over only an existing
   // attorney_county, and otherwise stays blank for the filer to supply.
   dest.attorney_county=dest.attorney_county||src.attorney_county||'';
-  // Milestone 72G (decided 2026-10-02): a certificate describes one filing
-  // being served. A same-period conversion carries the recipients and the
-  // ward's status -- for a source not opened since 72G, as its once-only move
-  // would leave it (wardStatusAsMigrated(), read-only) -- and starts the date,
-  // the method, every certificate signature and the attorney's own Part V
-  // signature date blank: the new filing is signed and served on its own date.
-  dest.certWardStatus=wardStatusAsMigrated(src);
   (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{dest.certRecipients[i]=copyRecipient(r);});
-  const rem=(src.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
-  if(rem.length){
-    dest.remuneration=rem.map(r=>({guardian:r.guardian||'',type:r.type||'',
-      amount:keep(r.amount),description:r.description||''}));
-  }
 }
 
 // Milestone 74N: `trustIndex` names the source's Part VIII trust a Trust
 // Accounting reports on (the dialog's choice); none leaves the block blank.
-export async function convertExistingWard(sourceWardId,targetType,{trustIndex=''}={}){
+// Decision 76G-1: `period` ('same' or 'next') for a pair convertAsksPeriod() names.
+export async function convertExistingWard(sourceWardId,targetType,{trustIndex='',period=''}={}){
   const sourceWard=getCaseFile().wards.find(w=>w.wardId===sourceWardId);
   if(!sourceWard)return;
   const srcType=sourceWard.inventoryType;
   if(srcType===targetType){await alertModal('Please choose a different filing type.');return;}
+  if(convertAsksPeriod(srcType,targetType)&&!CONVERT_PERIODS.includes(period)){await alertModal('Choose whether the new form covers the same period or the next.');return;}
 
   // Milestone 72H (decided at the Antigravity review): a source not opened
   // since 72H has not had its once-only certificate fill, so every mapper
@@ -375,9 +423,9 @@ export async function convertExistingWard(sourceWardId,targetType,{trustIndex=''
     convertGuardianSchedulesToAnnual(source,newWard);
     convertGuardianExtrasToAnnual(source,newWard);
   }else if(targetType==='simplified'){
-    convertToSimplified(source,srcType,newWard);
+    convertToSimplified(source,srcType,newWard,{period});
   }else if(srcType==='simplified'&&formEngine(targetType)==='annual'){
-    convertSimplifiedToAnnual(source,newWard);
+    convertSimplifiedToAnnual(source,newWard,{period});
   }
   // annual->guardian and simplified->guardian: header fields only (mapped
   // above) — an Initial Inventory has no accounting-period equivalent to
@@ -396,5 +444,5 @@ export async function convertExistingWard(sourceWardId,targetType,{trustIndex=''
   recordModelChange('conversion');
   navigate('/', { reason: DRAW.SWITCH });
   // Milestone 74J: nothing is converted -- a new filing is made from this one.
-  await alertModal(`Created a new ${INVENTORY_TYPES[targetType].name} for ${sourceWard.wardName} from their ${INVENTORY_TYPES[srcType].name}. The ${INVENTORY_TYPES[srcType].name} is unchanged.\n\n${describeConversion(srcType,targetType)}`);
+  await alertModal(`Created a new ${INVENTORY_TYPES[targetType].name} for ${sourceWard.wardName} from their ${INVENTORY_TYPES[srcType].name}. The ${INVENTORY_TYPES[srcType].name} is unchanged.\n\n${describeConversion(srcType,targetType,period)}`);
 }

@@ -172,7 +172,7 @@ describe('conversions', () => {
     expect(certDetailKeys(fromInv)).toEqual([]);
     expect(fromInv.attorney_barNumber).toBe(D2.barNumber);
     const fromAnnual = { ...emptyDataSimplified(), inventoryType: 'simplified' };
-    conv.convertToSimplified({ ...emptyDataAnnual(), inventoryType: 'annual', attorney_bar: '00765432' }, 'annual', fromAnnual);
+    conv.convertToSimplified({ ...emptyDataAnnual(), inventoryType: 'annual', attorney_bar: '00765432' }, 'annual', fromAnnual, { period: 'same' });
     expect(certDetailKeys(fromAnnual)).toEqual([]);
     expect(fromAnnual.attorney_barNumber).toBe('00765432');
   });
@@ -193,7 +193,7 @@ describe('conversions', () => {
     const src = simplified({ attorney_barNumber: '' });
     const before = structuredClone(src);
     const dest = { ...emptyDataAnnual(), inventoryType: 'annual' };
-    conv.convertSimplifiedToAnnual(mig.withOldCertificateFilled(src, 'simplified'), dest);
+    conv.convertSimplifiedToAnnual(mig.withOldCertificateFilled(src, 'simplified'), dest, { period: 'same' });
     expect(dest.attorney_bar).toBe('00999999');
     expect(src).toEqual(before);
     const opened = simplified({ attorney_barNumber: '', certAttorneyMigrated: true });

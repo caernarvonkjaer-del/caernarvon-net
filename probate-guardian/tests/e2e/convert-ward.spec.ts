@@ -204,6 +204,70 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
   });
 });
 
+// Milestone 76G item 1 (decision 76G-1): between an Annual and a Simplified
+// the dialog asks which period the new form covers. It always copied the
+// period and carried the ending balance, so a Simplified made from a 2025
+// Annual for 2025 counted the year twice.
+test.describe('76G-1: the same period or the next', () => {
+  test('the dialog asks, refuses to guess, and each answer carries what it says', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Period Ward', 'annual');
+    const sourceId = await page.evaluate(async () => {
+      const t = (window as any).GuardianForms.testing;
+      t.patchFiling({ // setup (D9)
+        periodFrom: '2025-01-01', periodTo: '2025-12-31', startingBalance: 10000,
+        schA: [{ payer: 'Bank', description: 'Interest', bank: '', accountNo: '', amount: 50 }],
+        schB1: [{ bankAcct: '', checkNo: '', periodFrom: '', periodTo: '', datePaid: '2025-06-01', payee: 'Bank', courtOrderDate: '', amount: 20 }],
+      });
+      await t.save.flush();
+      return t.snapshot().filing.wardId;
+    });
+
+    await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.openDialog());
+    await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
+    await page.locator('#convert-target-type').selectOption('simplified');
+    const period = page.locator('#convert-period-wrap');
+    await expect(period).toBeVisible();
+    await expect(page.locator('#convert-period-same-label')).toHaveText('The same period (01/01/2025 – 12/31/2025)');
+    await expect(page.locator('#convert-period-next-label')).toHaveText('The next period (from 01/01/2026)');
+    await expect(page.locator('#convert-period-same')).not.toBeChecked();
+    await expect(page.locator('#convert-period-next')).not.toBeChecked();
+
+    // Nothing is chosen for the filer.
+    await page.locator('#convertWardModal [data-modal-action="convert-ward"]').click();
+    await expect(page.locator('#convert-period-error')).toBeVisible();
+    await expect(page.locator('#convertWardModal.show')).toBeVisible();
+
+    await page.locator('#convert-period-same').check();
+    await expect(page.locator('#convert-note')).toContainText("its Starting Balance is this filing's own Starting Balance");
+    await page.locator('#convertWardModal [data-modal-action="convert-ward"]').click();
+    const notice = await acceptDynDialog(page);
+    expect(notice).toContain('For the same period');
+    const same = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing);
+    expect(same).toMatchObject({ inventoryType: 'simplified', periodFrom: '2025-01-01', periodTo: '2025-12-31' });
+    expect(Number(same.startingBalance)).toBe(10000);
+
+    await page.evaluate((id) => {
+      (window as any).__next = (window as any).GuardianForms.testing.convertFiling.convert(id, 'simplified', { period: 'next' })
+        .then(() => (window as any).GuardianForms.testing.snapshot().filing);
+    }, sourceId);
+    await acceptDynDialog(page);
+    const next = await page.evaluate(() => (window as any).__next);
+    expect(next.periodFrom).toBe('2026-01-01');
+    expect(next.periodTo).toBeFalsy();
+    expect(Number(next.startingBalance)).toBe(10030);
+  });
+
+  test('a form with no period question shows none', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'No Period Ward', 'annual');
+    await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.openDialog());
+    await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
+    await page.locator('#convert-target-type').selectOption('finalAccounting');
+    await expect(page.locator('#convert-period-wrap')).toBeHidden();
+  });
+});
+
 // Milestone 74J (decision 74J-3): New Filing from Existing offered only the
 // Initial Inventory from an Initial Guardianship Plan -- never the Annual
 // Guardianship Plan that follows it, which New Form's Load Ward Info already

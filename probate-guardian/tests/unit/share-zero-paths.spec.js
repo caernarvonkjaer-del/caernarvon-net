@@ -89,12 +89,12 @@ describe('Initial Inventory -> Annual keeps every share as entered', () => {
 describe('remuneration amounts keep $0 between the Annual and the Simplified', () => {
   test('Annual -> Simplified', () => {
     const dest = { ...emptyDataSimplified(), inventoryType: 'simplified' };
-    convertToSimplified({ inventoryType: 'annual', remuneration: [{ guardian: 'G', type: 'Fee', amount: 0 }] }, 'annual', dest);
+    convertToSimplified({ inventoryType: 'annual', remuneration: [{ guardian: 'G', type: 'Fee', amount: 0 }] }, 'annual', dest, { period: 'same' });
     expect(dest.remuneration[0].amount).toBe(0);
   });
   test('Simplified -> Annual', () => {
     const dest = { ...emptyDataAnnual(), inventoryType: 'annual' };
-    convertSimplifiedToAnnual({ inventoryType: 'simplified', remuneration: [{ guardian: 'G', type: 'Fee', amount: 0 }] }, dest);
+    convertSimplifiedToAnnual({ inventoryType: 'simplified', remuneration: [{ guardian: 'G', type: 'Fee', amount: 0 }] }, dest, { period: 'same' });
     expect((dest.remuneration || []).map((r) => r.amount)).toContain(0);
   });
 });

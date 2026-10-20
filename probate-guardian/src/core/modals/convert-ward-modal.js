@@ -3,7 +3,8 @@ import { getCaseFile, getActiveWard } from '../state.js';
 import { convertTargetsFor } from '../filing/filing-descriptor.js';
 import { alertModal, closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
-import { describeConversion } from '../filing/conversion.js';
+import { convertAsksPeriod, describeConversion } from '../filing/conversion.js';
+import { displayDate, nextIsoDay } from '../form/date-parser.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { bindComboboxKeyboardNav, comboboxAssignOptionIds, comboboxFilterItems, comboboxHide, comboboxRenderDropdown } from '../ui/combobox.js';
 import { formEngine } from '../filing/filing-registry.js';
@@ -79,11 +80,47 @@ export function updateConvertTargetOptions() {
   // describeConversion() are the real ones (the same text the post-conversion
   // alert reuses).
   const preview = () => {
+    updateConvertPeriodOptions(ward, targetSel.value);
     updateConvertNotePreview(ward.inventoryType, targetSel.value);
     updateConvertTrustOptions(ward, targetSel.value);
   };
   targetSel.onchange = preview;
+  for (const radio of document.querySelectorAll('input[name="convert-period"]')) {
+    /** @type {HTMLInputElement} */ (radio).onchange = () => {
+      const err = document.getElementById('convert-period-error');
+      if (err) err.hidden = true;
+      updateConvertNotePreview(ward.inventoryType, targetSel.value);
+    };
+  }
   preview();
+}
+
+// Milestone 76G item 1 (decision 76G-1): between an Annual-family accounting
+// and a Simplified, the filer says which period the new form covers. Nothing
+// is chosen for them: each change of filing or form clears the answer.
+export function convertPeriodChoice() {
+  const wrap = document.getElementById('convert-period-wrap');
+  if (!wrap || wrap.hidden) return '';
+  const checked = /** @type {HTMLInputElement | null} */ (wrap.querySelector('input[name="convert-period"]:checked'));
+  return checked ? checked.value : '';
+}
+
+export function updateConvertPeriodOptions(ward, targetType) {
+  const wrap = document.getElementById('convert-period-wrap');
+  if (!wrap) return;
+  const asks = !!ward && convertAsksPeriod(ward.inventoryType, targetType);
+  wrap.hidden = !asks;
+  for (const radio of wrap.querySelectorAll('input[name="convert-period"]')) /** @type {HTMLInputElement} */ (radio).checked = false;
+  const err = document.getElementById('convert-period-error');
+  if (err) err.hidden = true;
+  if (!asks) return;
+  const from = displayDate(ward.periodFrom);
+  const to = displayDate(ward.periodTo);
+  const next = displayDate(nextIsoDay(ward.periodTo));
+  const same = document.getElementById('convert-period-same-label');
+  const after = document.getElementById('convert-period-next-label');
+  if (same) same.textContent = from || to ? `The same period (${from || '?'} – ${to || '?'})` : 'The same period';
+  if (after) after.textContent = next ? `The next period (from ${next})` : 'The next period';
 }
 
 // Milestone 70, 70G: the source picker and note preview of the dialog above,
@@ -146,7 +183,7 @@ export function updateConvertTrustOptions(ward, targetType) {
 
 export function updateConvertNotePreview(srcType,destType){
   const noteEl=document.getElementById('convert-note');
-  noteEl.textContent=describeConversion(srcType,destType);
+  noteEl.textContent=describeConversion(srcType,destType,convertPeriodChoice());
 }
 
 export async function doConvertWard(){
@@ -155,8 +192,17 @@ export async function doConvertWard(){
   if(!sourceWardId||!targetType)return;
   const trustWrap=document.getElementById('convert-trust-wrap');
   const trustIndex=trustWrap&&!trustWrap.hidden?document.getElementById('convert-trust').value:'';
+  // Decision 76G-1: the period is asked, never assumed.
+  const periodWrap=document.getElementById('convert-period-wrap');
+  const period=convertPeriodChoice();
+  if(periodWrap&&!periodWrap.hidden&&!period){
+    const err=document.getElementById('convert-period-error');
+    if(err)err.hidden=false;
+    /** @type {HTMLElement | null} */ (document.getElementById('convert-period-same'))?.focus();
+    return;
+  }
   closeModal('convertWardModal');
-  await filingLifecycle.convert(sourceWardId,targetType,{trustIndex});
+  await filingLifecycle.convert(sourceWardId,targetType,{trustIndex,period});
 }
 
 /** A click outside the source picker closes its list. Installed once by main.js; the signal removes it. */

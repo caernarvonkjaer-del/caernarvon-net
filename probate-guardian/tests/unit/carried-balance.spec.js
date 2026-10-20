@@ -116,17 +116,18 @@ describe('every carry path calls the one carry', () => {
     expect(trust.startingBalance).toBe('');
   });
 
-  test('Annual -> Simplified: Line 30, as a number', () => {
+  // Decision 76G-1: the ending balance carries into the next period.
+  test('Annual -> Simplified for the next period: Line 30, as a number', () => {
     const dest = { ...emptyDataSimplified(), inventoryType: 'simplified' };
-    conversion.convertToSimplified(annual({ schD1: [d1(1100.005)] }), 'annual', dest);
+    conversion.convertToSimplified(annual({ schD1: [d1(1100.005)] }), 'annual', dest, { period: 'next' });
     expect(dest.startingBalance).toBe(1100.01);
     expect(dest.startingBalanceCarry).toMatchObject({ used: 'line30', value: 1100.01 });
   });
 
-  test('Simplified -> Annual: the remaining assets on hand', () => {
+  test('Simplified -> Annual for the next period: the remaining assets on hand', () => {
     const s = { ...emptyDataSimplified(), wardId: 'simp', inventoryType: 'simplified', startingBalance: 1234.56, interestIncome: 0.1, depositsSettlement: 0.2, serviceCharges: 0.3, federalIncomeTax: 1.005 };
     const dest = { ...emptyDataAnnual(), inventoryType: 'annual' };
-    conversion.convertSimplifiedToAnnual(s, dest);
+    conversion.convertSimplifiedToAnnual(s, dest, { period: 'next' });
     expect(dest.startingBalance).toBe(1233.56);
     expect(dest.startingBalanceCarry).toMatchObject({ used: 'simplifiedRemaining', value: 1233.56 });
   });
@@ -136,6 +137,84 @@ describe('every carry path calls the one carry', () => {
     expect(conversion.describeConversion('guardian', 'annual')).toContain('The Initial Inventory\'s total becomes the Starting Balance');
     expect(conversion.describeConversion('guardian', 'trustAccounting')).toContain('Starting Balance is left blank');
     expect(conversion.describeConversion('annual', 'finalAccounting')).not.toContain('left blank');
+  });
+});
+
+// Milestone 76G item 1 (decision 76G-1, the requester's): a filing made
+// between an Annual-family accounting and a Simplified covers the same period
+// or the next, and Convert asks. It always copied the period and carried the
+// ending balance: an Annual for 2025 starting at $10,000 with $50 in and $20
+// out ends at $10,030; a Simplified made from it for 2025 started at $10,030,
+// so once the same $50/$20 were entered its Line 8 read $10,060 -- the year
+// counted twice, and again on converting back.
+describe('the same period or the next (76G-1)', () => {
+  let conversion;
+  beforeAll(async () => { conversion = await import('../../src/core/filing/conversion.js'); });
+  const year = (extra = {}) => annual({ wardId: 'ann', periodFrom: '2025-01-01', periodTo: '2025-12-31', startingBalance: 10000,
+    schA: [{ payer: 'Bank', description: 'Interest', amount: 50 }], schB1: [{ payee: 'Bank', datePaid: '2025-06-01', amount: 20 }],
+    certWardStatus: 'Living', amendedForm: 'No', remuneration: [{ guardian: 'G', type: 'Fee', amount: 5, description: '' }], ...extra });
+
+  test('Annual -> Simplified, the same period: its own Starting Balance and carry record, its period, status and remuneration', () => {
+    const src = year({ startingBalanceCarry: { sourceWardId: 'prior', sourceLabel: 'Annual Accounting 01/01/2024–12/31/2024', used: 'line20', value: 10000, line20: 10000, line30: '', carriedAt: '2025-01-05T00:00:00.000Z' } });
+    const dest = { ...emptyDataSimplified(), inventoryType: 'simplified' };
+    conversion.convertToSimplified(src, 'annual', dest, { period: 'same' });
+    expect(dest.startingBalance).toBe(10000);
+    expect(dest.startingBalanceCarry).toEqual(src.startingBalanceCarry);
+    expect(dest).toMatchObject({ periodFrom: '2025-01-01', periodTo: '2025-12-31', amendedForm: 'No', certWardStatus: 'Living' });
+    expect(dest.remuneration).toEqual([{ guardian: 'G', type: 'Fee', amount: 5, description: '' }]);
+  });
+
+  test('Annual -> Simplified, the next period: the day after, its ending balance; status, amendment and remuneration start blank', () => {
+    const dest = { ...emptyDataSimplified(), inventoryType: 'simplified' };
+    conversion.convertToSimplified(year(), 'annual', dest, { period: 'next' });
+    expect(dest.startingBalance).toBe(10030);
+    expect(dest.startingBalanceCarry).toMatchObject({ sourceWardId: 'ann', used: 'line20', value: 10030 });
+    expect(dest).toMatchObject({ periodFrom: '2026-01-01', periodTo: '', amendedForm: '', certWardStatus: '' });
+    expect(dest.remuneration).toEqual(emptyDataSimplified().remuneration);
+  });
+
+  test('Simplified -> Annual: the same period keeps its own Starting Balance (no record when it carried none); the next carries Line 8', () => {
+    const s = { ...emptyDataSimplified(), wardId: 'simp', inventoryType: 'simplified', periodFrom: '2025-01-01', periodTo: '2025-12-31', startingBalance: 10000, interestIncome: 50, serviceCharges: 20 };
+    const same = { ...emptyDataAnnual(), inventoryType: 'annual', startingBalanceCarry: { stale: true } };
+    conversion.convertSimplifiedToAnnual(s, same, { period: 'same' });
+    expect(same.startingBalance).toBe(10000);
+    expect(same).not.toHaveProperty('startingBalanceCarry');
+    expect(same.periodFrom).toBe('2025-01-01');
+    const next = { ...emptyDataAnnual(), inventoryType: 'annual' };
+    conversion.convertSimplifiedToAnnual(s, next, { period: 'next' });
+    expect(next.startingBalance).toBe(10030);
+    expect(next).toMatchObject({ periodFrom: '2026-01-01', periodTo: '' });
+  });
+
+  test('Simplified -> Final is always the next period (Rule 5.680(c)), and says the Final Accounting', () => {
+    const s = { ...emptyDataSimplified(), wardId: 'simp', inventoryType: 'simplified', periodFrom: '2025-01-01', periodTo: '2025-12-31', startingBalance: 10000, interestIncome: 50, serviceCharges: 20 };
+    const dest = { ...emptyDataAnnual(), inventoryType: 'finalAccounting' };
+    conversion.convertSimplifiedToAnnual(s, dest, { period: 'same' });
+    expect(dest).toMatchObject({ startingBalance: 10030, periodFrom: '2026-01-01', periodTo: '' });
+    expect(conversion.convertAsksPeriod('simplified', 'finalAccounting')).toBe(false);
+    expect(conversion.describeConversion('simplified', 'finalAccounting')).toContain('The Final Accounting starts the day after');
+    expect(conversion.describeConversion('simplified', 'finalAccounting')).not.toContain('Annual Accounting\'s schedules');
+  });
+
+  test('which pairs ask, and nothing is assumed when the answer is missing', () => {
+    expect(['annual', 'finalAccounting', 'trustAccounting'].map((t) => conversion.convertAsksPeriod(t, 'simplified'))).toEqual([true, true, true]);
+    expect(['annual', 'trustAccounting'].map((t) => conversion.convertAsksPeriod('simplified', t))).toEqual([true, true]);
+    expect(conversion.convertAsksPeriod('guardian', 'simplified')).toBe(false);
+    expect(conversion.convertAsksPeriod('annual', 'finalAccounting')).toBe(false);
+    expect(() => conversion.convertToSimplified(year(), 'annual', { ...emptyDataSimplified(), inventoryType: 'simplified' })).toThrow(/same period, or the next/);
+    expect(() => conversion.convertSimplifiedToAnnual({ ...emptyDataSimplified(), inventoryType: 'simplified' }, { ...emptyDataAnnual(), inventoryType: 'annual' })).toThrow(/same period, or the next/);
+  });
+
+  test('the notice says what each choice carries', () => {
+    const same = conversion.describeConversion('annual', 'simplified', 'same');
+    expect(same).toContain("its Starting Balance is this filing's own Starting Balance");
+    expect(same).not.toContain('For the next period');
+    const next = conversion.describeConversion('simplified', 'annual', 'next');
+    expect(next).toContain('Remaining Assets On Hand (Line 8) becomes its Starting Balance');
+    expect(next).toContain('starts the day after');
+    const unasked = conversion.describeConversion('annual', 'simplified');
+    expect(unasked).toContain('Choose which period the new form covers.');
+    expect(conversion.describeConversion('trustAccounting', 'simplified', 'same')).toContain('Its Starting Balance is left blank');
   });
 });
 
