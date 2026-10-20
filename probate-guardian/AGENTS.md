@@ -279,7 +279,8 @@ on its location—update the dependent path and the index together. Past
 planning records leave the root for [`MILESTONE-ARCHIVE.md`](MILESTONE-ARCHIVE.md),
 each verbatim under an `Archive: <file name>` heading, so a citation of a
 milestone proposal, `TEST-SCRIPT-REVIEW.md` or `TEST-REVIEW.md` that is not at
-the root is found there (through Milestone 75, archived 2026-10-16).
+the root is found there (through Milestone 76; Milestones 60-75 archived
+2026-10-16, Milestone 76 on 2026-10-20).
 
 ---
 
