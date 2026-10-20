@@ -6,7 +6,9 @@
 (the requester, 2026-10-19, on Revision 2: "76A–76D, data loss"), in that
 order -- built 2026-10-19. 76E, 76G item 1 and 76H items 1, 2, 4 and 5
 approved to build (the requester, 2026-10-20: "76E, 76G-1, 76H 1/2/4/5") --
-76E, 76G item 1 and 76H items 1, 2, 4 and 5 built 2026-10-20; the rest authorizes no change.** Every decision is settled (Appendix
+76E, 76G item 1 and 76H items 1, 2, 4 and 5 built 2026-10-20. 76F and 76J
+approved to build, in that order (the requester, 2026-10-20: "76F, then
+76J"); the rest authorizes no change.** Every decision is settled (Appendix
 A). Building any other delivery, or any part of one, needs the requester's
 named approval of that delivery (AGENTS.md §3).
 
