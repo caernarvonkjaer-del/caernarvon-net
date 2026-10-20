@@ -161,36 +161,18 @@ AES-GCM/PBKDF2), zero unencrypted cloud transmission · `pdf-lib`/`pdfjs` and
 password encryption), `probate-guardian-data-model.csv` as schema
 single-source-of-truth.
 
-**Pending decision -- whether to move to a UI framework (raised 2026-10-17,
-unanswered).** The requester asked whether this app would gain from
-refactoring to a framework and is thinking it over. Until they answer, the
-pin above stands: no framework, and no work toward one. The options as put
-to them:
-
-1. **Leave it as is** (recommended). The rules in §6 and the browser tests
-   already catch the two problems a framework would remove: a list redrawn
-   by hand after a row is deleted (or its boxes point at the wrong row),
-   and the 392 hand-placed calls that escape what filers type (one missed
-   shows a typed "<" or "&" wrongly, or lets pasted text act as markup).
-2. **A small templating library such as lit-html, adopted one page at a
-   time.** About 5 KB, vendored in `lib/`; pages keep building their HTML
-   as text, but escaping and in-place updates come automatically; no
-   big-bang rewrite.
-3. **A full move to React** (not recommended). Roughly a quarter of the
-   55,000 source lines draw pages; the rest -- the export checks, the
-   Clerk's workbooks, the PDFs, the filing rules, saving and encryption --
-   gains nothing, and many of the 1,040 browser tests would be rewritten at
-   the same time as the code they verify.
-
-Options 2 and 3 change this pin, so either starts as a proposal for the
-requester's named approval (§3).
-
-**Ask again every three days until it is answered. Last asked: 2026-10-17.**
-In the first session on or after three days from that date, ask the
-requester once, early, as a choice prompt with the options above,
-recommended first, without holding up the task in hand. If the answer is
-still "not yet", update the date and commit it; once answered, replace
-this entry with the decision, its date and the reason.
+**Decided -- no UI framework (the requester, 2026-10-20).** Raised
+2026-10-17, when the requester asked whether the app would gain from a
+framework; answered "Leave it as is" when asked again. The pin above stands:
+no framework, and no work toward one. The reason, as put: the rules in §6 and
+the browser tests already catch the two problems a framework would remove --
+a list redrawn by hand after a row is deleted (or its boxes pointing at the
+wrong row), and the hand-placed escaping of what filers type -- and since
+Milestone 76B `tests/e2e/escaped-text.spec.ts` opens a crafted case file on
+every page of all nine forms and fails on any text drawn as markup. The
+options declined: a small templating library such as lit-html, adopted page
+by page, and a full move to React. Moving to either would change this pin,
+so it starts as a proposal for the requester's named approval (§3).
 
 ### Verified executable paths
 
