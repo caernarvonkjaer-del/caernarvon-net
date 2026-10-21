@@ -1,4 +1,5 @@
 import { confirmModal } from '../../core/ui/dialogs.js';
+import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
 import { renderUcnField } from '../../core/form/cards/case-caption-card.js';
 import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js';
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
@@ -1364,6 +1365,10 @@ function pageD4(){
           // filing has the field at all, and the proxy does not forward `in`.
           const state=inferBondDepositoryState(getD());
           return renderRadioGroupField({ path:'bondDepositoryState', id:'bondDepositoryState', label:BOND_DEPOSITORY_QUESTION, value:state, options:BOND_DEPOSITORY_OPTIONS, hint:'Not required to file. Each answer shows only the fields it needs.', route:'/d4' })
+            // Milestone 77F (decision 77F-1): the requester's statement of
+            // Pinellas Clerk practice, 2026-10-20 -- for Pinellas and Pasco
+            // filings only (county-guidance.js), never as statute.
+            +(hasSixthCircuitLocalGuidance(getD().county)?'<div class="form-text" data-bond-timing>Pinellas and Pasco: the bond doesn\'t have to be issued before you file this inventory. A surety may need the court\'s order first; enter the bond here once it is.</div>':'')
             +(revealsDepository(state)?formRow(col(6,optLabel('Date of most recent restricted depository receipt')+dateInput('restrictedDepositoryReceiptDate','Date of most recent restricted depository receipt'))):'')
             +(revealsBond(state)?formRow(col(4,optLabel('Bond Amount')+numInput('bondAmount')),col(3,optLabel('Bond Period – From')+dateInput('bondPeriodFrom','Bond Period – From')),col(3,optLabel('Bond Period – To')+dateInput('bondPeriodTo','Bond Period – To')))
               +formRow(col(12,optLabel('Name of Bonding Company')+textInput('bondingCompany','','name'))):'')

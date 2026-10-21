@@ -736,6 +736,22 @@ practice (2026-10-20), not as statute (AGENTS.md §5).
 | 1–7, 9 | None beyond the text; a unit check that the line renders where decision 77F-1 puts it. `TEST-INDEX.md` if a spec is added. |
 | 8 Legal | County practice, worded and gated as such. |
 
+### Build record — BUILT 2026-10-20
+
+Approved by name (Status), decision 77F-1 option 1. What a filer now sees:
+on a Pinellas or Pasco Initial Inventory, under D-4's "Which applies to this
+guardianship?", "Pinellas and Pasco: the bond doesn't have to be issued
+before you file this inventory. A surety may need the court's order first;
+enter the bond here once it is." Nothing for another county or a blank one
+(`hasSixthCircuitLocalGuidance()`, AGENTS.md §5). The user guide's D-4 entry
+says the same. Nothing about the bond's calculation or what is required
+changes.
+
+Code: `guardian-inventory/index.js`, `help/index.html`. Tests:
+`tests/e2e/bond-timing-77f.spec.ts` (new: Pinellas and Pasco show it,
+Hillsborough and a blank county don't; red first -- absent at HEAD);
+`bond-depository.spec.ts` unchanged and passing beside it.
+
 ---
 
 ## Appendix A — Every decision
