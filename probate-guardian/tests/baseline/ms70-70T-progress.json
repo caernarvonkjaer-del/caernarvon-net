@@ -22,6 +22,7 @@
   "tests/e2e/bond-timing-77f.spec.ts",
   "tests/e2e/carry-balance-matches-prior.spec.ts",
   "tests/e2e/carry-forward-hints.spec.ts",
+  "tests/e2e/carry-over-77b.spec.ts",
   "tests/e2e/carryover-workflow.spec.ts",
   "tests/e2e/case-file-core-fields-roundtrip.spec.ts",
   "tests/e2e/case-file-damaged-open.spec.ts",

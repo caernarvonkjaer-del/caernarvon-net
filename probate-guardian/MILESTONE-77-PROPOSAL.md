@@ -2,7 +2,7 @@
 
 ## Status
 
-**Draft (2026-10-20).** 77E approved to build (the requester, 2026-10-20:
+**Built (2026-10-20): every delivery, each with its build record below.** 77E approved to build (the requester, 2026-10-20:
 "Yes, the /s/ Name is supposed to be allowed for all filers … Let's just put
 it back in. If someone doesn't like it they can let us know.") -- built
 2026-10-20, its three decisions settled. 77A, 77B, 77C, 77D and 77F approved
@@ -267,6 +267,24 @@ noted, not in scope.
 | 6 Security | None. |
 | 7 UI | The dashboard's existing help-text style (`form-text`). |
 | 8 Legal | None. |
+
+### Build record — BUILT 2026-10-20
+
+Approved by name (Status), decision 77B-1 option 1. What a filer now sees:
+while the case has a filing, under the dashboard's heading, "Next year: use
+New year on a filing's row — it starts from this year's filing. Another form
+for the same ward: New Filing from Existing." and a **How a case carries
+forward** button that opens the user guide at its "New year, prior years &
+new filings from existing ones" section. The dashboard tour gains two steps
+after Create New Filing -- "Next Year's Report" at a row's New year and "New
+Filing from Existing" at its button -- eight in all.
+
+Code: `src/features/dashboard/index.js`, `src/core/help/walkthrough.js`.
+Tests: `tests/e2e/carry-over-77b.spec.ts` (new; red first -- the line is
+absent at HEAD); `tests/unit/guided-tour-content.spec.js` (the two steps,
+numbered in order; red first); `guided-tour-navigation.spec.ts` (eight
+dashboard steps). Browser (C: copy, chromium): every spec that draws the
+dashboard or the tour, 121, the one tour count updated here.
 
 ---
 

@@ -93,10 +93,14 @@ export const WALKTHROUGH_PLAN_MINOR=[
 export const WALKTHROUGH_DASHBOARD=[
   {element:'#help-toggle-btn',title:'1. Help & Guidance',text:'Click "?" for in-app help, the User Guide, Activity Log, shared party records, backup controls, and the guided tour.',position:'left'},
   {element:'#new-ward-btn, [data-dashboard-action="add-ward"]',title:'2. Create New Filing',text:'Choose a current filing type: Initial Inventory, Simplified Annual Accounting, Annual Accounting, Final Accounting, Trust Accounting, Simplified Annual Plan, Annual Guardianship Plan, Initial Guardianship Plan, or Annual Plan — Minors. Starting a new case also asks how to protect the case data.',position:'bottom'},
-  {element:'.dashboard-summary-strip',title:'3. Status Overview',text:'Tracks urgent action items and approaching deadlines across all active wards.',position:'bottom'},
-  {element:'#dashboard-search',title:'4. Search & Filter',text:'Quickly locate any filing by ward name, case number, or contact details.',position:'bottom'},
-  {element:'#theme-toggle-btn',title:'5. Light & Dark Appearance',text:'Switch between light and dark mode here. Your preference is remembered across sessions on this device.',position:'left'},
-  {element:'.dashboard-triage-queue, .dashboard-empty',title:'6. All Filings Queue',text:'Resume, edit, close, or find filings from one place. The case file is a local .sav file: use Save Backup (.sav) to keep a copy, Restore from Backup (.sav) to bring filings back from one, and Open Case File (.sav) to switch cases. Automatic saving depends on the browser and an authorized file; keep manual backups.',position:'top'},
+  // Milestone 77B: how a case carries into its next report (a step whose
+  // button isn't on the page -- no filing yet -- is skipped).
+  {element:'[data-dashboard-action="new-year"]',title:'3. Next Year\'s Report',text:'A filing\'s New year button starts next year\'s report from this one: the ward, the people and this year\'s figures carry over, and the new year\'s dates, signatures and answers start blank.',position:'left'},
+  {element:'[data-dashboard-action="select-existing"]',title:'4. New Filing from Existing',text:'Starts another form for the same ward from one you have -- for example the Annual Accounting from the Initial Inventory -- with the ward\'s details and closing figures already filled in.',position:'bottom'},
+  {element:'.dashboard-summary-strip',title:'5. Status Overview',text:'Tracks urgent action items and approaching deadlines across all active wards.',position:'bottom'},
+  {element:'#dashboard-search',title:'6. Search & Filter',text:'Quickly locate any filing by ward name, case number, or contact details.',position:'bottom'},
+  {element:'#theme-toggle-btn',title:'7. Light & Dark Appearance',text:'Switch between light and dark mode here. Your preference is remembered across sessions on this device.',position:'left'},
+  {element:'.dashboard-triage-queue, .dashboard-empty',title:'8. All Filings Queue',text:'Resume, edit, close, or find filings from one place. The case file is a local .sav file: use Save Backup (.sav) to keep a copy, Restore from Backup (.sav) to bring filings back from one, and Open Case File (.sav) to switch cases. Automatic saving depends on the browser and an authorized file; keep manual backups.',position:'top'},
 ];
 
 export let WALKTHROUGH_STEPS=[];

@@ -22,6 +22,16 @@ describe('guided tour content', () => {
     ]) expect(dashboard).toContain(label);
   });
 
+  // Milestone 77B: how a case carries into its next report.
+  test('the dashboard tour shows New year and New Filing from Existing, at their buttons, numbered in order', () => {
+    const dashboard = source.match(/(?:export )?const WALKTHROUGH_DASHBOARD=\[(.*?)];/s)?.[1] || '';
+    expect(dashboard).toContain(`element:'[data-dashboard-action="new-year"]'`);
+    expect(dashboard).toContain(`element:'[data-dashboard-action="select-existing"]'`);
+    expect(dashboard).toMatch(/starts next year\\'s report from this one/);
+    const numbers = [...dashboard.matchAll(/title:'(\d+)\./g)].map((m) => Number(m[1]));
+    expect(numbers).toEqual(numbers.map((_, i) => i + 1));
+  });
+
   test('each filing tour includes current shell, progress, review, and real route targets', () => {
     for (const name of [
       'WALKTHROUGH_GUARDIAN', 'WALKTHROUGH_SIMPLIFIED', 'WALKTHROUGH_ANNUAL',

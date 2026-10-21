@@ -78,6 +78,9 @@ test('guided-tour dashboard sequence covers all dashboard steps from help panel'
   const expectedSteps = [
     { title: 'Help & Guidance', selector: '#help-toggle-btn' },
     { title: 'Create New Filing', selector: '#new-ward-btn' },
+    // Milestone 77B: how a case carries into its next report.
+    { title: "Next Year's Report", selector: '[data-dashboard-action="new-year"]' },
+    { title: 'New Filing from Existing', selector: '[data-dashboard-action="select-existing"]' },
     { title: 'Status Overview', selector: '.dashboard-summary-strip' },
     { title: 'Search & Filter', selector: '#dashboard-search' },
     { title: 'Light & Dark Appearance', selector: '#theme-toggle-btn' },

@@ -5,6 +5,7 @@
 // every filing feature (legacy-app.js's mountDashboardFeature() and
 // window.createFeatureBridge() until Milestone 70's 70K).
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
+import { openUserGuide } from '../../core/help/user-guide.js';
 import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
 import { displayLocalDate } from '../../core/form/date-parser.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
@@ -103,12 +104,19 @@ function dashboardHeaderHTML() {
   const newFormBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-new-form" id="new-ward-btn" data-dashboard-action="add-ward">${ic('plus', 14)} New Form</button>`;
   const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-export-all" data-dashboard-action="export-all" title="Save the whole case -- every filing -- as a .sav file under a name you choose; that file becomes this case's file">${ic('archive', 14)} Save case file as…</button>` : '';
   const newExistingBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>`;
+  // Milestone 77B (decision 77B-1): a guardian testing the app wasn't sure the
+  // case was meant to carry into later reports; it is, and nothing said so.
+  // While the case has a filing, one line says how, beside the buttons.
+  const carryOverLine = wards.length > 0
+    ? `<p class="form-text dashboard-carry-over" data-dashboard-carry-over>Next year: use <strong>New year</strong> on a filing's row — it starts from this year's filing. Another form for the same ward: <strong>New Filing from Existing</strong>. <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-dashboard-action="carry-over-guide">How a case carries forward</button></p>`
+    : '';
 
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
       <div class="dashboard-page-kicker">Status - overview</div>
       <h1>All Filings — Dashboard</h1>
       <p>Review exceptions, deadlines, and court status across active filings.</p>
+      ${carryOverLine}
     </div>
     <div class="dashboard-header-actions">
       ${exportAllBtn}
@@ -632,6 +640,7 @@ async function handleDashboardClick(event) {
     case 'pdf': quickExportPdf(wardId); break;
     case 'prior-years': showPriorYearsModal(wardId); break;
     case 'select-existing': showConvertWardModal(); break;
+    case 'carry-over-guide': openUserGuide('year'); break;
     case 'toggle-closed': toggleClosedSection(); break;
   }
 }
