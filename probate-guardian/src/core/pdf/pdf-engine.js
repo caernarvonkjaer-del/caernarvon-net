@@ -714,7 +714,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   // rather than failing to render the signature at all.
   const renderSignatureImage = (dataUrl, layout) => {
     writeArtifactStart(doc, 'Layout');
-    const { x, y, maxWidth, maxHeight } = layout;
+    const { x, maxWidth, maxHeight } = layout;
     let width = maxWidth;
     let height = maxHeight;
     try {
@@ -728,6 +728,9 @@ export async function generateCourtFormPdf(model, options = {}) {
     } catch {
       // Renders at the requested box, unscaled, rather than not at all.
     }
+    // Milestone 77D-1: sitting on the line (its bottom at layout.bottom) when
+    // given one, never above layout.top.
+    const y = layout.bottom != null ? Math.max(layout.top ?? -Infinity, layout.bottom - height) : layout.y;
     doc.addImage(dataUrl, 'PNG', x, y, width, height);
     writeArtifactEnd(doc);
   };
@@ -1855,7 +1858,10 @@ export async function generateCourtFormPdf(model, options = {}) {
         // with no fields at all is a signature and date alone, which is a
         // legitimate shape (the plan-* forms' wet-signature blocks).
         const fieldRows = Array.isArray(block.fields) ? block.fields : [];
-        const baseSigHeight = isWetSignature ? 58 : 64;
+        // Milestone 77D-1: a stamp sits below its heading, on a line drawn
+        // lower, up to 36pt tall -- 8pt more block than "/s/".
+        const STAMP_DROP = hasStampImage ? 16 : 0;
+        const baseSigHeight = isWetSignature ? 58 : hasStampImage ? 72 : 64;
         const fieldLayout = fieldRows.length ? planFieldRows(fieldRows) : null;
         const sigHeight = fieldLayout ? baseSigHeight + 4 + fieldLayout.height : baseSigHeight;
         checkPageSpace(sigHeight + 10, sec.title);
@@ -1900,14 +1906,17 @@ export async function generateCourtFormPdf(model, options = {}) {
         writeArtifactStart(doc, 'Layout');
         doc.setDrawColor(140, 150, 165);
         doc.setLineWidth(0.75);
-        doc.line(margin + 2, curY + 36, margin + 250, curY + 36);
+        doc.line(margin + 2, curY + 36 + STAMP_DROP, margin + 250, curY + 36 + STAMP_DROP);
         writeArtifactEnd(doc);
 
         if (hasStampImage) {
           // Signature Stamp: the captured/uploaded image sits above the
           // line the same way a wet-ink signature physically would, sized
           // to preserve its own aspect ratio within the line's own width.
-          renderSignatureImage(block.signatureImage, { x: margin + 2, y: curY + 6, maxWidth: 246, maxHeight: 28 });
+          // Milestone 77D-1: it was drawn from 6pt down, over the heading
+          // (baseline 12pt), at most 28pt tall; now from below the heading,
+          // its bottom on the line, at most 36pt tall.
+          renderSignatureImage(block.signatureImage, { x: margin + 2, top: curY + 16, bottom: curY + 36 + STAMP_DROP, maxWidth: 246, maxHeight: 36 });
           const sigLabelNode = structureTree.addStructureElement({
             tag: 'P',
             pageNumber: pageNum,
@@ -1918,7 +1927,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
-          doc.text(`Signature of ${block.signerName || ''}`.trim(), margin + 2, curY + 46);
+          doc.text(`Signature of ${block.signerName || ''}`.trim(), margin + 2, curY + 46 + STAMP_DROP);
           writeMarkedContentEnd(doc);
         } else if (isWetSignature) {
           // Wet-ink signature: the line above is left blank for a pen

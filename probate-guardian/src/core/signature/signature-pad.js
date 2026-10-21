@@ -37,6 +37,53 @@ export function hasVisibleContent(pixels) {
   return false;
 }
 
+/**
+ * Milestone 77D: the box the ink occupies, with a small margin, as
+ * { x, y, width, height } within a `width` x `height` RGBA image -- or null
+ * when nothing is drawn. A drawn signature was saved as the whole drawing box,
+ * so it printed as a fraction of its line. Pure and DOM-free, like
+ * hasVisibleContent().
+ * @param {ArrayLike<number>} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} [margin]  pixels kept around the ink (default: 4% of the ink's longer side, at
+ *   least 4 -- from the ink, not the image, so trimming a trimmed image changes nothing)
+ */
+export function inkBounds(pixels, width, height, margin) {
+  let minX = width, minY = height, maxX = -1, maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (pixels[(y * width + x) * 4 + 3] !== 0) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return null;
+  const m = margin ?? Math.max(4, Math.round(Math.max(maxX - minX + 1, maxY - minY + 1) * 0.04));
+  const x = Math.max(0, minX - m);
+  const y = Math.max(0, minY - m);
+  return { x, y, width: Math.min(width, maxX + m + 1) - x, height: Math.min(height, maxY + m + 1) - y };
+}
+
+/**
+ * Milestone 77D: `canvas` cropped to its ink (inkBounds()), as a new canvas --
+ * or `canvas` itself when it is blank or already tight.
+ * @param {HTMLCanvasElement} canvas
+ */
+export function trimCanvasToInk(canvas) {
+  const ctx = canvas.getContext('2d');
+  const box = inkBounds(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+  if (!box || (box.x === 0 && box.y === 0 && box.width === canvas.width && box.height === canvas.height)) return canvas;
+  const out = document.createElement('canvas');
+  out.width = box.width;
+  out.height = box.height;
+  out.getContext('2d').drawImage(canvas, box.x, box.y, box.width, box.height, 0, 0, box.width, box.height);
+  return out;
+}
+
 /** Scans the live canvas's alpha channel directly, rather than re-decoding
  * the exported PNG bytes, since the caller already holds the canvas at the
  * moment "Apply" is clicked. */
@@ -130,7 +177,8 @@ function drawToCanvas(source, naturalWidth, naturalHeight, { stripBackground = f
     removeLightBackground(imageData.data);
     ctx.putImageData(imageData, 0, 0);
   }
-  return canvas.toDataURL('image/png');
+  // Milestone 77D: saved trimmed to its ink.
+  return trimCanvasToInk(canvas).toDataURL('image/png');
 }
 
 const CANVAS_W = 600;
@@ -257,7 +305,8 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
 
   container.querySelector('[data-sig-action="apply"]').addEventListener('click', () => {
     let dataUrl, sourceCanvas;
-    if (activeTab === 'draw') { sourceCanvas = drawCanvas; dataUrl = drawCanvas.toDataURL('image/png'); }
+    // Milestone 77D: a drawing is saved trimmed to its ink, not the whole box.
+    if (activeTab === 'draw') { sourceCanvas = drawCanvas; dataUrl = trimCanvasToInk(drawCanvas).toDataURL('image/png'); }
     else { sourceCanvas = uploadPreview; dataUrl = uploadedDataUrl; }
     if (!dataUrl) { showError('Add a signature before applying.'); return; }
     // A blank canvas (nothing drawn/typed, or Clear was just pressed) still

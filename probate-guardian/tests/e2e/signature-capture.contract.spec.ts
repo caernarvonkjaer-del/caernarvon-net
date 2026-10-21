@@ -273,9 +273,13 @@ test.describe('Milestone 39-C: Upload background-transparency (luminance-thresho
     await page.locator('[data-sig-action="apply"]').click();
     await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe(true);
 
-    const { bgAlpha, inkAlpha } = await page.evaluate(async () => {
+    // Milestone 77D: saved trimmed to its ink -- the 20 x 20 square with a
+    // 4-pixel margin, 28 x 28 -- so the margin (1, 1) is background and the
+    // middle (14, 14) ink. Had the background been kept, the whole image
+    // would be ink and nothing trimmed.
+    const { bgAlpha, inkAlpha, size } = await page.evaluate(async () => {
       const dataUrl = (window as any).GuardianForms.testing.field('planGuardians.0.signatureImage');
-      return new Promise<{ bgAlpha: number; inkAlpha: number }>((resolve) => {
+      return new Promise<{ bgAlpha: number; inkAlpha: number; size: number[] }>((resolve) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
@@ -283,13 +287,14 @@ test.describe('Milestone 39-C: Upload background-transparency (luminance-thresho
           canvas.height = img.naturalHeight;
           const ctx = canvas.getContext('2d')!;
           ctx.drawImage(img, 0, 0);
-          const bg = ctx.getImageData(5, 5, 1, 1).data;
-          const ink = ctx.getImageData(40, 20, 1, 1).data;
-          resolve({ bgAlpha: bg[3], inkAlpha: ink[3] });
+          const bg = ctx.getImageData(1, 1, 1, 1).data;
+          const ink = ctx.getImageData(14, 14, 1, 1).data;
+          resolve({ bgAlpha: bg[3], inkAlpha: ink[3], size: [img.naturalWidth, img.naturalHeight] });
         };
         img.src = dataUrl;
       });
     });
+    expect(size, 'trimmed to the ink and its margin').toEqual([28, 28]);
     expect(bgAlpha).toBe(0);
     expect(inkAlpha).toBe(255);
   });

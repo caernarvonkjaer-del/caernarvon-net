@@ -170,6 +170,7 @@
   "tests/e2e/signature-block-address-margin.spec.ts",
   "tests/e2e/signature-by-hand.spec.ts",
   "tests/e2e/signature-capture.contract.spec.ts",
+  "tests/e2e/signature-stamp-77d.spec.ts",
   "tests/e2e/signature-stamp-reuse.spec.ts",
   "tests/e2e/signature-style-removal.spec.ts",
   "tests/e2e/signed-amount-keypad.spec.ts",

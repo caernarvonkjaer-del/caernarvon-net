@@ -473,6 +473,49 @@ signs by hand or with a stamp -- 77E changes that, not this).
 | 8 Legal | None. |
 | 9 Cross-form | One engine draws every form's signature block; every form's stamped blocks change together. |
 
+### Build record — BUILT 2026-10-20
+
+Approved by name (Status), decisions 77D-1 and 77D-2 option 1. What a filer
+now sees:
+
+- **A drawn or uploaded signature is saved trimmed to its ink**, with a
+  margin of 4% of the ink's longer side (at least 4 pixels) -- not the whole
+  600 x 180 drawing box.
+- **It prints below its heading, sitting on the line**, up to 36 points
+  (half an inch) tall: the line and the "Signature of …" caption move 16
+  points down for a stamp, and its block grows 8 points; "/s/" and blank
+  blocks are unchanged.
+- **A signature saved before is trimmed when its filing opens**, once (the
+  margin comes from the ink, so trimming a trimmed signature changes
+  nothing), with an Activity Log entry, "Saved signatures trimmed"; the
+  case's saved signatures (each person's reusable stamps) too. Not a closed
+  filing, an earlier year opened for correction, or an archived year: those
+  reprint as filed. Only blank margin is removed. No saved shape changes, so
+  the saved-file corpus needs no new fixture (AGENTS.md §8 item 2).
+
+Code: `signature-pad.js` (`inkBounds()`, `trimCanvasToInk()`; Draw's Apply
+and Upload save trimmed), `src/core/signature/stamp-trim.js` (new: the
+open-time trim), `ward-lifecycle.js` (runs it as a filing opens; saves and
+logs when anything changed), `activity-log-view.js` (`SIGNATURE_TRIMMED`),
+`pdf-engine.js` (the stamp's placement), `help/index.html`.
+
+Tests: `tests/unit/signature-trim-77d.spec.js` (new, 6; red first --
+`inkBounds()` doesn't exist at HEAD); `tests/e2e/signature-stamp-77d.spec.ts`
+(new, 2: a signature drawn by real mouse moves saved trimmed and placed on
+the PDF below its heading, its bottom on the line, read from pdf.js's
+operators; a saved untrimmed one left alone on a closed filing, trimmed once
+on a filing being prepared, with one log entry). Red first: with the source
+at HEAD both fail (the 600-pixel box saved and kept); with only
+`pdf-engine.js` at HEAD the first fails on placement (the image's top 8
+points above the heading's baseline). The first run also caught the trim
+not repeating cleanly (a margin taken from the image's size shrank a
+trimmed image again); the margin now comes from the ink. Updated:
+`signature-capture.contract.spec.ts` (an upload is saved trimmed, so its
+background is read at the margin). Browser (C: copy, chromium): every spec
+that touches a signature stamp, plus `form-runtime-lifecycle.contract`,
+`signature-block-address-margin` and `activity-log-actions`, 113 of 114, the
+one the upload test updated here.
+
 ---
 
 ## 77E — A guardian can sign "/s/ Name"

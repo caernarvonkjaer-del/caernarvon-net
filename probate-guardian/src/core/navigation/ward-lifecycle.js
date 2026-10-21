@@ -59,6 +59,9 @@ export async function activateWard(ward, opts = {}) {
   // 5. On success, set loaded state
   setActiveFiling(ward);
   addToRecentlyOpened(ward);
+  // Milestone 77D-2: signatures saved before trimming are trimmed, once, as
+  // the filing opens (not awaited: it decodes images; nothing waits on it).
+  void trimStampsOnOpen(ward);
   if (formEngine(ward.inventoryType) === 'guardian') {
     // The Initial Inventory's validator is its feature's: loaded before the
     // sidebar asks for completion.
@@ -69,6 +72,23 @@ export async function activateWard(ward, opts = {}) {
   await refreshAutoSaveArmedStatus();
   notifyProbateGuardianTabStateChanged();
   return true;
+}
+
+async function trimStampsOnOpen(ward) {
+  try {
+    const { trimSavedSignatureStamps } = await import('../signature/stamp-trim.js');
+    const { paths, count } = await trimSavedSignatureStamps(ward, getCaseFile().parties);
+    if (!count) return;
+    // Loaded here, when there is something to save: none is on the open path.
+    const [{ markDirtySinceExport }, { commitModelChange }, { auditLog }] = await Promise.all([
+      import('../persistence/case-file.js'), import('../model-change.js'), import('../activity/audit-log.js'),
+    ]);
+    markDirtySinceExport();
+    commitModelChange('signature-trim', paths.length ? paths : undefined);
+    void auditLog('SIGNATURE_TRIMMED', `${count} saved signature${count === 1 ? '' : 's'} trimmed to the signature's own size (only blank margin removed)`, true, ward.wardId);
+  } catch (e) {
+    console.error('Trimming saved signatures failed', e);
+  }
 }
 
 export async function unloadWard() {

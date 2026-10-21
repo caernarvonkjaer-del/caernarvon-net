@@ -172,6 +172,7 @@ const ANNOUNCEMENTS = {
   'src/core/form/plan-row-actions.js': 5,           // the Plans' add/remove guardian, add/remove/duplicate row
   'src/core/form/prune-cards.js': 1,                // the clean-up on leaving a page
   'src/core/modals/pick-record-dialogs.js': 2,      // Link Person; a new shared record from a slot
+  'src/core/navigation/ward-lifecycle.js': 1,      // Milestone 77D-2: saved signatures trimmed as a filing opens
   'src/core/signature/signature-state-control.js': 1, // a signature stamp
   'src/core/parties/party-management.js': 6,        // Sync (3), Merge, Dismiss, Unmerge
   'src/core/filing/schedule-docs.js': 5,            // a supporting document added, removed, its comment; 75A: moved to the dates, joined to them

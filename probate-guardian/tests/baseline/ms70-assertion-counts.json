@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 10403,
-  "tests": 3088
+  "expects": 10430,
+  "tests": 3096
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -680,7 +680,11 @@
   },
   "tests/e2e/signature-capture.contract.spec.ts": {
    "tests": 28,
-   "expects": 103
+   "expects": 104
+  },
+  "tests/e2e/signature-stamp-77d.spec.ts": {
+   "tests": 2,
+   "expects": 19
   },
   "tests/e2e/signature-stamp-reuse.spec.ts": {
    "tests": 4,
@@ -1609,6 +1613,10 @@
   "tests/unit/signature-stamp-history.spec.js": {
    "tests": 11,
    "expects": 26
+  },
+  "tests/unit/signature-trim-77d.spec.js": {
+   "tests": 6,
+   "expects": 7
   },
   "tests/unit/signed-amount-keypad.spec.js": {
    "tests": 4,
