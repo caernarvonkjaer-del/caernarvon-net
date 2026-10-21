@@ -38,7 +38,11 @@ export function validationPanel(errors,opts){
       ${ic('alert',17)}
       <div>
         <div class="validation-title">${n} required field${n===1?'':'s'} still missing</div>
-        <div class="validation-sub">${opts.subtitle||`Across ${groups.length} section${groups.length===1?'':'s'}, listed below. These must be completed before this ward can be exported.`}</div>
+        <div class="validation-sub">${opts.subtitle||`Across ${groups.length} section${groups.length===1?'':'s'}, listed below. ${opts.overridable===false
+          ? 'At least one of them can\'t be overridden: correct it to continue.'
+          // Milestone 77A: it said they "must be completed before this ward
+          // can be exported" -- untrue while Continue can acknowledge them.
+          : 'Complete them, or choose “Continue despite outstanding requirements” to produce a draft with them blank.'}`}</div>
       </div>
     </div>
     <div class="validation-groups">${rows}</div>

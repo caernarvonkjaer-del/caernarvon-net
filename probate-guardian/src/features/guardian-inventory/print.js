@@ -28,7 +28,8 @@ import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 import { renderPage } from '../../core/navigation/router.js';
 import { DRAW } from '../../core/navigation/draw-reason.js';
-import { exportReasonHtml, excelOmissionsHtml, outputRefusal } from '../../core/filing/output-reasons.js';
+import { refuseOrContinue } from '../../core/filing/output-continue.js';
+import { exportReasonHtml, excelOmissionsHtml } from '../../core/filing/output-reasons.js';
 import { excelOmissions } from '../../core/excel/workbook-contract/index.js';
 
 function buildModelForPreview(D){
@@ -52,7 +53,7 @@ export function pagePrint(capOver){
   const errors=preflight.messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
-  const errPanel=(errors.length?validationPanel(errors):'') + renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: getD(), validationIssues: preflight.structuredIssues });
+  const errPanel=(errors.length?validationPanel(errors,{overridable:preflight.structuredIssues.every(i=>i.bypassable!==false)}):'') + renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: getD(), validationIssues: preflight.structuredIssues });
   const warnPanel=supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:'';
   const advisoryPanel=renderOutputAdvisories(preflight.advisories);
   // Milestone 38D/44B: what blocks each output comes from
@@ -100,8 +101,8 @@ export async function doSavePdf(){
   const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print', { reason: DRAW.PREVIEW });
-    await alertModal(outputRefusal(authorization, 'PDF'));
-    return;
+    // Milestone 77A: Continue from the refusal itself (output-continue.js).
+    if (!(await refuseOrContinue(authorization, 'PDF', getD(), baseIssues))) return;
   }
   // Milestone 67: disables the button for the export's duration, so a second
   // click while a big filing is still generating can't fire a second

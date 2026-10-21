@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   CONTINUE_LABEL, EXPORT_REASON_ID, OUTPUT_BUTTONS,
-  excelOmissionsHtml, excelOmissionsQuestion, exportReasonHtml, outputReason, outputRefusal,
+  excelOmissionsHtml, excelOmissionsQuestion, exportReasonHtml, outputContinueQuestion, outputReason, outputRefusal,
 } from '../../src/core/filing/output-reasons.js';
 
 // Milestone 74C and 73M step 5: Save as PDF and Save as Excel stay clickable
@@ -11,6 +11,11 @@ import {
 // despite outstanding requirements" the Simplified Plan's Save as PDF stayed
 // greyed out; and Save as Excel, back on Preview after a Continue, redrew the
 // page and said nothing.
+//
+// Milestone 77A: a guardian concluded she couldn't produce a draft -- the
+// reason line named a Continue button that wasn't there, and the refusals
+// ended in OK. The reason line now carries the button, and a refusal Continue
+// can answer asks, with Continue and Cancel.
 
 const allowed = { status: 'allowed', issues: [] };
 const outstanding = (n) => ({ status: 'acknowledgement-required', issues: Array.from({ length: n }, (_, i) => ({ code: `x.${i}` })) });
@@ -25,7 +30,8 @@ describe('what stops an output', () => {
   test('items that cannot be overridden, and requirements Continue can acknowledge, are counted and told apart', () => {
     expect(outputReason(blocked(1))).toEqual(['blocked', '1 item to correct first — see the list on this page']);
     expect(outputReason(blocked(3))[1]).toMatch(/^3 items to correct first/);
-    expect(outputReason(outstanding(1))).toEqual(['outstanding', `1 requirement outstanding — see the list on this page, or choose “${CONTINUE_LABEL}”`]);
+    expect(outputReason(outstanding(1))).toEqual(['outstanding', '1 requirement outstanding — see the list on this page, or continue with it blank']);
+    expect(outputReason(outstanding(2))[1]).toBe('2 requirements outstanding — see the list on this page, or continue with them blank');
     expect(outputReason(outstanding(2))[1]).toMatch(/^2 requirements outstanding/);
   });
 
@@ -40,6 +46,8 @@ describe('what stops an output', () => {
 describe('the reason line beside the buttons', () => {
   // Milestone 76J item 1: each reason also names its outputs (data-export-outputs).
   const reasons = (html) => [...html.matchAll(/data-export-reason="([a-z]+)" data-export-outputs="[a-z ]*">([^<]*)</g)].map((m) => [m[1], m[2].replace(/&#39;/g, "'")]);
+  // Milestone 77A: the Continue each outstanding reason carries, by the outputs it covers.
+  const continues = (html) => [...html.matchAll(/<button type="button"[^>]*data-export-continue="([a-z ]+)"[^>]*>([^<]*)<\/button>/g)].map((m) => [m[1], m[2]]);
 
   test('is always there for the buttons to point at, and empty when every output can go', () => {
     const html = exportReasonHtml({ pdf: allowed, excel: { authorization: allowed } });
@@ -48,8 +56,16 @@ describe('the reason line beside the buttons', () => {
   });
 
   test('says the same sentence once for both buttons when they share it', () => {
-    expect(reasons(exportReasonHtml({ pdf: outstanding(2), excel: { authorization: outstanding(2) } })))
-      .toEqual([['outstanding', `Save as PDF and Save as Excel: 2 requirements outstanding — see the list on this page, or choose “${CONTINUE_LABEL}”.`]]);
+    const html = exportReasonHtml({ pdf: outstanding(2), excel: { authorization: outstanding(2) } });
+    expect(reasons(html))
+      .toEqual([['outstanding', 'Save as PDF and Save as Excel: 2 requirements outstanding — see the list on this page, or continue with them blank. ']]);
+    expect(continues(html), 'the button the sentence names').toEqual([['pdf excel', CONTINUE_LABEL]]);
+  });
+
+  test('77A: only a reason Continue can answer carries the button', () => {
+    expect(continues(exportReasonHtml({ pdf: blocked(1), excel: { authorization: outstanding(1) } }))).toEqual([['excel', CONTINUE_LABEL]]);
+    expect(continues(exportReasonHtml({ pdf: blocked(1) }))).toEqual([]);
+    expect(continues(exportReasonHtml({ pdf: allowed, excel: { authorization: allowed, capacity: [{ label: 'Part XI' }] } }))).toEqual([]);
   });
 
   test('gives each button its own sentence when they differ, and a Plan only its Save as PDF', () => {
@@ -74,6 +90,13 @@ describe('the click', () => {
     expect(outputRefusal(outstanding(2), 'Excel')).toMatch(/^Cannot export to Excel — 2 required fields missing\./);
     expect(outputRefusal(blocked(1), 'PDF')).toBe("Cannot export — 1 required field missing. See the list on this page; it can't be overridden.");
     expect(outputRefusal(blocked(2), 'Excel')).toBe("Cannot export to Excel — 2 required fields missing. See the list on this page; they can't be overridden.");
+    expect(outputRefusal(blocked(2), 'Print')).toBe("Cannot print — 2 required fields missing. See the list on this page; they can't be overridden.");
+  });
+
+  test('77A: when Continue can answer, the click asks -- for the PDF, the workbook and Print', () => {
+    expect(outputContinueQuestion(outstanding(3), 'PDF')).toBe(`Cannot export yet — 3 required fields missing, listed on this page. Choose “${CONTINUE_LABEL}” to save the PDF anyway, with them blank, or Cancel to complete them first.`);
+    expect(outputContinueQuestion(outstanding(1), 'Excel')).toBe(`Cannot export to Excel yet — 1 required field missing, listed on this page. Choose “${CONTINUE_LABEL}” to save the Excel workbook anyway, with it blank, or Cancel to complete it first.`);
+    expect(outputContinueQuestion(outstanding(2), 'Print')).toMatch(/^Cannot print yet — 2 required fields missing, listed on this page\. Choose “Continue despite outstanding requirements” to print anyway, with them blank/);
   });
 });
 

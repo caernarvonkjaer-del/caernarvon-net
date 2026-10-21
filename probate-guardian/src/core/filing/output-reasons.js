@@ -19,6 +19,9 @@ export const EXPORT_REASON_ID = 'export-reason';
 export const CONTINUE_LABEL = 'Continue despite outstanding requirements';
 
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const them = (n) => (n === 1 ? 'it' : 'them');
+const HEAD = { PDF: 'Cannot export', Excel: 'Cannot export to Excel', Print: 'Cannot print' };
+const VERB = { PDF: 'save the PDF', Excel: 'save the Excel workbook', Print: 'print' };
 
 /**
  * What stops an output now, as [kind, sentence], or null when nothing does.
@@ -34,7 +37,9 @@ export function outputReason(authorization, { capacity = [] } = {}) {
   if (!authorization || authorization.status === 'allowed') return null;
   const n = authorization.issues.length;
   if (authorization.status === 'blocked') return ['blocked', `${count(n, 'item', 'items')} to correct first — see the list on this page`];
-  return ['outstanding', `${count(n, 'requirement', 'requirements')} outstanding — see the list on this page, or choose “${CONTINUE_LABEL}”`];
+  // Milestone 77A: the sentence ends at the button that follows it
+  // (exportReasonHtml()); it named a button that wasn't there.
+  return ['outstanding', `${count(n, 'requirement', 'requirements')} outstanding — see the list on this page, or continue with ${them(n)} blank`];
 }
 
 /**
@@ -57,24 +62,45 @@ export function exportReasonHtml({ pdf, excel } = {}) {
   // Milestone 76J item 1: each reason names its outputs, so the Preview can
   // give Save as Excel its own Continue when only the PDF is blocked.
   const outputKey = { 'Save as PDF': 'pdf', 'Save as Excel': 'excel' };
-  const parts = groups.map((g) => `<span data-export-reason="${g.kind}" data-export-outputs="${g.labels.map((l) => outputKey[l]).join(' ')}">${esc(g.labels.join(' and '))}: ${esc(g.text)}.</span>`).join(' ');
+  // Milestone 77A: a reason Continue can answer carries the button, named for
+  // the outputs it covers (the Preview wires it, pdf-preview.js).
+  const parts = groups.map((g) => {
+    const outputs = g.labels.map((l) => outputKey[l]).join(' ');
+    const button = g.kind === 'outstanding'
+      ? `<button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-export-continue="${outputs}">${esc(CONTINUE_LABEL)}</button>`
+      : '';
+    return `<span data-export-reason="${g.kind}" data-export-outputs="${outputs}">${esc(g.labels.join(' and '))}: ${esc(g.text)}.${button ? ` ${button}` : ''}</span>`;
+  }).join(' ');
   return `<span id="${EXPORT_REASON_ID}" class="export-reason" style="font-size:.8rem;color:var(--ink-2);">${parts}</span>`;
 }
 
 /**
  * The message a save handler shows when authorizeFilingOutput() didn't allow
  * it -- today's "Cannot export" sentence, and how to go on when "Continue"
- * can.
+ * can. Since Milestone 77A a refusal Continue can answer asks instead
+ * (outputContinueQuestion(), output-continue.js); this is said when it can't.
  *
  * @param {{ status: string, issues: any[] }} authorization
- * @param {'PDF' | 'Excel'} format
+ * @param {'PDF' | 'Excel' | 'Print'} format
  */
 export function outputRefusal(authorization, format = 'PDF') {
   const n = authorization.issues.length;
-  const head = format === 'Excel' ? 'Cannot export to Excel' : 'Cannot export';
+  const head = HEAD[format] || HEAD.PDF;
   const what = `${n} required field${n === 1 ? '' : 's'} missing`;
   if (authorization.status === 'blocked') return `${head} — ${what}. See the list on this page; ${n === 1 ? 'it' : 'they'} can't be overridden.`;
   return `${head} — ${what}. See the list on this page, or choose “${CONTINUE_LABEL}” to export anyway.`;
+}
+
+/**
+ * Milestone 77A: what Print, Save as PDF and Save as Excel ask when what is
+ * outstanding can be acknowledged -- Continue or Cancel.
+ *
+ * @param {{ status: string, issues: any[] }} authorization
+ * @param {'PDF' | 'Excel' | 'Print'} format
+ */
+export function outputContinueQuestion(authorization, format = 'PDF') {
+  const n = authorization.issues.length;
+  return `${HEAD[format] || HEAD.PDF} yet — ${n} required field${n === 1 ? '' : 's'} missing, listed on this page. Choose “${CONTINUE_LABEL}” to ${VERB[format] || VERB.PDF} anyway, with ${them(n)} blank, or Cancel to complete ${them(n)} first.`;
 }
 
 /**

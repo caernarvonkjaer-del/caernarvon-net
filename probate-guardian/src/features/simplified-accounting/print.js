@@ -25,7 +25,8 @@ import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 import { renderPage } from '../../core/navigation/router.js';
 import { DRAW } from '../../core/navigation/draw-reason.js';
-import { exportReasonHtml, excelOmissionsHtml, outputRefusal } from '../../core/filing/output-reasons.js';
+import { refuseOrContinue } from '../../core/filing/output-continue.js';
+import { exportReasonHtml, excelOmissionsHtml } from '../../core/filing/output-reasons.js';
 import { excelOmissions } from '../../core/excel/workbook-contract/index.js';
 
 function buildModelForPreview(D){
@@ -91,7 +92,7 @@ export function pagePrintSimplified(capOver){
         </div>
       </div>
     </div>
-    ${errors.length?validationPanel(errors):''}
+    ${errors.length?validationPanel(errors,{overridable:preflight.structuredIssues.every(i=>i.bypassable!==false)}):''}
     ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: getD(), validationIssues: preflight.structuredIssues })}
     ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
@@ -111,8 +112,8 @@ export async function doSavePdf(){
   const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print', { reason: DRAW.PREVIEW });
-    await alertModal(outputRefusal(authorization, 'PDF'));
-    return;
+    // Milestone 77A: Continue from the refusal itself (output-continue.js).
+    if (!(await refuseOrContinue(authorization, 'PDF', getD(), baseIssues))) return;
   }
   // Milestone 67: disables the button for the export's duration, so a second
   // click while it's still generating can't fire a second download and get

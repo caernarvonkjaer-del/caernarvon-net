@@ -35,6 +35,7 @@
   "tests/e2e/closed-filing-sync.spec.ts",
   "tests/e2e/combobox-keyboard-nav.spec.ts",
   "tests/e2e/conditional-reveal-routes.spec.ts",
+  "tests/e2e/continue-77a.spec.ts",
   "tests/e2e/continue-prompt-banner.spec.ts",
   "tests/e2e/contradiction-warnings.spec.ts",
   "tests/e2e/convert-ward.spec.ts",

@@ -32,8 +32,9 @@ test.describe('73O part 4: Preview & Export the same way on every form', () => {
     await navigate(page, '/print');
     await page.getByRole('button', { name: 'Print', exact: true }).click();
     const dialog = page.locator('.modal-overlay.show');
-    await expect(dialog).toContainText(/Cannot print: \d+ required items? still missing/);
-    await dialog.getByRole('button').first().click();
+    // Milestone 77A: Print asks, when Continue can answer; Cancel prints nothing.
+    await expect(dialog).toContainText(/Cannot print yet — \d+ required fields? missing/);
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
 
     await createSimplifiedWard(page, 'Print Simplified Ward');
     await fillMinimalValidSimplifiedWard(page);

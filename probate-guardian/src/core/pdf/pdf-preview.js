@@ -28,7 +28,8 @@ import { base64ToBytes } from '../images/png-dimensions.js';
 import { announceStatus } from '../status/live-region.js';
 import { prepareFilingOutput, previewStatusHtml } from '../filing/output-preflight.js';
 import { groupIssuesByPage } from '../validation/issue-groups.js';
-import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
+import { authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
+import { continueDespiteOutstanding, onOutputAcknowledged, refuseOrContinue } from '../filing/output-continue.js';
 import { alertModal, confirmModal } from '../ui/dialogs.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { requestSave } from '../state.js';
@@ -491,6 +492,7 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
   beginFreshPreview();
   destroyAnnotationSession();
   currentPreview()?.destroy();
+  onOutputAcknowledged(null);
   const authorization = authorizeFilingOutput(D, baseIssues, { capability: 'preview' });
   if (authorization.status !== 'allowed') {
     // Announce the count, not the list -- an assertive region reading fifty
@@ -505,49 +507,52 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
     // panel once that fallback was gone.
     container.innerHTML = blockedPanelHTML(authorization.issues, D.inventoryType, { overridable: authorization.status !== 'blocked' });
     // Milestone 76J item 1: the Preview blocked by something only the PDF
-    // carries (a supporting statement that can't be read) offers no Continue;
-    // Save as Excel's reason line gets its own when the workbook only waits
-    // for an acknowledgement.
-    if (authorization.status === 'blocked' && authorizeFilingOutput(D, baseIssues, { capability: 'excel' }).status === 'acknowledgement-required') {
-      const excelReason = [...document.querySelectorAll('[data-export-reason="outstanding"]')]
-        .find((el) => String(el.getAttribute('data-export-outputs') || '').split(' ').includes('excel'));
-      if (excelReason && !excelReason.querySelector('[data-export-continue]')) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'btn btn-link btn-sm p-0 ms-1 align-baseline';
-        button.dataset.exportContinue = 'excel';
-        button.textContent = 'Continue despite outstanding requirements';
-        button.addEventListener('click', async () => {
-          if (!(await confirmModal('Requirements remain outstanding. Continue and save the Excel workbook anyway? The PDF stays blocked until its problem is corrected.'))) return;
-          if (!acknowledgeOutstandingRequirements(D, baseIssues)) return;
-          excelReason.remove();
-          announceStatus('Save as Excel can continue; the PDF is still blocked.', { containerId: 'print-preview-status' });
+    // carries (a supporting statement that can't be read) offers no Continue
+    // of its own; Save as Excel's reason line still does when the workbook
+    // only waits for an acknowledgement.
+    const blockedForGood = authorization.status === 'blocked';
+    // What the page says once Continue is given -- from the Preview's button,
+    // the reason line's, or a refusal's (Milestone 77A, output-continue.js).
+    const afterAcknowledged = () => {
+      if (blockedForGood) {
+        document.querySelectorAll('[data-export-reason="outstanding"]').forEach((reason) => {
+          if (String(reason.getAttribute('data-export-outputs') || '').split(' ').includes('excel')) reason.remove();
         });
-        excelReason.append(button);
+        announceStatus('Save as Excel can continue; the PDF is still blocked.', { containerId: 'print-preview-status' });
+        return;
       }
-    }
-    container.querySelector('[data-preview-action="override"]')
-      ?.addEventListener('click', async () => {
-        if (authorization.status === 'blocked') return;
-        if (!(await confirmModal('Requirements remain outstanding. Continue with ordinary preview and output?'))) return;
-        if (acknowledgeOutstandingRequirements(D, baseIssues)) {
-          // Milestone 74C / 73M step 5: the export buttons are always clickable,
-          // so nothing is re-enabled here (this used to re-enable the save
-          // buttons its per-form selectors matched -- the Simplified Plan's
-          // never was -- and skip one by its tooltip's wording). The reason
-          // line drops what the acknowledgement covers; a capacity limit stays.
-          document.querySelectorAll('[data-export-reason="outstanding"]').forEach((reason) => reason.remove());
-          // Milestone 73F part 2: the banner says what is still outstanding --
-          // it kept the count it was drawn with, and a later redraw said
-          // "Ready to export".
-          const outstanding = authorization.issues.length;
-          document.querySelectorAll('[data-preview-status]').forEach((status) => {
-            status.outerHTML = previewStatusHtml({ messages: [], structuredIssues: authorization.issues });
-          });
-          announceStatus(`Continuing with ${outstanding} item${outstanding === 1 ? '' : 's'} outstanding.`, { containerId: 'print-preview-status' });
-          void renderPreviewInto(container, buildModel, D, options);
-        }
+      // Milestone 74C / 73M step 5: the export buttons are always clickable,
+      // so nothing is re-enabled here (this used to re-enable the save
+      // buttons its per-form selectors matched -- the Simplified Plan's
+      // never was -- and skip one by its tooltip's wording). The reason
+      // line drops what the acknowledgement covers; a capacity limit stays.
+      document.querySelectorAll('[data-export-reason="outstanding"]').forEach((reason) => reason.remove());
+      // Milestone 73F part 2: the banner says what is still outstanding --
+      // it kept the count it was drawn with, and a later redraw said
+      // "Ready to export".
+      const outstanding = authorization.issues.length;
+      document.querySelectorAll('[data-preview-status]').forEach((status) => {
+        status.outerHTML = previewStatusHtml({ messages: [], structuredIssues: authorization.issues });
       });
+      announceStatus(`Continuing with ${outstanding} item${outstanding === 1 ? '' : 's'} outstanding.`, { containerId: 'print-preview-status' });
+      void renderPreviewInto(container, buildModel, D, options);
+    };
+    onOutputAcknowledged((data) => {
+      if (!container.isConnected) return;
+      if (data !== D && !(data?.wardId && data.wardId === D?.wardId)) return;
+      afterAcknowledged();
+    });
+    const ask = blockedForGood
+      ? 'Requirements remain outstanding. Continue and save the Excel workbook anyway? The PDF stays blocked until its problem is corrected.'
+      : 'Requirements remain outstanding. Continue with ordinary preview and output?';
+    const onContinue = async () => {
+      if (!(await confirmModal(ask))) return;
+      continueDespiteOutstanding(D, baseIssues);
+    };
+    if (!blockedForGood) container.querySelector('[data-preview-action="override"]')?.addEventListener('click', onContinue);
+    // Milestone 77A: the reason line's own Continue (output-reasons.js puts it
+    // on a reason only Continue can answer).
+    document.querySelectorAll('[data-export-continue]').forEach((button) => button.addEventListener('click', onContinue));
     return;
   }
   await renderPreviewInto(container, buildModel, D, options);
@@ -566,9 +571,9 @@ export async function printGeneratedPdf(buildModel, D, baseIssues = []) {
     if (authorization.status !== 'allowed') {
       // The full list belongs on the Print Preview panel, which groups it and
       // can be read at leisure. An alert box holding fifty sentences cannot.
-      const count = authorization.issues.length;
-      await alertModal(`Cannot print: ${count} required item${count === 1 ? '' : 's'} still missing. Open Print Preview to see what they are.`);
-      return;
+      // Milestone 77A: when Continue can answer it, Print asks (it said
+      // "Open Print Preview", from Print Preview, with only OK).
+      if (!(await refuseOrContinue(authorization, 'Print', D, baseIssues))) return;
     }
     const model = buildModel(D);
     const doc = await generateCourtFormPdf(model);

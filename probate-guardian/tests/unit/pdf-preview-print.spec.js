@@ -27,8 +27,8 @@ vi.mock('../../src/core/state.js', () => ({ requestSave: vi.fn() }));
 vi.mock('../../src/core/persistence/case-file.js', () => ({ markDirtySinceExport: vi.fn() }));
 
 const { printGeneratedPdf } = await import('../../src/core/pdf/pdf-preview.js');
-const { alertModal } = await import('../../src/core/ui/dialogs.js');
-const { authorizeFilingOutput } = await import('../../src/core/filing/output-authorization.js');
+const { alertModal, confirmModal } = await import('../../src/core/ui/dialogs.js');
+const { authorizeFilingOutput, acknowledgeOutstandingRequirements } = await import('../../src/core/filing/output-authorization.js');
 
 describe("Print's new tab", () => {
   let opened;
@@ -59,10 +59,35 @@ describe("Print's new tab", () => {
     expect(alertModal).not.toHaveBeenCalled();
   });
 
-  test('nothing is opened when the filing cannot be printed', async () => {
+  test('nothing is opened when the filing cannot be printed, and it says why', async () => {
     authorizeFilingOutput.mockReturnValueOnce({ status: 'blocked', issues: [{}, {}] });
     await printGeneratedPdf(() => ({}), {}, []);
     expect(opened).toHaveLength(0);
-    expect(alertModal).toHaveBeenCalledWith('Cannot print: 2 required items still missing. Open Print Preview to see what they are.');
+    expect(alertModal).toHaveBeenCalledWith("Cannot print — 2 required fields missing. See the list on this page; they can't be overridden.");
+    expect(confirmModal).not.toHaveBeenCalled();
+  });
+
+  // Milestone 77A: Print offers Continue itself when Continue can answer.
+  test('requirements Continue can answer: Print asks; Cancel opens nothing', async () => {
+    authorizeFilingOutput.mockReturnValueOnce({ status: 'acknowledgement-required', issues: [{}, {}, {}] });
+    confirmModal.mockResolvedValueOnce(false);
+    await printGeneratedPdf(() => ({}), {}, []);
+    expect(confirmModal).toHaveBeenCalledTimes(1);
+    expect(confirmModal.mock.calls[0][0].message).toMatch(/^Cannot print yet — 3 required fields missing/);
+    expect(confirmModal.mock.calls[0][0].confirmLabel).toBe('Continue despite outstanding requirements');
+    expect(acknowledgeOutstandingRequirements).not.toHaveBeenCalled();
+    expect(opened).toHaveLength(0);
+    expect(alertModal).not.toHaveBeenCalled();
+  });
+
+  test('requirements Continue can answer: Continue acknowledges them and prints', async () => {
+    authorizeFilingOutput.mockReturnValueOnce({ status: 'acknowledgement-required', issues: [{}] });
+    confirmModal.mockResolvedValueOnce(true);
+    acknowledgeOutstandingRequirements.mockReturnValueOnce(true);
+    const D = { wardId: 'w1' };
+    const issues = () => [];
+    await printGeneratedPdf(() => ({}), D, issues);
+    expect(acknowledgeOutstandingRequirements).toHaveBeenCalledWith(D, issues);
+    expect(opened).toHaveLength(1);
   });
 });

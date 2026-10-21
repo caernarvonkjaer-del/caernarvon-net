@@ -20,7 +20,8 @@ import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/e
 import { writeContract } from '../../core/excel/workbook-contract/engine.js';
 import { SIMPLIFIED_CONTRACT } from '../../core/excel/workbook-contract/simplified.js';
 import { excelOmissions, workbookAdapter } from '../../core/excel/workbook-contract/index.js';
-import { excelOmissionsQuestion, outputRefusal } from '../../core/filing/output-reasons.js';
+import { excelOmissionsQuestion } from '../../core/filing/output-reasons.js';
+import { refuseOrContinue } from '../../core/filing/output-continue.js';
 import { runImportTransaction } from '../../core/excel/import-transaction.js';
 import { confirmImport } from '../../core/excel/import-confirm.js';
 import { recordDateDraft } from '../../core/form/commit-coordinator.js';
@@ -54,10 +55,15 @@ export async function doSaveExcel(){
         + capIssues.map(o => `• ${o.message}`).join('\n')
         + '\n\nSave as PDF instead — the PDF includes every entry.');
     } else {
-      await alertModal(outputRefusal(authorization, 'Excel'));
+      // Milestone 77A: Continue from the refusal itself (output-continue.js);
+      // the page shows the list either way.
+      renderPage('/print', { reason: DRAW.PREVIEW });
+      if (!(await refuseOrContinue(authorization, 'Excel', getD(), () => validateSimplified()))) return;
     }
-    renderPage('/print', { reason: DRAW.PREVIEW });
-    return;
+    if (capIssues.length) {
+      renderPage('/print', { reason: DRAW.PREVIEW });
+      return;
+    }
   }
   // Milestone 73M (decisions 73M-1 and 73M-2): what the filer must file
   // another way -- A-2's Notes, the Lines 20/30 explanation -- is asked about

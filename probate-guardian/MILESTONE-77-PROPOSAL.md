@@ -5,9 +5,11 @@
 **Draft (2026-10-20).** 77E approved to build (the requester, 2026-10-20:
 "Yes, the /s/ Name is supposed to be allowed for all filers … Let's just put
 it back in. If someone doesn't like it they can let us know.") -- built
-2026-10-20, its three decisions settled. Building any other delivery, or any
-part of one, needs the requester's named approval of that delivery
-(AGENTS.md §3). The other decisions in Appendix A are open.
+2026-10-20, its three decisions settled. 77A, 77B, 77C, 77D and 77F approved
+to build (the requester, 2026-10-20: "Do the other 5 parts now"), every
+remaining decision settled as recommended ("Take all six"), built in the
+order 77A, 77C, 77D, 77F, 77B -- each delivery's build record says when it
+landed.
 
 ## Where these came from
 
@@ -139,6 +141,8 @@ scroll there concludes she can't produce a draft for the attorney's audit.
 2. **Beside the reason line only.** The refusals still end in OK.
 3. **In each refusal only.** Nothing on the page itself until she tries.
 
+**Settled 2026-10-20 by the requester: option 1** ("Take all six", with 77A, 77B, 77C, 77D and 77F approved to build).
+
 ### Checklist (AGENTS.md §8)
 
 | # | Answer |
@@ -152,6 +156,50 @@ scroll there concludes she can't produce a draft for the attorney's audit.
 | 7 UI | The existing confirm dialog and reason line; the "Preview blocked" box unchanged. |
 | 8 Legal | None: what is required to file is unchanged. |
 | 9 Cross-form | All seven preview pages share the panel, the reason line and the refusals; one change covers the nine forms. |
+
+### Build record — BUILT 2026-10-20
+
+Approved by name (Status), decision 77A-1 option 1. What a filer now sees:
+
+- **The reason line carries its Continue**: "Save as PDF and Save as Excel:
+  3 requirements outstanding — see the list on this page, or continue with
+  them blank." followed by a **Continue despite outstanding requirements**
+  button. Only a reason Continue can answer carries one; beside a PDF
+  blocked for good, Save as Excel's own reason keeps its Continue (76J).
+- **Print, Save as PDF and Save as Excel ask** when Continue can answer:
+  "Cannot export yet — 3 required fields missing, listed on this page.
+  Choose “Continue despite outstanding requirements” to save the PDF anyway,
+  with them blank, or Cancel to complete them first." (and "to save the Excel
+  workbook", "Cannot print yet … to print"), with Continue and Cancel.
+  Continue produces the output and the page says Continue was given, as the
+  Preview's own button does. What can't be overridden still says why, with
+  only OK (Print's: "Cannot print — … they can't be overridden.").
+- **The red box** says "Across 5 sections, listed below. Complete them, or
+  choose “Continue despite outstanding requirements” to produce a draft with
+  them blank." -- or, when one can't be overridden, "At least one of them
+  can't be overridden: correct it to continue."
+- The "Preview blocked" box keeps its button; Continue still lasts for the
+  visit; the user guide says a draft for the attorney can be made with
+  blanks, and how.
+
+Code: `src/core/filing/output-continue.js` (new: `refuseOrContinue()`,
+`continueDespiteOutstanding()`, `onOutputAcknowledged()`),
+`output-reasons.js`, `validation-panel.js`, `pdf-preview.js` (one Continue
+for the Preview's button and the reason line's; Print asks), the seven
+`print.js` (Save as PDF; the red box's flag), the three workbooks'
+`excel.js` (Save as Excel), `help/index.html`.
+
+Tests: `tests/unit/output-reasons.spec.js` and `pdf-preview-print.spec.js`
+(red first: 8 fail at HEAD); `tests/e2e/continue-77a.spec.ts` (new, real
+clicks on all seven preview pages; red first: its four fail at HEAD -- the
+red box said "These must be completed …", the refusals offered neither Cancel
+nor Continue); updated: `output-buttons-after-override.spec.ts`,
+`preview-print-button.spec.ts`, `export-helper.contract.spec.ts`, and
+`tests/e2e/support/target.ts` (`clickExport()` cancels a refusal that asks,
+never continuing; `exportOutput()` is still the explicit opt-in).
+Browser (C: copy, chromium): those, `excel-continue-pdf-only`,
+`section-marks-follow-export`, `persistence-recovery.contract` and
+`form-entry.contract` (an impossible date still refuses with OK), 49 in all.
 
 ---
 
@@ -204,6 +252,8 @@ noted, not in scope.
 2. **The tour and the guide only.** Seen only by a filer who opens Help.
 3. **Once, after the first save** ("Your case is saved; next year…"), then
    not again.
+
+**Settled 2026-10-20 by the requester: option 1** ("Take all six", with 77A, 77B, 77C, 77D and 77F approved to build).
 
 ### Checklist (AGENTS.md §8)
 
@@ -295,6 +345,8 @@ and "Attorney — date signed is required to apply "/s/" Signed".
    at filing, and no Continue needed for it.
 2. **Nothing.** The blank date is simply allowed.
 
+**Settled 2026-10-20 by the requester: option 1** ("Take all six", with 77A, 77B, 77C, 77D and 77F approved to build).
+
 ### Checklist (AGENTS.md §8)
 
 | # | Answer |
@@ -358,6 +410,8 @@ signs by hand or with a stamp -- 77E changes that, not this).
 2. **The same 28 points**, placed below the heading. Fixes the overlap; with
    trimming, already much larger than today.
 
+**Settled 2026-10-20 by the requester: option 1** ("Take all six", with 77A, 77B, 77C, 77D and 77F approved to build).
+
 **77D-2 — Signatures already saved.**
 1. **(Recommended)** **Trimmed when the filing is opened**, once: only empty
    margin is removed, the mark itself is untouched, and the Activity Log
@@ -365,6 +419,8 @@ signs by hand or with a stamp -- 77E changes that, not this).
    without signing again (AGENTS.md §8 item 2: nothing to re-enter).
 2. **Left as saved**: only new signatures are trimmed; an old one prints in
    the new place at its old size until it is applied again.
+
+**Settled 2026-10-20 by the requester: option 1** ("Take all six", with 77A, 77B, 77C, 77D and 77F approved to build).
 
 ### Checklist (AGENTS.md §8)
 
@@ -591,6 +647,8 @@ practice (2026-10-20), not as statute (AGENTS.md §5).
 2. **The Inventory, for every county**, worded as general guidance.
 3. **The Inventory and the Annual's Part IX.**
 
+**Settled 2026-10-20 by the requester: option 1** ("Take all six", with 77A, 77B, 77C, 77D and 77F approved to build).
+
 ### Checklist (AGENTS.md §8)
 
 | # | Answer |
@@ -604,15 +662,15 @@ practice (2026-10-20), not as statute (AGENTS.md §5).
 
 | Decision | Question | Recommended | Status |
 | --- | --- | --- | --- |
-| 77A-1 | Where Continue is offered | Beside the reason line, and in each refusal | Open |
-| 77B-1 | Where carry-over is explained | A line on the dashboard, and the tour | Open |
-| 77C-1 | A reminder when a certificate date is blank | A reminder, never a block | Open |
-| 77D-1 | How tall a signature prints | Up to about half an inch | Open |
-| 77D-2 | Signatures already saved | Trimmed when the filing is opened | Open |
+| 77A-1 | Where Continue is offered | Beside the reason line, and in each refusal | Settled: as recommended |
+| 77B-1 | Where carry-over is explained | A line on the dashboard, and the tour | Settled: as recommended |
+| 77C-1 | A reminder when a certificate date is blank | A reminder, never a block | Settled: as recommended |
+| 77D-1 | How tall a signature prints | Up to about half an inch | Settled: as recommended |
+| 77D-2 | Signatures already saved | Trimmed when the filing is opened | Settled: as recommended |
 | 77E-1 | How the guardian rule changes | A new policy, 3 | Settled: retire it outright (option 2) |
 | 77E-2 | A guardian's "/s/" that 73A asked again | Shown as chosen again | Settled: as recommended |
 | 77E-3 | The caption under a guardian's "/s/" | The same as an attorney's | Settled: no rule citation (option 2) |
-| 77F-1 | Where the bond line goes | The Inventory only, Pinellas and Pasco | Open |
+| 77F-1 | Where the bond line goes | The Inventory only, Pinellas and Pasco | Settled: as recommended |
 
 Settled 2026-10-20 by the requester, before this proposal: the answers in
 the table under "Where these came from" -- among them 77C's scope (the

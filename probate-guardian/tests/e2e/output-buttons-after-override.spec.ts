@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, createSimplifiedWard, acceptDynDialog, clickExport, expectExportReady } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, acceptDynDialog, dismissDynDialog, clickExport, expectExportReady } from './support/target';
 import { readAll } from './support/stream';
 
 // Milestone 74C, with Milestone 73M step 5. Save as PDF and Save as Excel stay
@@ -105,14 +105,17 @@ for (const form of FORMS) {
         await expect(page.locator(selector), 'one attribute names every export button').toHaveAttribute('data-output-action', action);
       }
       await expect(reason.locator('[data-export-reason="outstanding"]')).toContainText(form.excel ? 'Save as PDF and Save as Excel:' : 'Save as PDF:');
-      await expect(reason).toContainText(`requirements outstanding — see the list on this page, or choose “${CONTINUE}”`);
+      await expect(reason).toContainText('requirements outstanding — see the list on this page, or continue with them blank.');
+      // Milestone 77A: the button the sentence names is there.
+      await expect(reason.locator('[data-export-continue]')).toHaveText(CONTINUE);
 
       let downloaded = false;
       page.on('download', () => { downloaded = true; });
       await page.locator(PDF).click();
-      const said = await acceptDynDialog(page);
-      expect(said).toMatch(/^Cannot export — \d+ required fields missing\. /);
-      expect(said).toContain(`or choose “${CONTINUE}” to export anyway`);
+      // Milestone 77A: the click asks; Cancel saves nothing.
+      const said = await dismissDynDialog(page);
+      expect(said).toMatch(/^Cannot export yet — \d+ required fields missing, listed on this page\. /);
+      expect(said).toContain(`Choose “${CONTINUE}” to save the PDF anyway`);
       expect(downloaded, 'nothing was saved').toBe(false);
 
       // Continue clears what it acknowledged from the reason line.
@@ -139,9 +142,9 @@ for (const form of FORMS) {
         let downloaded = false;
         page.on('download', () => { downloaded = true; });
         await page.locator(EXCEL).click();
-        const said = await acceptDynDialog(page);
-        expect(said).toMatch(/^Cannot export to Excel — \d+ required fields missing\. /);
-        expect(said).toContain(`or choose “${CONTINUE}” to export anyway`);
+        const said = await dismissDynDialog(page);
+        expect(said).toMatch(/^Cannot export to Excel yet — \d+ required fields missing, listed on this page\. /);
+        expect(said).toContain(`Choose “${CONTINUE}” to save the Excel workbook anyway`);
         expect(downloaded, 'nothing was saved').toBe(false);
         // ...and the reason line beside it said so before the click.
         await expect(page.locator('#export-reason [data-export-reason="outstanding"]')).toContainText('Save as Excel');

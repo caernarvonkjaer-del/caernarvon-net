@@ -61,7 +61,7 @@ test.describe('a positive export reads the gate before any download wait', () =>
     await expect(button).toBeVisible();
     const r = await timed(() => clickExport(button, 60_000));
     expect(r.error, 'the click is refused').not.toBeNull();
-    expect(r.error!.message).toMatch(/^Save as Excel was refused: Cannot export to Excel — \d+ required fields? missing/);
+    expect(r.error!.message).toMatch(/^Save as Excel was refused: Cannot export to Excel yet — \d+ required fields? missing/);
     expect(r.ms, 'the refusal, not a download timeout, ends the wait').toBeLessThan(15_000);
     await expect(page.locator(DYN_OPEN), 'the refusal dialog is closed again').toHaveCount(0);
   });

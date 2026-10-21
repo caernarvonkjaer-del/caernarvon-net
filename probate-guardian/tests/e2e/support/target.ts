@@ -693,7 +693,9 @@ export async function clickExport(button: Locator, timeout = 60_000): Promise<Do
   ]);
   if (outcome === 'refused') {
     const said = ((await refusal.locator('.modal-box-intro').textContent()) ?? '').trim();
-    await refusal.locator('[data-dyn-action="ok"], [data-dyn-action="confirm"]').click();
+    // Milestone 77A: a refusal Continue can answer asks (Continue / Cancel);
+    // this helper never continues -- exportOutput() opts in to that.
+    await refusal.locator('[data-dyn-action="ok"], [data-dyn-action="cancel"]').click();
     download.catch(() => {});
     throw new Error(`${name} was refused: ${said}`);
   }
