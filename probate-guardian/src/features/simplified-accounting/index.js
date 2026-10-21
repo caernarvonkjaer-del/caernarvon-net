@@ -739,7 +739,7 @@ function pagePart6(){
   ${preparerNoteHTML()}
     <div class="schedule-instructions">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to the recipients below.</div>
     <div class="row g-3 mb-3">
-      <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,true,'date')}</div>
+      <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,false,'date')}<div class="form-text">Leave blank until the copies are served; the PDF then reads “the date indicated below”.</div></div>
       <div class="col-md-8">${renderSelectField({ path: 'certWardStatus', label: 'Indicate if Ward is:', value: d.certWardStatus, options: WARD_STATUS_VALUES, required: true })}</div>
       <div class="col-12">${renderFormField({ path: 'certIndicator', label: SERVICE_METHOD_LABEL, value: d.certIndicator, kind: SERVICE_METHOD_KIND, id: 'certIndicator' })}</div>
     </div>

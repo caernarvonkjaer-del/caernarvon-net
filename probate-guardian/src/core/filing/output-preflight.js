@@ -16,7 +16,7 @@ import { features, hasFeatureServices } from '../runtime/features.js';
 import { unrepresentedAdvisories } from './unrepresented-filing.js';
 import { startingBalanceNotes } from './starting-balance-carry.js';
 import { guardianEmailAdvisories } from './guardian-email.js';
-import { serviceMethodAdvisories } from './service-method.js';
+import { serviceDateAdvisories, serviceMethodAdvisories } from './service-method.js';
 import { amountFieldIssues } from './amount-fields.js';
 import { emailFieldIssues } from './email-fields.js';
 import { dateAdvisories } from './date-advisories.js';
@@ -148,6 +148,8 @@ export function collectOutputIssues(target, baseIssues = []) {
     // (Rule 2.516(f)) -- warned, never blocked. The Plans' comes through
     // planCertificateAdvisories() above.
     ...serviceMethodAdvisories(target, identity.descriptor?.engineId),
+    // Milestone 77C-1: the certificate's date is open -- a reminder.
+    ...serviceDateAdvisories(target, identity.descriptor?.engineId),
   ];
   return { descriptor: identity.descriptor, structuredIssues, advisories };
 }

@@ -57,7 +57,7 @@ import { rowStarted } from '../../core/validation/row-started.js';
 // share the rule.
 const INVENTORY_ATTORNEY_REQUIRED = {
   '/': ['attorneyForGuardian'],
-  '/d2': ['attorney.name', 'attorney.filingDate', 'attorney.barNumber', 'attorney.phone', 'attorney.email', 'attorney.streetAddress', 'attorney.cityStateZip'],
+  '/d2': ['attorney.name', 'attorney.barNumber', 'attorney.phone', 'attorney.email', 'attorney.streetAddress', 'attorney.cityStateZip'],
 };
 const INVENTORY_ATTORNEY_TRIGGERS = ['attorneyForGuardian', 'attorney'];
 const attorneyMarkerAborts = new WeakMap();
@@ -1290,7 +1290,7 @@ function pageD2(){
       <button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="attorney" data-index="0">Link Person</button>
     </div>
     <div class="entry-card-body">
-      ${formRow(col(5,attyLabel("Attorney's Name")+textInput('attorney.name','','name')+useCoverNameButton('attorney.name',D.attorney.name,D.attorneyForGuardian)),col(3,(signatureDateRequired({ path: 'attorney', state: D.attorney.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput('attorney.signatureDate','Signature Date')),col(4,attyLabel('Filing Date (as of)')+dateInput('attorney.filingDate','Filing Date (as of)')))}
+      ${formRow(col(5,attyLabel("Attorney's Name")+textInput('attorney.name','','name')+useCoverNameButton('attorney.name',D.attorney.name,D.attorneyForGuardian)),col(3,(signatureDateRequired({ path: 'attorney', state: D.attorney.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput('attorney.signatureDate','Signature Date')),col(4,optLabel('Filing Date (as of)')+dateInput('attorney.filingDate','Filing Date (as of)')))}
       ${formRow(col(4,attyLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,attyLabel('Phone Number')+textInput('attorney.phone','','phone')))}
       ${formRow(col(6,attyLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,attyLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,attyLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
@@ -1382,7 +1382,7 @@ function pageD5(){
   const serviceCertificateHTML=()=>{
     // Milestone 72G: the ward's status is the workbook's "Indicate if:"; how
     // the copies were served is its own box, printed on the PDF only.
-    const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate','Service Date (on this date)')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],...WARD_STATUS_VALUES.map(v=>[v,v])],D.serviceIndicateIf)))
+    const serviceRow=formRow(col(4,optLabel('Service Date (on this date)')+dateInput('serviceDate','Service Date (on this date)')+'<div class="form-text">Leave blank until the copies are served; the PDF then reads “the date indicated below”.</div>'),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],...WARD_STATUS_VALUES.map(v=>[v,v])],D.serviceIndicateIf)))
       +formRow(col(12,optLabel(SERVICE_METHOD_LABEL)+textInput('serviceMethod','')));
     // Milestone 72H: the certificate's attorney is D-2's, as the Clerk's
     // workbook links it -- its name, Florida Bar number, phone and address

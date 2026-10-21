@@ -171,7 +171,9 @@ export function collectAnnualIssues(d){
   }));
   }
   // Part IX's bond fields: nothing required (Milestone 67B; see the note above).
-  req(d.certDate,'Part X — Certificate of Service Date','certDate');
+  // Milestone 77C: a blank Certificate of Service Date is not listed (the
+  // report is served after the guardian drafts it); one entered is still
+  // checked against Period To below. service-method.js reminds.
   // Milestone 72G: the ward's status, the workbook's "Indicate if:" (K23),
   // required on all three accountings (the requester's decision, recorded as
   // Pinellas Clerk practice), in the Inventory's own message style.

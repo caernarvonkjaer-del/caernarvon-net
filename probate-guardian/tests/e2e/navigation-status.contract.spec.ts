@@ -423,10 +423,12 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     });
     expect(paths.preparerDate).toBe('preparer.signatureDate');
     expect(paths.attorneySignatureDate).toBe('attorney.signatureDate');
-    expect(paths.attorneyFilingDate).toBe('attorney.filingDate');
+    // Milestone 77C: a blank attorney Filing Date is not listed (it is filled
+    // in when the report is filed).
+    expect(paths.attorneyFilingDate).toBeUndefined();
 
-    await followJumpLink(page, '/d2', paths.attorneyFilingDate);
-    await expect(page.locator(`[data-bind="${paths.attorneyFilingDate}"]`)).toBeFocused();
+    await followJumpLink(page, '/d2', paths.attorneySignatureDate);
+    await expect(page.locator(`[data-bind="${paths.attorneySignatureDate}"]`)).toBeFocused();
   });
 
   test('D-3 Safe Deposit Box radios and D-4 Bond fields resolve real, distinct targets', async ({ page }) => {
@@ -482,13 +484,15 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     const paths = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();
       return {
-        serviceDate: structured.find((e: any) => e.section === 'D-5')?.path,
+        serviceDate: structured.find((e: any) => e.path === 'serviceDate')?.path,
         recipientName: structured.find((e: any) => e.section === 'D-5 Recipient 1' && e.label === 'Name')?.path,
         attorneyName: structured.find((e: any) => e.section === 'D-5 Attorney' && e.label === 'Name')?.path,
         d2AttorneyName: structured.find((e: any) => e.section === 'D-2 Attorney' && e.label === 'Name')?.path,
       };
     });
-    expect(paths.serviceDate).toBe('serviceDate');
+    // Milestone 77C: a blank Service Date is not listed (filled in when the
+    // copies are served).
+    expect(paths.serviceDate).toBeUndefined();
     expect(paths.recipientName).toBe('serviceRecipients.0.name');
     expect(paths.attorneyName, 'D-5 asks for no attorney name (72H)').toBeUndefined();
     expect(paths.d2AttorneyName).toBe('attorney.name');
@@ -662,6 +666,9 @@ test.describe('Simplified field-path accuracy (Milestone 33, Item 3, sub-phase 3
     });
     expect(otherPaths.barNumber).toBe('attorney_barNumber');
 
+    // Milestone 77C: a blank Date of Service is not listed; one entered before
+    // Period To still is, at its own path.
+    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ periodTo: '2026-12-31', certServiceDate: '2026-06-01' }));
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p6'));
     const p6Path = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();

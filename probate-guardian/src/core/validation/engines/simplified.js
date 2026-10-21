@@ -125,7 +125,8 @@ export function collectSimplifiedIssues(d){
     filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
   }
-  req(d.certServiceDate,'Part VI — Date of Service','certServiceDate');
+  // Milestone 77C: a blank Date of Service is not listed; one entered is
+  // still checked against Period To. service-method.js reminds.
   errs.push(...checkDateOrder(d.periodTo,d.certServiceDate,{
     sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Date of Service',allowSameDay:true,
     filingType:T,laterPath:'certServiceDate',

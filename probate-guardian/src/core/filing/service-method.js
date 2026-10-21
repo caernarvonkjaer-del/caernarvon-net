@@ -60,9 +60,9 @@ export function methodOfServiceLine(method) {
 
 /** Each accounting engine's certificate: where its recipients, attestation and method live. */
 const CERTIFICATES = Object.freeze({
-  guardian: Object.freeze({ section: 'D-5', recipients: 'serviceRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'serviceNoRecipients', method: 'serviceMethod' }),
-  annual: Object.freeze({ section: 'Part X', recipients: 'certRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'certNoRecipients', method: 'certIndicator' }),
-  simplified: Object.freeze({ section: 'Part VI', recipients: 'certRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'certNoRecipients', method: 'certIndicator' }),
+  guardian: Object.freeze({ section: 'D-5', recipients: 'serviceRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'serviceNoRecipients', method: 'serviceMethod', date: 'serviceDate' }),
+  annual: Object.freeze({ section: 'Part X', recipients: 'certRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'certNoRecipients', method: 'certIndicator', date: 'certDate' }),
+  simplified: Object.freeze({ section: 'Part VI', recipients: 'certRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'certNoRecipients', method: 'certIndicator', date: 'certServiceDate' }),
 });
 
 /** The warning's text, shared with the Plans' (plan-certificate-of-service.js). */
@@ -81,6 +81,19 @@ export function serviceMethodAdvisories(d, engineId) {
   const listed = (Array.isArray(d[c.recipients]) ? d[c.recipients] : []).some((r) => r && c.recipientFields.some((f) => text(r[f])));
   if (!listed || text(d[c.method])) return [];
   return [{ code: 'certificate.method-missing', severity: 'advisory', field: c.method, message: methodMissingMessage(c.section) }];
+}
+
+/**
+ * Milestone 77C-1: Preview & Export reminds that the certificate's date is
+ * open -- it is filled in by whoever serves the report, often weeks after the
+ * guardian drafts it -- unless no one needs to be served. Never an export
+ * issue (decision 77C-1; the Plans have their own, plan-certificate-of-service.js).
+ */
+export function serviceDateAdvisories(d, engineId) {
+  const c = CERTIFICATES[engineId];
+  if (!d || !c) return [];
+  if (d[c.noRecipients] === 'Yes' || text(d[c.date])) return [];
+  return [{ code: 'certificate.date-blank', severity: 'advisory', field: c.date, message: `${c.section} — Date of Service is blank. The report can be filed without it; fill it in when it is served.` }];
 }
 
 // ── The certificate's lifecycle (72G step 6) ────────────────────────────────

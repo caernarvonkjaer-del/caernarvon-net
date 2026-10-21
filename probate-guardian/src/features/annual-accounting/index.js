@@ -1657,7 +1657,7 @@ function pagePart10Annual(){
   ${preparerNoteHTML()}
   <div class="schedule-instructions">Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to the recipients listed below.</div>
   <div class="row g-2 mb-3">
-    <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
+    <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",false,'date')}<div class="form-text">Leave blank until the copies are served; the PDF then reads “the date indicated below”.</div></div>
     <div class="col-md-6">${selD('Indicate if Ward is:',d.certWardStatus,"D.certWardStatus=this.value",WARD_STATUS_VALUES,true)}</div>
     <div class="col-12">${inpD(SERVICE_METHOD_LABEL,d.certIndicator,"D.certIndicator=this.value",false,'text',{kind:SERVICE_METHOD_KIND})}</div>
   </div>

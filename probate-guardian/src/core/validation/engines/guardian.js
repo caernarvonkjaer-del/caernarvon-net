@@ -150,7 +150,7 @@ export function collectGuardianIssues(d){
   }
   // Milestone 72B: the primary email joins the rest once an attorney is
   // started, as on the Annual and the Simplified; D-2 always marked it required.
-  if(attorneyStarted){req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.email,'D-2 Attorney — Primary Email','attorney.email');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');}
+  if(attorneyStarted){req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.email,'D-2 Attorney — Primary Email','attorney.email');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');}
   // "Unanswered" is anything other than Yes or No. New filings start with
   // '', and both explicit strings satisfy the parent answer; the filed
   // question is required only when the parent is Yes.
@@ -214,7 +214,10 @@ export function collectGuardianIssues(d){
     rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
       req('',`D-5 Recipient ${index+1} — ${f}`,`serviceRecipients.${index}.name`)));
   }
-  if(!d.serviceDate)push('D-5 — Service Date is required.','serviceDate');
+  // Milestone 77C (the requester, 2026-10-20, reversing the 2026-09-13 "keep
+  // required" decision): a blank Service Date, and above a blank attorney
+  // Filing Date, are not listed -- the guardian drafts before the report is
+  // served and filed; service-method.js's serviceDateAdvisories() reminds.
   // Milestone 64A-2, item 2.4. Form PART VI J24/J25: 'Indicate if:' Ward is
   // totally incapacitated / Ward is under 14 years old / N/A. 'N/A' is a
   // real, complete answer -- not a stand-in for unanswered -- so req()'s

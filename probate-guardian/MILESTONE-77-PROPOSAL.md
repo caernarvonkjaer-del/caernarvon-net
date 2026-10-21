@@ -361,6 +361,43 @@ and "Attorney — date signed is required to apply "/s/" Signed".
 | 8 Legal | The certificate of service and its date remain the filer's to complete before filing (§744.362(1) for the Inventory; the accountings' own certificates); the app stops checking that the date is filled in while the report is a draft. Whether a certificate filed undated is acceptable is not something this app decides. |
 | 9 Cross-form | The Inventory and the three accountings are brought to the Plans' rule; the Plans are unchanged. |
 
+### Build record — BUILT 2026-10-20
+
+Approved by name (Status), decision 77C-1 option 1. What a filer now sees:
+
+- **A blank date of service is not listed** on the Initial Inventory (D-5
+  Service Date), the Annual, Final and Trust Accountings (Part X Certificate
+  of Service Date) or the Simplified (Part VI Date of Service), nor a blank
+  attorney Filing Date on the Inventory; their stars are gone, and each date
+  box says "Leave blank until the copies are served; the PDF then reads “the
+  date indicated below”." A date that is entered is still checked -- a real
+  date, and on or after Period To on the Annual family and the Simplified.
+  The attorney's "/s/" date stays required with "/s/".
+- **A reminder** on Preview & Export, in the "Review recommended before
+  filing" box, while the date is blank and someone is to be served: "Part X
+  — Date of Service is blank. The report can be filed without it; fill it in
+  when it is served." Never a block.
+- The data model: `serviceDate`, `certDate` and `certServiceDate` optional;
+  `attorney.filingDate` already was, and the code now agrees. The user
+  guide's certificate entries say the date may be left blank.
+
+Code: `engines/guardian.js`, `engines/annual.js`, `engines/simplified.js`,
+`service-method.js` (`serviceDateAdvisories()`), `output-preflight.js`, the
+Inventory's, the Annual's and the Simplified's `index.js` (stars, hints, the
+Inventory's live attorney markers), `help/index.html`, the data model.
+
+Tests: `tests/unit/certificate-dates-77c.spec.js` (new, 8; red first -- 6 fail
+with the engines, `service-method.js` and `output-preflight.js` at HEAD, the
+two date-order cases passing on both); `navigation-status.contract.spec.ts`
+updated (its D-2 link now the attorney's signature date; the Simplified's
+Part VI path proved by a date before Period To); the completion golden
+regenerated (13 of 4,936 outcomes: a page whose only gap was one of these
+dates is now complete) and the validator golden (751 of 4,936, each losing
+one of the six retired messages, nothing gained), both diffed outcome by
+outcome. Unit: the whole suite on the C: copy, the timeouts under load
+passing alone; `verify:data-model`. Browser (C: copy, chromium): every spec
+naming these dates, the asterisk rule and the readiness card.
+
 ---
 
 ## 77D — A drawn signature prints at its size, on its line
