@@ -11,6 +11,16 @@ remaining decision settled as recommended ("Take all six"), built in the
 order 77A, 77C, 77D, 77F, 77B -- each delivery's build record says when it
 landed.
 
+**Closing regression (2026-10-21, the requester's go-ahead).** `npm test`
+from a copy on C: at `9f4bf08f` (every delivery built): unit 245 files,
+3,506 tests passed; browser (41.0 min) 1,076 passed, 7 skipped (the cases
+that need a built target), 4 failed -- the Plan Simplified's PDF preview,
+the persistence case committing a typed value on save, one Annual guardian
+signature case and the Plans' New Year wording. Each failed at about a
+minute (a time limit, not a wrong result), in two consecutive pairs, one
+reporting "Test ended" while closing its browser: load on the machine. Their
+four spec files run alone: 51 of 51 passed. Nothing was changed.
+
 ## Where these came from
 
 A professional guardian tested the app and wrote to the requester on
