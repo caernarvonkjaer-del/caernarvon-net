@@ -975,5 +975,5 @@ This index inventories repository files retained as source or project artifacts.
 | [`tsconfig.json`](<tsconfig.json>) | JSON configuration or fixture data. |
 | [`vite.config.js`](<vite.config.js>) | Build, tooling, or configuration source. |
 | [`vitest.config.ts`](<vitest.config.ts>) | Build, tooling, or configuration source. |
-| [`WCAG_2.1_AA_regex-structural.md`](<WCAG_2.1_AA_regex-structural.md>) | Project documentation or policy reference. |
+| [`WCAG_2.1_AA_regex-structural.md`](<WCAG_2.1_AA_regex-structural.md>) | How the generated PDFs are tagged for PDF/UA-1 / WCAG 2.1 AA and how the browser tests verify it (regex over the PDF bytes): the tagging code and the test cluster quoted, what each check proves and what none does. Compiled 2026-09-18; re-verified and updated 2026-10-27. |
 | [`WORKSTATION.md`](<WORKSTATION.md>) | The development workstation: verified tool and browser paths, the FAT32 drive and the copy on C:, git settings, measured run times. Split from AGENTS.md 2026-10-27. |
