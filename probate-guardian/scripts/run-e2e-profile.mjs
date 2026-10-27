@@ -5,9 +5,8 @@
 // PG_TARGET/PG_BROWSER set for a spawned Playwright process, and this repo
 // has no cross-env dependency -- setting process.env directly here (rather
 // than "PG_TARGET=x npx playwright test" in package.json's scripts) avoids
-// depending on shell-specific env-var syntax, since this project's own
-// HOW-TO-RUN.txt documents PowerShell's `$env:X=` form, which the bare
-// POSIX "X=y cmd" form doesn't work with on Windows.
+// depending on shell-specific env-var syntax: the bare POSIX "X=y cmd" form
+// doesn't work in PowerShell, whose form is `$env:X=`.
 //
 // TEST-REVIEW.md, Delivery 1 (2026-10-13). This runner is what `npm test`'s
 // browser leg and `test:quick` go through, so both are source/Chromium here

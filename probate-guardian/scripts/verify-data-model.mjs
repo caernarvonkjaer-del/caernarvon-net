@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Milestone 34-2: zero-dependency checker for probate-guardian-data-model.csv
 // against the canonical 20-column contract defined in
-// DATA-MODEL-REMEDIATION-PLAN.md. Documentation-quality tooling only -- it
+// DATA-MODEL-REMEDIATION-PLAN.md (retired 2026-10-27, in git history; this
+// checker now states the contract). Documentation-quality tooling only -- it
 // reads the CSV and reports problems; it never writes to it and has no
 // effect on application behavior.
 import { existsSync, readFileSync } from 'node:fs';
