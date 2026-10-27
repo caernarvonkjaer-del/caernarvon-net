@@ -10,6 +10,12 @@ surfaces. Scope changes deliberately; defer to the requester on product,
 scope, and legal-interpretation calls. This is the default contract; §3
 covers deviations.
 
+**The requester** -- the project's owner, a representative of the Clerk of
+the Circuit Court, Pinellas County -- makes those calls. Wherever this file
+asks for a decision, an approval or a "named approval", it means the
+requester's. A Clerk-practice answer the requester gives is recorded as
+county practice, never as a reading of a statute or rule (§4).
+
 ---
 
 ## 1. Quick Command & Tech Stack Reference
@@ -38,8 +44,8 @@ non-zero, so a later stage never runs against a broken prerequisite.
 
 - **`npm test` is unchanged and stays unchanged.** It is the full regression
   §2 governs. `test:quick` is not a substitute for it and is not a merge gate:
-  it runs 35 of the suite's 1,036 browser tests (counted with `--list`,
-  2026-10-14; TEST-REVIEW.md Delivery 1M cut the suite from 1,238 and the
+  it runs 37 of the suite's 1,087 browser tests (counted with `--list`,
+  2026-10-27; TEST-REVIEW.md Delivery 1M cut the suite from 1,238 and the
   tier from 69, the requester choosing to leave the tier's four specs as
   they are).
 - **Both named tiers go through `scripts/run-e2e-profile.mjs`** (since
@@ -176,8 +182,12 @@ so it starts as a proposal for the requester's named approval (§3).
 
 ### Verified executable paths
 
-Windows workstation, verified **2026-09-19**. Every path below was confirmed
-to exist on disk, not inferred from configuration. Browser resolution was
+Windows workstation, verified **2026-09-19** and re-verified
+**2026-10-27**, when the 2026-09-19 table was found wrong: Node had moved
+from `E:` and Git from `D:` to `C:\Program Files`, and Python and the
+bundled browsers were under another user's profile (`C:\Users\No Name`).
+Every path below was confirmed to exist on disk, not inferred from
+configuration. Browser resolution was
 confirmed by evaluating `playwright.config.ts` itself
 (`node --input-type=module -e "(await import('./playwright.config.ts')).default"`)
 and cross-checked against `npx playwright install --dry-run`, which reports
@@ -187,9 +197,9 @@ Playwright's own expected install locations.
 
 | Tool | Path | Version |
 | --- | --- | --- |
-| node | `E:\Program Files\nodejs\node.exe` | 24.16.0 |
-| npm / npx | `E:\Program Files\nodejs\npm.ps1`, `npx.ps1` | 11.13.0 |
-| git | `D:\Program Files\Git\cmd\git.exe` | 2.55.0.windows.3 |
+| node | `C:\Program Files\nodejs\node.exe` | 24.16.0 |
+| npm / npx | `C:\Program Files\nodejs\npm.ps1`, `npx.ps1` | 11.13.0 |
+| git | `C:\Program Files\Git\cmd\git.exe` | 2.55.0.windows.3 |
 | playwright | `node_modules\.bin\playwright.cmd` | 1.62.1 |
 | vite | `node_modules\.bin\vite.cmd` | 8.2.2 |
 | vitest | `node_modules\.bin\vitest.cmd` | 4.1.11 |
@@ -198,9 +208,9 @@ Playwright's own expected install locations.
 `vite`, `vitest` and `tsc` are **project-local only** — none is on `PATH`, so
 they are reachable through `npx`/`npm run`, never as a bare command.
 
-**Browsers** — bundled ones all under
-`C:\Users\No Name\AppData\Local\ms-playwright\` (`PLAYWRIGHT_BROWSERS_PATH` is
-unset, so this is the `%LOCALAPPDATA%` default):
+**Browsers** — bundled ones all under `%LOCALAPPDATA%\ms-playwright\`
+(`C:\Users\clkmt07\AppData\Local\ms-playwright\` on 2026-10-27;
+`PLAYWRIGHT_BROWSERS_PATH` is unset, so this is the default):
 
 | Project | Executable | Version |
 | --- | --- | --- |
@@ -208,8 +218,8 @@ unset, so this is the `%LOCALAPPDATA%` default):
 | — full Chromium | `chromium-1234\chrome-win64\chrome.exe` | 151.0.7922.34 |
 | `firefox` | `firefox-1538\firefox\firefox.exe` | 153.0 |
 | `webkit` | `webkit-2336\Playwright.exe` | 26.5 |
-| `edge` (`channel: 'msedge'`) | `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe` | 153.0.4234.32 |
-| system Chrome (no project uses it by default) | `C:\Program Files\Google\Chrome\Application\chrome.exe` | 151.0.7922.176 |
+| `edge` (`channel: 'msedge'`) | `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe` | 155.0.4283.45 |
+| system Chrome (no project uses it by default) | `C:\Program Files\Google\Chrome\Application\chrome.exe` | 156.0.8078.48 |
 
 The default `chromium` project resolves to the **headless shell**, not
 `chrome.exe` — `defaultChromiumExecutablePath()` lists the headless shell
@@ -219,9 +229,11 @@ misconfiguration. The `edge` project carries no `executablePath`; `channel:
 'msedge'` means Playwright launches the **system** Edge above, so an Edge
 upgrade changes the browser under test without any repo change.
 
-Both system browsers are confirmed **launchable**, not merely present:
-Playwright drove system Chrome through the 41 targeted Milestone 59A browser
-tests, and launched system Edge in a headless smoke check.
+Both system browsers were confirmed **launchable**, not merely present, at
+their 2026-09-19 versions (Chrome 151, Edge 153): Playwright drove system
+Chrome through the 41 targeted Milestone 59A browser tests, and launched
+system Edge in a headless smoke check. Both have updated themselves since;
+the versions above were read from the executables, not launched.
 
 **Corrections — three earlier claims in this section were wrong and were
 removed. Do not reinstate them:**
@@ -252,10 +264,12 @@ or not the binary was ever downloaded. Confirm with an existence check.
 `bootstrap.bundle.min.js`), and the e2e web server is local
 (`npx vite preview --outDir . --port 4321 --strictPort` → `http://localhost:4321/index.html`).
 
-**Python** (§2's rule, with its reason confirmed): `py` → `C:\Windows\py.exe`
-and `python` → `C:\Program Files\Python314\python.exe`, both Python 3.14.5.
-`python3` resolves to `...\WindowsApps\python3.exe`, a **0-byte Microsoft
-Store alias stub** — exactly why `python3` must never be used on this machine.
+**Python** (§2's rule, with its reason confirmed 2026-10-27): `py` →
+`%LOCALAPPDATA%\Programs\Python\Launcher\py.exe` and `python` →
+`%LOCALAPPDATA%\Programs\Python\Python314\python.exe`, both Python 3.14.6.
+`python3` resolves to `%LOCALAPPDATA%\Microsoft\WindowsApps\python3.exe`, a
+**0-byte Microsoft Store alias stub** — exactly why `python3` must never be
+used on this machine.
 
 These paths and versions are machine-specific evidence, not portable
 repository defaults; re-verify them after any browser, Node, or Playwright
@@ -287,6 +301,12 @@ the root is found there (through Milestone 76; Milestones 60-75 archived
 ## 2. Git, Concurrency & Execution Discipline
 
 - **Direct to master.** Commit and push directly; never create feature branches.
+- **A push to master goes live.** The test site deploys automatically from
+  `master` (the Cloudflare Pages assembly, `scripts/build-cloudflare-pages.mjs`
+  at the repository root), and guardians use the test site for real filings
+  (§8 item 2). Push only work whose targeted tests pass; an unfinished change
+  stays in the working tree. Production is separate and manual: the
+  requester deploys a portable package built per §9.
 - **Concurrent tree.** Multiple agents/collaborators may edit or push at the same time.
   - Sync with `master` before starting; `git status`/`git log` before editing — a change you didn't make is not stale by default.
   - Commit **only your own task's files**; never sweep in unrelated concurrent work.
@@ -303,6 +323,10 @@ the root is found there (through Milestone 76; Milestones 60-75 archived
 - **Python on Windows: use `python` or `py`, never `python3`.** `python3` resolves to a Microsoft Store alias stub — a real file, so `PATH` lookups (`shutil.which`, `where`) report it as found, but running it just prints an install nag and exits non-zero (see §10, P4). Doesn't apply to Linux/macOS end-user docs (`HOW-TO-RUN.txt`), where `python3` is correct. General lesson: a `PATH` hit is never proof an executable works — applies to any future interpreter-detection logic too.
 - **Commit messages** state what changed, the observable reason (§3's "lead with impact" rule applies here too), and the verification evidence (tests run, red-first result) — not just a summary of the diff.
 - **Verify commit citations** — never cite a SHA without checking it via `git log`/`git rev-parse` first.
+- **The user guide follows the app.** A change a filer would see -- a label,
+  a choice, what holds output back, a new page or section -- updates the
+  in-app user guide, `help/index.html`, in the same commit, and the guided
+  tours (`src/core/help/walkthrough.js`) when a tour step names what changed.
 
 ---
 
@@ -349,23 +373,29 @@ In practice: open with one sentence a non-engineer could act on (*what breaks, f
 - **Pro se / Ch. 393 Guardian Advocate protection**: never make attorney-certification fields mandatory blockers on an unrepresented filing — skip attorney validation entirely if no attorney is entered.
 - **Bypassable output acknowledgement**: after an affirmative override, court output still generates faithfully (no watermark/filename/formatting degradation); issues stay visible in the UI. Non-bypassable issues (data-integrity conflicts, format-capacity overflow, generation failures, since Milestone 73F part 3 an impossible date -- decision 73F-3 -- and since Milestone 76I two blocks on Save as Excel only, the PDF staying overridable: a started Schedule B-4 row with no category or one outside the workbook's 18, and an unreadable amount the workbook would write -- decisions 76I-2 and 76I-3, `src/core/excel/workbook-blocks.js`) are never overridable.
 
-**The sidebar is not the export gate, and on 14 Annual schedules it is
-deliberately stricter. Do not "fix" that by tightening export.**
+**The sidebar may ask more than the export gate does. Do not "fix" that by
+tightening export.**
 
 The invariant above governs the **readiness panel** (`readiness-config.js`).
-The **sidebar nav dots** (the completion evaluators in
-`src/core/status/completion.js`, which the sidebar reaches through
-`computeNavChecks()` in `src/core/status/nav-marks.js`) are a
-different surface with a different job, and the two must not be conflated —
-`readiness-config.js` has no per-schedule Annual items at all.
+The **sidebar's marks** -- the check beside each page, the page checklist,
+the dashboard's progress -- come from the export checks themselves
+(`src/core/status/section-marks.js`, over `evaluateFiling()` in
+`src/core/validation/engines/index.js`), so a ✓ never hides an export
+blocker. They add one thing export does not: **sidebar-only prompts**
+(`sidebarOnly: true`), questions a page waits on while export passes:
 
-On Schedules A, B-1–B-4, C, D-1–D-5, E, F-1 and F-2, `annualCompletion()`
-marks a schedule incomplete until the filer either enters a complete row or
-ticks "I verify there are no items to report". `validateAnnual()`'s
-`checkRows()` requires neither: it skips rows with no data and validates only
-populated ones. Twelve of those schedules go through `rowsComplete()`; `a-schc`
-and `a-sche` inline the identical `length > 0 && every(...)` test, so a search
-for `rowsComplete(` finds only twelve of the fourteen.
+- each of the Annual family's 14 schedules (A, B-1–B-4, C, D-1–D-5, E, F-1,
+  F-2) and the Initial Inventory's 11 (A-1 to C-5): an entry, or "I verify
+  there are no items to report" (`annualNoItemsPrompts()`,
+  `inventoryNoItemsPrompts()`);
+- the Final Accounting's Final Report lists, the Initial Plan's Question 7,
+  and the others `section-marks.js`'s opening comment lists (the bond
+  question, a Plan's certificate, the Annual Plan's 3G).
+
+A row "+ Add" added and never touched counts as no entry. Export validates
+only the rows a filer started. (Milestone 73F parts 2 and 3 replaced the
+sidebar's earlier hand-written rules, which disagreed with export in both
+directions.)
 
 **This divergence is intentional and export is the side that is correct.** The
 court's own Annual workbook contains no "no items to report" declaration
@@ -376,14 +406,9 @@ worth prompting for, which is why the sidebar asks; it is not something the
 court requires, so export must never demand it. Requiring it to file would
 block filings that are complete and valid under the court's own form.
 
-*Since Milestones 73F parts 2 and 3:* the sidebar's "no items" question is a
-prompt raised by the export checks themselves (`annualNoItemsPrompts()` in
-`src/core/validation/engines/index.js`; the functions named above are
-retired), a row "+ Add" added and the filer never touched counts as no row,
-and the Initial Inventory's eleven schedules follow the same rule
-(`inventoryNoItemsPrompts()`, decision 73F-4): a prompt, never an export
-block. The Inventory's workbook has no "none" declaration either; the
-Pinellas Clerk practice below is what this rests on for both.
+The Inventory's workbook has no "none" declaration either (decision 73F-4
+made its schedules a prompt, where they used to block export); the Pinellas
+Clerk practice below is what this rests on for both.
 
 **Part XI is the one exception, and only because a statute names it.**
 §744.367(3)(a) requires the annual report to *include* a declaration of
@@ -445,7 +470,7 @@ here they should.
 **The three embedded workbooks in `templates/` are not an export target — they are the Pinellas County Clerk's own instruments.** Where they define a calculation, threshold, fee, or which schedules roll into a total, that is **authoritative**. Not to be improved on, inferred around, or re-derived from statute.
 
 - **Read the template before proposing/designing/changing any calculation.** Base64 in `templates/{annual,guardian,simplified}-template.js`; unzip and read `xl/workbook.xml`, `xl/sharedStrings.xml`, sheet XML (with a real parser — §10, P2). Milestone 57 lost hours holding items open for authority already sitting in the file: **57E-2** was deferred "pending a fee formula" that was already printed in the workbook (annual `PART II/III` rows 13-17; guardian `PART V` rows 7-9). **"Does Schedule C belong in the audit-fee base?"** — `SUMMARY I` B39 answers it directly (`=H32+H38`, Schedules A/B only). **57F** proposed writing ward name/case number onto 54 worksheets that already pull them by formula from defined names `Name_of_Ward`/`Case_Number` — the "fix" would have destroyed the propagation it meant to create.
-- **Push back on, don't defer, any change that alters a calculation** — fee tiers/thresholds, which schedules feed a total (and each one's sign), bond/audit-fee bases, rounding/percentage/apportionment, anything that changes a number a filer submits. Refuse to build it until checked against the template and any divergence is disproved or consciously accepted by Alan, by name, with the reason recorded. Matching the template needs no permission; diverging from it is a **legal-accuracy defect by default**.
+- **Push back on, don't defer, any change that alters a calculation** — fee tiers/thresholds, which schedules feed a total (and each one's sign), bond/audit-fee bases, rounding/percentage/apportionment, anything that changes a number a filer submits. Refuse to build it until checked against the template and any divergence is disproved or consciously accepted by the requester, by name, with the reason recorded. Matching the template needs no permission; diverging from it is a **legal-accuracy defect by default**.
 - **Never write into a formula cell.** The app writes inputs; the template's formulas compute totals. Overwriting one with a literal is silent — the file still opens, the number is just wrong forever after (this is how Milestone 57D became a critical regression).
 - **Verify a formula survived by reading the exported file, never by re-importing it** — the importer reads by address and evaluates nothing, so it agrees with a broken exporter perfectly (§10, P2 — this is exactly how two real corruptions survived a full test suite for their entire lives).
 - **When a proposal and the template disagree, the template wins** — say so plainly and correct the document.
@@ -484,6 +509,21 @@ Tier 3  Declarative Form Composition (pages assemble sequences of cards)
 - UI-only preferences (theme, display) live in `localStorage`, never `.sav`/case state (nothing sensitive; must be synchronously readable pre-paint, which encrypted/async case state can't guarantee) — see `src/core/theme-preference.js` (`pg-theme-v1`).
 - Icons via `src/core/ui/icons.js`'s `ic(name, size)`; any icon inside `<button>`/`<a>` needs an accessible name (`aria-label`, `title`, or visible text).
 - `.entry-card`/`.summary-box` with `cards.css`'s container queries for consistent multi-column layout.
+
+**Accessibility:**
+
+- Every control has an accessible name, grouped choices sit in a
+  `<fieldset>` with a `<legend>`, and a field's error is tied to the field so
+  a screen reader announces it -- held by `accessible-names.spec.ts`,
+  `form-field-labels.spec.ts` and `accessible-errors-and-groups.spec.ts`.
+- Generated PDFs are real text with a tagged structure, reading order and
+  bookmarks -- never a scanned image -- built toward PDF/UA-1 and WCAG 2.1
+  AA. `WCAG_2.1_AA_regex-structural.md` describes how that is checked and
+  what the checks do and don't prove (`pdf-accessibility-and-signatures.spec.ts`,
+  `plan-pdf-wcag-compliance.spec.ts`, `pdf-form-specific.spec.ts`).
+- The requester has set no formal conformance target for the screens. Keep
+  the guarantees above, and never describe the app or its PDFs as certified
+  conformant.
 
 ---
 
@@ -527,6 +567,22 @@ Tier 3  Declarative Form Composition (pages assemble sequences of cards)
   into a court workbook that way), never something to override on the way to
   a green test. `clickExport()` ends with the app's refusal text, not a
   download timeout.
+- **Recorded outcomes change only on purpose, with the reason.** Two unit
+  specs compare every filing variant's outcome to a recorded file:
+  `tests/unit/validator-engines.spec.js` (each export check's result,
+  `tests/baseline/ms73-validator-golden.json`) and
+  `tests/unit/completion-parity.spec.js` (the sidebar's marks and progress,
+  `tests/baseline/ms70-completion-golden.json`). A deliberate change to a
+  check regenerates its record (`PG_UPDATE_GOLDEN=1 npx vitest run
+  tests/unit/<spec>`) and adds to the record's note what changed and why --
+  the validator's note is in the spec, the completion one in its JSON. Diff
+  the regenerated file and confirm every changed outcome is one the change
+  intended; an unexplained one is a finding.
+- **A new browser spec is registered twice.** It joins
+  `tests/baseline/ms70-70T-progress.json`'s `converted` list, in order
+  (`tests/unit/ms70-70T-guard.spec.js` fails on a spec it doesn't cover),
+  and its counts join `tests/baseline/ms70-assertion-counts.json` through
+  `node scripts/ms70-assertion-counts.mjs --write-baseline`.
 
 ---
 
